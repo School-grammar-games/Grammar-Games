@@ -1,0 +1,1728 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Preposition Side-Scroller (Desktop + Touch Controls)</title>
+  <style>
+    :root{
+      --bg1:#cfe9ff; --bg2:#e8f6ff;
+      --ground:#5c8a3a; --ground2:#4a732f;
+      --btn:#1f2f67;
+      --btn2:#23357a;
+    }
+
+    *,*::before,*::after{ box-sizing:border-box; }
+
+    html,body{
+      height:100%;
+      /* Fallback for browsers with dynamic address bars (set via JS as --vh). */
+      height: calc(var(--vh, 1vh) * 100);
+      min-height:100vh;
+      min-height:100dvh;
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background-image: url("Images Sidescroller/background_website.png"),
+                  radial-gradient(900px 520px at 20% 15%, rgba(255,255,255,0.90), rgba(255,255,255,0) 60%),
+                  radial-gradient(800px 520px at 80% 10%, rgba(255,255,255,0.75), rgba(255,255,255,0) 60%),
+                  linear-gradient(var(--bg1), var(--bg2));
+      background-size: cover, auto, auto, auto;
+      background-position: center, center, center, center;
+      background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+      background-attachment: fixed, fixed, fixed, fixed;
+      overflow-x:hidden;
+      overflow-y:hidden;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:0.55;
+      background:
+        radial-gradient(110px 60px at 12% 18%, rgba(255,255,255,0.95), rgba(255,255,255,0) 70%),
+        radial-gradient(140px 70px at 18% 16%, rgba(255,255,255,0.90), rgba(255,255,255,0) 70%),
+        radial-gradient(120px 60px at 24% 19%, rgba(255,255,255,0.92), rgba(255,255,255,0) 70%),
+        radial-gradient(120px 60px at 62% 14%, rgba(255,255,255,0.92), rgba(255,255,255,0) 70%),
+        radial-gradient(160px 80px at 70% 12%, rgba(255,255,255,0.90), rgba(255,255,255,0) 70%),
+        radial-gradient(120px 60px at 78% 15%, rgba(255,255,255,0.92), rgba(255,255,255,0) 70%),
+        radial-gradient(520px 220px at 15% 78%, rgba(45,120,90,0.22), rgba(45,120,90,0) 70%),
+        radial-gradient(560px 240px at 55% 82%, rgba(45,120,90,0.20), rgba(45,120,90,0) 72%),
+        radial-gradient(520px 220px at 90% 80%, rgba(45,120,90,0.18), rgba(45,120,90,0) 72%);
+    }
+    body::after{
+      content:"";
+      position:fixed;
+      inset:-2px;
+      pointer-events:none;
+      background: radial-gradient(1200px 800px at 50% 35%, rgba(0,0,0,0), rgba(0,0,0,0.10) 70%, rgba(0,0,0,0.16) 100%);
+      mix-blend-mode:multiply;
+      opacity:0.55;
+    }
+
+    .wrap{
+      height: calc(var(--vh, 1vh) * 100);
+      min-height:100vh;
+      min-height:100dvh;
+      display:grid;
+      place-items:center;
+      /* Respect notches/home indicators and keep symmetric gutters. */
+      padding-top: calc(12px + env(safe-area-inset-top));
+      padding-right: calc(12px + env(safe-area-inset-right));
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      padding-left: calc(12px + env(safe-area-inset-left));
+      box-sizing:border-box;
+    }
+
+    .frame{
+      width:100%;
+      max-width:1040px;
+      padding:16px;
+      border-radius:18px;
+      background: rgba(255,255,255,0.32);
+      border:1px solid rgba(255,255,255,0.55);
+      box-shadow: 0 18px 55px rgba(0,0,0,0.18);
+      backdrop-filter: blur(8px);
+    }
+
+    canvas{
+      width:100%;
+      aspect-ratio:16/9;
+      border-radius:12px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.15);
+      outline:1px solid rgba(15,23,42,0.10);
+      display:block;
+      background:transparent;
+    }
+
+    .controls-bar{
+      margin-top:8px; /* slightly tighter */
+      display:flex;
+      gap:14px;
+      align-items:stretch;
+      justify-content:space-between;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+
+    .ctrl{
+      flex:1 1 0;
+      height:64px;
+      border-radius:14px;
+      background:linear-gradient(180deg, var(--btn2), var(--btn));
+      border:1px solid rgba(255,255,255,0.14);
+      box-shadow:0 10px 24px rgba(0,0,0,0.18);
+      color:#fff;
+      font-weight:800;
+      font-size:20px;
+      letter-spacing:0.2px;
+      display:grid;
+      place-items:center;
+      user-select:none;
+      -webkit-user-select:none;
+      touch-action:none;
+      cursor:pointer;
+    }
+    .ctrl.smalltxt{ font-size:18px; }
+    .ctrl:active, .ctrl.pressed{
+      transform: translateY(1px);
+      filter: brightness(1.07);
+      box-shadow:0 7px 18px rgba(0,0,0,0.18);
+    }
+
+    /* Responsive tweaks for short viewports (common on phones in landscape). */
+    @media (max-height: 500px) and (orientation: landscape){
+      .wrap{
+        padding-top: calc(8px + env(safe-area-inset-top));
+        padding-right: calc(8px + env(safe-area-inset-right));
+        padding-bottom: calc(8px + env(safe-area-inset-bottom));
+        padding-left: calc(8px + env(safe-area-inset-left));
+      }
+      .frame{ width:100%; max-width:1040px; padding:10px; }
+      .controls-bar{ gap:10px; margin:0; }
+      .ctrl{ height:48px; font-size:14px; border-radius:12px; }
+      .ctrl.smalltxt{ font-size:14px; }
+    }
+    /* HUD (Level / Hearts / Score / Restart) */
+    .hud{
+      margin-bottom:6px;
+      padding:3px 8px;
+      border-radius:10px;
+      background: rgba(255,255,255,0.88);
+      border:1px solid rgba(255,255,255,0.55);
+      box-shadow:0 6px 14px rgba(0,0,0,0.10);
+      outline:1px solid rgba(15,23,42,0.08);
+    }
+    .hud-top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      flex-wrap:nowrap;
+    }
+    .hud-left, .hud-right{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:nowrap;
+    }
+    .hud-level{ font-weight:800; font-size:11.5px; color:rgba(15,23,42,0.85); }
+    .hud-hearts{ font-weight:900; font-size:13.5px; letter-spacing:0.5px; color:rgba(220,38,38,0.95); }
+    .hud-score{ font-weight:800; font-size:11.5px; color:rgba(15,23,42,0.85); }
+    .hud-time{ font-weight:700; font-size:11.5px; color:rgba(15,23,42,0.70); }
+
+    .hud-restart{
+      height:24px;
+      padding:0 10px;
+      border-radius:10px;
+      background:linear-gradient(180deg, var(--btn2), var(--btn));
+      border:1px solid rgba(255,255,255,0.14);
+      box-shadow:0 6px 12px rgba(0,0,0,0.16);
+      color:#fff;
+      font-weight:800;
+      font-size:11.5px;
+      letter-spacing:0.2px;
+      display:inline-grid;
+      place-items:center;
+      user-select:none;
+      -webkit-user-select:none;
+      touch-action:manipulation;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+    .hud-restart:active{
+      transform: translateY(1px);
+      filter: brightness(1.07);
+      box-shadow:0 5px 10px rgba(0,0,0,0.16);
+    }
+
+    .hud-row2{
+      margin-top:1px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .hud-prompt{
+      margin:0;
+      flex:1 1 auto;
+      min-width:0;
+      font-weight:850;
+      font-size:14px;
+      color:rgba(15,23,42,0.92);
+      line-height:1.12;
+    }
+    .hud-meta-right{
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-end;
+      gap:8px;
+      white-space:nowrap;
+    }
+    .hud-hint{
+      margin:0;
+      font-weight:600;
+      font-size:10px;
+      color:rgba(15,23,42,0.60);
+      white-space:nowrap;
+    }
+    .hud-feedback{
+      margin:0;
+      font-weight:800;
+      font-size:11.5px;
+      color:rgba(15,23,42,0.88);
+      white-space:nowrap;
+      display:none;
+    }
+
+    @media (max-width: 720px){
+      .hud-top{ flex-wrap:wrap; }
+      .hud-left, .hud-right{ flex-wrap:wrap; }
+      .hud-meta-right{ white-space:normal; }
+      .hud-hint, .hud-feedback{ white-space:normal; }
+    }
+
+    @media (max-height: 500px) and (orientation: landscape){
+      .hud{ margin-bottom:6px; padding:3px 8px; }
+      .hud-prompt{ font-size:14px; }
+      .hud-restart{ height:24px; font-size:10px; }
+      .hud-hint{ font-size:10px; }
+    }
+
+
+  
+
+    /* Review modal (end-of-run mistakes) */
+    .modal{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: calc(14px + env(safe-area-inset-top))
+               calc(14px + env(safe-area-inset-right))
+               calc(14px + env(safe-area-inset-bottom))
+               calc(14px + env(safe-area-inset-left));
+      background: rgba(0,0,0,0.55);
+      z-index: 9999;
+    }
+    .modal.open{ display:flex; }
+
+    .modal-card{
+      width: min(920px, 100%);
+      max-height: min(80vh, 720px);
+      overflow:hidden;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.96);
+      border: 1px solid rgba(15,23,42,0.12);
+      box-shadow: 0 18px 55px rgba(0,0,0,0.28);
+      display:flex;
+      flex-direction:column;
+    }
+    .modal-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(15,23,42,0.10);
+      background: rgba(248,250,252,0.92);
+    }
+    .modal-title{
+      font-weight: 900;
+      font-size: 15px;
+      color: rgba(15,23,42,0.90);
+    }
+    .modal-close{
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      border: 1px solid rgba(15,23,42,0.12);
+      background: rgba(255,255,255,0.95);
+      cursor:pointer;
+      font-size: 20px;
+      line-height: 30px;
+      font-weight: 800;
+      color: rgba(15,23,42,0.70);
+    }
+    .modal-close:active{ transform: translateY(1px); }
+
+    .modal-body{
+      padding: 12px 14px;
+      overflow:auto;
+    }
+    .mistake-item{
+      border: 1px solid rgba(15,23,42,0.10);
+      border-radius: 12px;
+      padding: 10px 10px;
+      background: rgba(255,255,255,0.96);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+      margin-bottom: 10px;
+    }
+    .mistake-sentence{
+      font-weight: 800;
+      font-size: 13.5px;
+      color: rgba(15,23,42,0.88);
+      margin-bottom: 6px;
+    }
+    .mistake-meta{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-bottom: 6px;
+    }
+    .pill{
+      display:inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.06);
+      border: 1px solid rgba(15,23,42,0.10);
+      font-weight: 700;
+      font-size: 12px;
+      color: rgba(15,23,42,0.78);
+    }
+    .mistake-why{
+      margin: 0;
+      font-size: 12.5px;
+      line-height: 1.35;
+      color: rgba(15,23,42,0.80);
+    }
+
+    .modal-actions{
+      padding: 12px 14px;
+      border-top: 1px solid rgba(15,23,42,0.10);
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      background: rgba(248,250,252,0.92);
+    }
+    .modal-btn{
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, var(--btn2), var(--btn));
+      border:1px solid rgba(255,255,255,0.14);
+      box-shadow:0 10px 20px rgba(0,0,0,0.16);
+      color:#fff;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .modal-btn:active{ transform: translateY(1px); }
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="frame">
+
+      <div class="hud" aria-label="Status">
+        <div class="hud-top">
+          <div class="hud-left">
+            <div class="hud-level" id="hudLevel">Level 1 / 50</div>
+            <div class="hud-hearts" id="hudHearts" aria-label="Lives">♥♥♥</div>
+          </div>
+          <div class="hud-right">
+            <div class="hud-score" id="hudScore">Score: 0</div>
+            <div class="hud-time" id="hudTime">Time: 00:00</div>
+            <div class="hud-restart" id="btnRestart" role="button" aria-label="Restart">Restart</div>
+          </div>
+        </div>
+        <div class="hud-row2">
+          <div class="hud-prompt" id="hudPrompt"></div>
+          <div class="hud-meta-right">
+            <div class="hud-hint" id="hudHint">◀ / ▶ move • Jump (double jump) • Restart button (or R on keyboard)</div>
+            <div class="hud-feedback" id="hudFeedback"></div>
+          </div>
+        </div>
+      </div>
+
+      <canvas id="game" width="960" height="540"></canvas>
+
+      <div class="controls-bar" aria-label="Controls">
+        <div class="ctrl" id="btnLeft" role="button" aria-label="Move left">◀</div>
+        <div class="ctrl smalltxt" id="btnJump" role="button" aria-label="Jump">Jump</div>
+        <div class="ctrl" id="btnRight" role="button" aria-label="Move right">▶</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="reviewModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+      <div class="modal-head">
+        <div class="modal-title" id="reviewTitle">Review mistakes</div>
+        <button class="modal-close" id="reviewClose" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body" id="reviewBody"></div>
+      <div class="modal-actions">
+        <button class="modal-btn" id="reviewRestart" type="button">Restart</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+
+  // ----------------------------
+  // HUD (DOM)
+  // ----------------------------
+  const hudLevelEl = document.getElementById("hudLevel");
+  const hudHeartsEl = document.getElementById("hudHearts");
+  const hudScoreEl = document.getElementById("hudScore");
+  const hudTimeEl = document.getElementById("hudTime");
+  const hudPromptEl = document.getElementById("hudPrompt");
+  const hudHintEl = document.getElementById("hudHint");
+  const hudFeedbackEl = document.getElementById("hudFeedback");
+  const btnRestart = document.getElementById("btnRestart");
+
+
+  // ----------------------------
+  // REVIEW MODAL (mistakes)
+  // ----------------------------
+  const reviewModalEl = document.getElementById("reviewModal");
+  const reviewCloseEl = document.getElementById("reviewClose");
+  const reviewRestartEl = document.getElementById("reviewRestart");
+  const reviewBodyEl = document.getElementById("reviewBody");
+
+  function escapeHtml(s){
+    return String(s)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+
+  function closeReviewModal(){
+    if (!reviewModalEl) return;
+    reviewModalEl.classList.remove('open');
+    reviewModalEl.setAttribute('aria-hidden','true');
+  }
+
+  function showReviewModal(){
+    if (!reviewModalEl || !reviewBodyEl) return;
+
+    const total = mistakeLog.length;
+    if (total === 0) {
+      reviewBodyEl.innerHTML = '<div class="mistake-item"><div class="mistake-sentence">No mistakes recorded.</div><p class="mistake-why">Restart to play again.</p></div>';
+    } else {
+      const header = `<div class="mistake-item"><div class="mistake-sentence">End of run review</div><p class="mistake-why">You made ${total} mistake${total===1?'':'s'}. Each item shows the accepted answer(s) and a brief reason.</p></div>`;
+      const items = mistakeLog.map(m => {
+        const chosen = escapeHtml(m.chosen);
+        const corrects = escapeHtml(m.corrects.join(' / '));
+        const why = escapeHtml(m.why || '');
+        return `
+          <div class="mistake-item">
+            <div class="mistake-sentence">${escapeHtml(m.prompt)}</div>
+            <div class="mistake-meta">
+              <span class="pill">Your answer: ${chosen}</span>
+              <span class="pill">Accepted: ${corrects}</span>
+            </div>
+            <p class="mistake-why">${why}</p>
+          </div>`;
+      }).join('');
+      reviewBodyEl.innerHTML = header + items;
+    }
+
+    reviewModalEl.classList.add('open');
+    reviewModalEl.setAttribute('aria-hidden','false');
+  }
+
+  if (reviewCloseEl) reviewCloseEl.addEventListener('click', () => closeReviewModal());
+  if (reviewRestartEl) reviewRestartEl.addEventListener('click', () => { closeReviewModal(); restartQueued = true; });
+  if (reviewModalEl) reviewModalEl.addEventListener('click', (e) => { if (e.target === reviewModalEl) closeReviewModal(); });
+  let lastHudHeight = 0;
+
+
+  // ----------------------------
+  // RESPONSIVE FIT (mobile)
+  // ----------------------------
+  const frameEl = document.querySelector('.frame');
+  const controlsEl = document.querySelector('.controls-bar');
+  const hudEl = document.querySelector('.hud');
+  const wrapEl = document.querySelector('.wrap');
+  const BASE_W = canvas.width;
+  const BASE_H = canvas.height;
+
+  // Mobile browsers (notably iOS Safari) report fluctuating CSS viewport units as the
+  // address bar shows/hides. We set a JS-driven --vh custom property as a stable fallback.
+  function setVhVar(){
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+  }
+
+  function getViewportSize(){
+    const vv = window.visualViewport;
+    if (vv) return { w: vv.width, h: vv.height };
+    return { w: window.innerWidth, h: window.innerHeight };
+  }
+
+  function fitCanvasToViewport(){
+    // Compute available size while preserving the 16:9 game aspect.
+    const vp = getViewportSize();
+    const vh = vp.h;
+    let maxW = frameEl ? frameEl.clientWidth : vp.w;
+
+    const wrapStyle = wrapEl ? getComputedStyle(wrapEl) : null;
+    const frameStyle = frameEl ? getComputedStyle(frameEl) : null;
+    const framePadX = frameStyle ? (parseFloat(frameStyle.paddingLeft) + parseFloat(frameStyle.paddingRight)) : 0;
+    maxW = Math.max(160, Math.min((maxW - framePadX), (vp.w - 2)));
+    const controlsStyle = controlsEl ? getComputedStyle(controlsEl) : null;
+    const hudStyle = hudEl ? getComputedStyle(hudEl) : null;
+
+    const wrapPad = wrapStyle ? (parseFloat(wrapStyle.paddingTop) + parseFloat(wrapStyle.paddingBottom)) : 0;
+    const framePad = frameStyle ? (parseFloat(frameStyle.paddingTop) + parseFloat(frameStyle.paddingBottom)) : 0;
+    const controlsMarginTop = controlsStyle ? (parseFloat(controlsStyle.marginTop) || 0) : 0;
+    const controlsH = controlsEl ? controlsEl.offsetHeight : 0;
+
+    const hudMargin = hudStyle ? ((parseFloat(hudStyle.marginTop) || 0) + (parseFloat(hudStyle.marginBottom) || 0)) : 0;
+    const hudH = hudEl ? hudEl.offsetHeight : 0;
+
+    // Small safety buffer helps across browsers with dynamic toolbars.
+    const extra = wrapPad + framePad + hudH + hudMargin + controlsH + controlsMarginTop + 6;
+    const maxH = Math.max(160, vh - extra);
+
+    const scale = Math.min(maxW / BASE_W, maxH / BASE_H);
+    const cssW = Math.max(1, Math.floor(BASE_W * scale));
+    const cssH = Math.max(1, Math.floor(BASE_H * scale));
+
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+    canvas.style.margin = '0 auto';
+  }
+
+  // Keep the CSS viewport fallback current.
+  setVhVar();
+  window.addEventListener('resize', () => { setVhVar(); fitCanvasToViewport(); });
+  window.addEventListener('orientationchange', () => setTimeout(() => { setVhVar(); fitCanvasToViewport(); }, 120));
+  if (window.visualViewport) {
+    // visualViewport events fire when the browser chrome collapses/expands.
+    window.visualViewport.addEventListener('resize', () => { setVhVar(); fitCanvasToViewport(); });
+    window.visualViewport.addEventListener('scroll', () => { setVhVar(); fitCanvasToViewport(); });
+  }
+  // Initial sizing
+  fitCanvasToViewport();
+
+  // ----------------------------
+  // BACKGROUND IMAGE (parallax)
+  // ----------------------------
+  const bgImg = new Image();
+  bgImg.decoding = "async";
+  bgImg.src = "Images Sidescroller/background_sidescroller.png";
+  let bgReady = false;
+  bgImg.onload = () => { bgReady = true; };
+
+
+  // ----------------------------
+  // AUDIO (WebAudio)
+  // ----------------------------
+  let audioCtx = null;
+  function ensureAudio() {
+    if (audioCtx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    audioCtx = new AC();
+  }
+  function playBeep({ type="sine", freq=440, dur=0.14, gain=0.12, endFreq=null }) {
+    if (!audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (endFreq != null) osc.frequency.linearRampToValueAtTime(endFreq, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g).connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur);
+  }
+  function soundCorrect() {
+    playBeep({ type:"triangle", freq:620, endFreq:880, dur:0.16, gain:0.14 });
+    setTimeout(() => playBeep({ type:"triangle", freq:880, endFreq:980, dur:0.12, gain:0.10 }), 110);
+  }
+  function soundWrong() {
+    playBeep({ type:"sawtooth", freq:220, endFreq:160, dur:0.22, gain:0.13 });
+  }
+
+  // ----------------------------
+  // SCREEN FLASH
+  // ----------------------------
+  let flash = { t: 0, dur: 0, color: "rgba(0,0,0,0)" };
+  function triggerFlash(color, dur=0.18) {
+    flash.color = color;
+    flash.t = dur;
+    flash.dur = dur;
+  }
+
+  // ----------------------------
+  // SIZES
+  // ----------------------------
+  const CHAR_W = 34, CHAR_H = 44;
+  const PLATFORM_W = CHAR_W * 3;
+  const PLATFORM_H = 18;
+
+  // Thin ground, but ALWAYS at bottom
+  const GROUND_H = 40;
+
+  // ----------------------------
+  // LEVELS (50)
+  // ----------------------------
+  const LEVELS_BASE = [
+    { prompt: "He's surfing ____ the internet.", options: ["on","in","at","to"], correct: "on", why: "Use 'on the internet' (fixed collocation) to mean using online services/websites." },
+    { prompt: "We arrived ____ the station at 6.", options: ["at","to","in","on"], correct: "at", why: "Use 'at' for a specific point/place (station as a location)." },
+    { prompt: "I was born ____ 2008.", options: ["in","on","at","since"], correct: "in", why: "Use 'in' for years." },
+    { prompt: "The keys are ____ the table.", options: ["on","in","at","to"], correct: "on", why: "Use 'on' for something resting on a surface." },
+    { prompt: "She is interested ____ biology.", options: ["in","on","at","for"], correct: "in", why: "Use 'interested in' (fixed collocation)." },
+    { prompt: "He apologized ____ being late.", options: ["for","about","to","with"], correct: "for", why: "Use 'apologize for' + noun/gerund to name what you are sorry about." },
+    { prompt: "I’m good ____ math.", options: ["at","in","on","to"], correct: "at", why: "Use 'good at' to describe skill/ability." },
+    { prompt: "We depend ____ public transport.", options: ["on","in","at","from"], correct: "on", why: "Use 'depend on' (fixed collocation)." },
+    { prompt: "They are afraid ____ spiders.", options: ["of","from","about","for"], correct: "of", why: "Use 'afraid of' (fixed collocation)." },
+    { prompt: "Please write ____ pen, not pencil.", options: ["with","by","in","on"], correct: "with", why: "Use 'with' to express the instrument/tool used." },
+    { prompt: "This book belongs ____ my sister.", options: ["to","for","with","at"], correct: "to", why: "Use 'belong to' to show possession." },
+    { prompt: "She arrived ____ time for the lesson.", options: ["on","in","at","to"], correct: "on", why: "Use 'on time' (fixed phrase) meaning punctual." },
+    { prompt: "We met ____ Monday morning.", options: ["on","in","at","by"], correct: "on", why: "Use 'on' for days and dates (Monday)." },
+    { prompt: "He lives ____ Bavaria.", options: ["in","at","on","to"], correct: "in", why: "Use 'in' for regions/areas (states, countries, cities)." },
+    { prompt: "I’ll call you ____ the evening.", options: ["in","on","at","to"], correct: "in", why: "Use 'in' with parts of the day (in the morning/afternoon/evening)." },
+    { prompt: "The cat is hiding ____ the bed.", options: ["under","over","between","through"], correct: "under", why: "Use 'under' for a position beneath something." },
+    { prompt: "The supermarket is ____ the bank.", options: ["next to","between","behind","across"], correct: "next to", why: "Use 'next to' for immediate adjacency." },
+    { prompt: "She walked ____ the street carefully.", options: ["across","through","over","along"], correct: "across", why: "Use 'across' when you go from one side to the other." },
+    { prompt: "We drove ____ the tunnel.", options: ["through","across","between","beside"], correct: "through", why: "Use 'through' for movement inside an enclosed space from entrance to exit." },
+    { prompt: "I’ve lived here ____ 2019.", options: ["since","for","during","until"], correct: "since", why: "Use 'since' with a starting point (a year/date)." },
+    { prompt: "I’ve lived here ____ three years.", options: ["for","since","until","during"], correct: "for", why: "Use 'for' with a duration (length of time)." },
+    { prompt: "He has been ill ____ the weekend.", options: ["since","for","at","on"], correct: "since", why: "Use 'since' to mark when the situation started." },
+    { prompt: "They talked ____ the test results.", options: ["about","of","for","with"], correct: "about", why: "Use 'talk about' for the topic of a conversation." },
+    { prompt: "He’s responsible ____ the project.", options: ["for","of","to","with"], correct: "for", why: "Use 'responsible for' (fixed collocation)." },
+    { prompt: "Don’t worry ____ it.", options: ["about","for","of","to"], correct: "about", why: "Use 'worry about' (fixed collocation)." },
+    { prompt: "She is married ____ a doctor.", options: ["to","with","for","at"], correct: "to", why: "Use 'married to' (fixed collocation)." },
+    { prompt: "I’m looking ____ my phone.", options: ["for","at","to","with"], correct: "for", why: "Use 'look for' to mean search." },
+    { prompt: "He looked ____ the picture and smiled.", options: ["at","for","to","in"], correct: "at", why: "Use 'look at' for directing your eyes to something." },
+    { prompt: "The train goes ____ Berlin at 7.", options: ["to","at","in","on"], correct: "to", why: "Use 'to' to indicate a destination." },
+    { prompt: "Please translate this ____ English.", options: ["into","to","in","at"], correct: "into", why: "Use 'translate into' to indicate the target language/result." },
+
+    // Image description phrases (20)
+    { prompt: "____ the foreground, you can see a bicycle.", options: ["In","On","At","To"], correct: "In", why: "Use 'in the foreground' (fixed image-description phrase)." },
+    { prompt: "____ the background, there are mountains.", options: ["In","On","At","Into"], correct: "In", why: "Use 'in the background' (fixed image-description phrase)." },
+    { prompt: "There is a small house ____ the right.", options: ["on","in","at","to"], correct: "on", why: "In picture descriptions, use 'on the right/left' for relative position." },
+    { prompt: "There are two trees ____ the left side.", options: ["on","in","at","to"], correct: "on", why: "In picture descriptions, use 'on the left side' for relative position." },
+    { prompt: "The sun is ____ the top of the picture.", options: ["at","in","on","to"], correct: "at", why: "Use 'at the top/bottom' to point to a position on an image." },
+    { prompt: "The river is ____ the bottom of the picture.", options: ["at","in","on","to"], correct: "at", why: "Use 'at the top/bottom' to point to a position on an image." },
+    { prompt: "The main object is ____ the center.", options: ["in","on","at","to"], correct: ["in","at"], why: "Both can work: 'in the center' (within the central area) or 'at the center' (exact point)." },
+    { prompt: "There is a tree ____ the middle of the field.", options: ["in","at","on","to"], correct: ["in","at"], why: "Both can work: 'in the middle' (general area) or 'at the middle' (exact point; less common but acceptable)." },
+    { prompt: "A car is parked ____ the building.", options: ["in front of","behind","between","across"], correct: "in front of", why: "Use 'in front of' for a position before something (between you and it)." },
+    { prompt: "A garden is ____ the house.", options: ["behind","in front of","over","through"], correct: "behind", why: "Use 'behind' for a position at the back of something." },
+    { prompt: "A cat is sitting ____ the chair.", options: ["on","in","at","to"], correct: "on", why: "Use 'on' when something is on top of a surface." },
+    { prompt: "The dog is lying ____ the sofa.", options: ["under","on","behind","between"], correct: ["under","on"], why: "Both can be correct depending on meaning: 'on' if it is on top of the sofa; 'under' if it is beneath it." },
+    { prompt: "The ball is ____ the box.", options: ["in","on","at","over"], correct: "in", why: "Use 'in' for something inside an enclosed space." },
+    { prompt: "The lamp is ____ the table.", options: ["above","under","between","through"], correct: "above", why: "Use 'above' for a higher position without contact." },
+    { prompt: "The shoes are ____ the bed.", options: ["under","over","in","at"], correct: "under", why: "Use 'under' for a position beneath something." },
+    { prompt: "The school is ____ the church and the supermarket.", options: ["between","behind","over","through"], correct: "between", why: "Use 'between' for something in the middle of two reference points." },
+    { prompt: "He walked ____ the bridge.", options: ["across","through","under","into"], correct: "across", why: "Use 'across' when crossing from one side to the other (bridge as a surface)." },
+    { prompt: "We drove ____ the tunnel.", options: ["through","across","over","between"], correct: "through", why: "Use 'through' for movement inside an enclosed space from entrance to exit." },
+    { prompt: "A bird is flying ____ the lake.", options: ["over","under","between","through"], correct: "over", why: "Use 'over' for a position above something (often while moving)." },
+    { prompt: "He is ____ school right now.", options: ["at","in","on","to"], correct: ["at","in"], why: "Both are used: 'at school' focuses on being at the institution/activity; 'in school' can mean inside the building or enrolled/in attendance." },
+    { prompt: "We will meet ____ the weekend.", options: ["at","on","in","to"], correct: ["at","on"], why: "Both occur: 'at the weekend' is common in BrE; 'on the weekend' is common in AmE (also used by some BrE speakers)." },
+  ];
+
+  // Current level order (shuffled on game-over restart)
+  let LEVELS = [...LEVELS_BASE];
+
+  function shuffleLevels() {
+    if (LEVELS_BASE.length <= 1) { LEVELS = [...LEVELS_BASE]; return; }
+    let next;
+    do {
+      next = shuffle([...LEVELS_BASE]);
+    } while (next[0].prompt === LEVELS[0].prompt);
+    LEVELS = next;
+  }
+
+  // ----------------------------
+  // INPUT (keyboard)
+  // ----------------------------
+  const keysDown = new Set();
+  let jumpQueued = false;
+  let restartQueued = false;
+
+  function keyName(e) {
+    if (e.code === "Space") return "space";
+    if (e.key && e.key.startsWith("Arrow")) return e.key.toLowerCase();
+    return (e.key || "").toLowerCase();
+  }
+
+  window.addEventListener("keydown", (e) => {
+    ensureAudio();
+    const k = keyName(e);
+    if (k === "arrowleft" || k === "arrowright" || k === "arrowup" || k === "space") e.preventDefault();
+    if (!keysDown.has(k)) {
+      if (k === "arrowup" || k === "space") jumpQueued = true;
+      if (k === "r") restartQueued = true;
+    }
+    keysDown.add(k);
+  }, { passive: false });
+
+  window.addEventListener("keyup", (e) => keysDown.delete(keyName(e)));
+  canvas.addEventListener("pointerdown", () => ensureAudio());
+  const isDown = (k) => keysDown.has(k);
+
+  // ----------------------------
+  // INPUT (buttons)
+  // ----------------------------
+  const touch = { left:false, right:false };
+  const btnLeft  = document.getElementById("btnLeft");
+  const btnRight = document.getElementById("btnRight");
+  const btnJump  = document.getElementById("btnJump");
+
+  if (btnRestart) {
+    btnRestart.addEventListener("pointerdown", (ev) => {
+      ensureAudio();
+      if (ev && ev.preventDefault) ev.preventDefault();
+      restartQueued = true;
+    }, { passive:false });
+  }
+
+  function setPressed(el, on){ if (el) el.classList.toggle("pressed", !!on); }
+
+  function bindHold(el, onDown, onUp){
+    el.addEventListener("pointerdown", (ev) => {
+      ensureAudio();
+      ev.preventDefault();
+      try { el.setPointerCapture(ev.pointerId); } catch(_) {}
+      onDown();
+      setPressed(el, true);
+    }, { passive:false });
+
+    const up = (ev) => {
+      if (ev && ev.preventDefault) ev.preventDefault();
+      onUp();
+      setPressed(el, false);
+    };
+
+    el.addEventListener("pointerup", up, { passive:false });
+    el.addEventListener("pointercancel", up, { passive:false });
+    el.addEventListener("lostpointercapture", up, { passive:true });
+  }
+
+  bindHold(btnLeft,  () => { touch.left = true;  }, () => { touch.left = false; });
+  bindHold(btnRight, () => { touch.right = true; }, () => { touch.right = false; });
+
+  btnJump.addEventListener("pointerdown", (ev) => {
+    ensureAudio();
+    ev.preventDefault();
+    try { btnJump.setPointerCapture(ev.pointerId); } catch(_) {}
+    jumpQueued = true;
+    setPressed(btnJump, true);
+  }, { passive:false });
+
+  const clearJump = (ev) => {
+    if (ev && ev.preventDefault) ev.preventDefault();
+    setPressed(btnJump, false);
+  };
+  btnJump.addEventListener("pointerup", clearJump, { passive:false });
+  btnJump.addEventListener("pointercancel", clearJump, { passive:false });
+  btnJump.addEventListener("lostpointercapture", clearJump, { passive:true });
+
+  const controlsBar = document.querySelector(".controls-bar");
+  controlsBar.addEventListener("touchstart", (e) => e.preventDefault(), { passive:false });
+  controlsBar.addEventListener("touchmove",  (e) => e.preventDefault(), { passive:false });
+
+  // ----------------------------
+  // WORLD / PLAYER
+  // ----------------------------
+  const WORLD = {
+    gravity: 2200,
+    friction: 0.85,
+    moveAccel: 2800,
+    maxSpeed: 420,
+    jumpSpeed: 820,
+    coyoteTime: 0.10,
+    jumpBuffer: 0.10,
+    maxAirJumps: 1,
+  };
+
+  const camera = { x: 0, y: 0 };
+
+  function makePlayer() {
+    return {
+      x: 80, y: 200, w: CHAR_W, h: CHAR_H,
+      vx: 0, vy: 0,
+      onGround: false,
+      coyote: 0,
+      jumpBuf: 0,
+      facing: 1,
+      airJumpsLeft: WORLD.maxAirJumps,
+    };
+  }
+  let player = makePlayer();
+
+  // ----------------------------
+  // SCORE / TIMER / LIVES
+  // ----------------------------
+  let score = 0;
+  let lives = 3;
+  const MAX_LIVES = 3;
+  let gameOver = false;
+
+
+  // Record first wrong attempt per sentence (keeps the end-of-run review concise)
+  let mistakeLog = [];
+  let mistakeSeenByLevel = new Set();
+
+  function getCorrectArray(lvl){
+    return Array.isArray(lvl.correct) ? lvl.correct : [lvl.correct];
+  }
+
+  function recordMistake(levelIdx, chosenLabel){
+    if (mistakeSeenByLevel.has(levelIdx)) return;
+    mistakeSeenByLevel.add(levelIdx);
+    const lvl = LEVELS[levelIdx];
+    mistakeLog.push({
+      level: levelIdx + 1,
+      prompt: lvl.prompt,
+      chosen: chosenLabel,
+      corrects: getCorrectArray(lvl),
+      why: lvl.why || ''
+    });
+  }
+
+  let runStartMs = performance.now();
+  function elapsedSeconds() { return Math.max(0, (performance.now() - runStartMs) / 1000); }
+  function fmtTime(sec) {
+    const s = Math.floor(sec);
+    const mm = String(Math.floor(s / 60)).padStart(2, "0");
+    const ss = String(s % 60).padStart(2, "0");
+    return `${mm}:${ss}`;
+  }
+
+  // ----------------------------
+  // HELPERS
+  // ----------------------------
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const randi = (a, b) => Math.floor(rand(a, b + 1));
+  const shuffle = (arr) => arr.map(v => [Math.random(), v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+
+  function aabb(ax, ay, aw, ah, bx, by, bw, bh) {
+    return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+  }
+
+  // ----------------------------
+  // PLATFORMS
+  // ----------------------------
+  let platforms = [];
+
+  const GEN = {
+    groundX: -900,
+    groundW: 5200,
+
+    minCount: 13,
+    maxCount: 26,
+
+    w: PLATFORM_W,
+    h: PLATFORM_H,
+
+    gapMin: 110,
+    gapMax: 170,
+
+    stepUpMax: 105,
+    stepDownMax: 140,
+
+    yMin: 170,
+    yMax: 350,
+  };
+
+  function reachableFromGround(platformY) {
+    return platformY >= 320 && platformY <= GEN.yMax;
+  }
+
+  function generatePlatforms() {
+    const list = [];
+    const groundY = canvas.height - GROUND_H;      // ground always flush to bottom
+    list.push({ x: GEN.groundX, y: groundY, w: GEN.groundW, h: GROUND_H });
+
+    const count = randi(GEN.minCount, GEN.maxCount);
+
+    let x = 280;
+    let y0 = randi(320, 350);
+    if (!reachableFromGround(y0)) y0 = 330;
+    list.push({ x, y: y0, w: GEN.w, h: GEN.h });
+
+    x += GEN.w + randi(GEN.gapMin, GEN.gapMax);
+    let y1 = clamp(y0 + randi(-60, 80), GEN.yMin, GEN.yMax);
+    list.push({ x, y: y1, w: GEN.w, h: GEN.h });
+
+    for (let i = 2; i < count; i++) {
+      const prev = list[list.length - 1];
+      x += GEN.w + randi(GEN.gapMin, GEN.gapMax);
+
+      let rawTarget = (Math.random() < 0.5) ? randi(190, 250) : randi(280, 350);
+      rawTarget = clamp(rawTarget, GEN.yMin, GEN.yMax);
+
+      let y = rawTarget;
+      const dy = y - prev.y;
+      if (dy < -GEN.stepUpMax) y = prev.y - GEN.stepUpMax;
+      if (dy >  GEN.stepDownMax) y = prev.y + GEN.stepDownMax;
+
+      y = clamp(y + randi(-14, 14), GEN.yMin, GEN.yMax);
+
+      const dy2 = y - prev.y;
+      if (dy2 < -GEN.stepUpMax) y = prev.y - GEN.stepUpMax;
+      if (dy2 >  GEN.stepDownMax) y = prev.y + GEN.stepDownMax;
+
+      list.push({ x, y, w: GEN.w, h: GEN.h });
+    }
+
+    platforms = list;
+  }
+
+  // ----------------------------
+  // COLLISIONS
+  // ----------------------------
+  function resolveCollisions(p, dt) {
+    p.x += p.vx * dt;
+    for (const plat of platforms) {
+      if (aabb(p.x, p.y, p.w, p.h, plat.x, plat.y, plat.w, plat.h)) {
+        if (p.vx > 0) p.x = plat.x - p.w;
+        else if (p.vx < 0) p.x = plat.x + plat.w;
+        p.vx = 0;
+      }
+    }
+
+    p.y += p.vy * dt;
+    p.onGround = false;
+    for (const plat of platforms) {
+      if (aabb(p.x, p.y, p.w, p.h, plat.x, plat.y, plat.w, plat.h)) {
+        if (p.vy > 0) {
+          p.y = plat.y - p.h;
+          p.vy = 0;
+          p.onGround = true;
+          p.coyote = WORLD.coyoteTime;
+          p.airJumpsLeft = WORLD.maxAirJumps;
+        } else if (p.vy < 0) {
+          p.y = plat.y + plat.h;
+          p.vy = 0;
+        }
+      }
+    }
+  }
+
+  // ----------------------------
+  // COLLECTIBLES / FLOW
+  // ----------------------------
+  let levelIndex = 0;
+  let collectibles = [];
+  let feedback = { text: "", timer: 0 };
+  let transition = { active: false, t: 0, nextLevel: 0 };
+
+  const BOX_W = 110;
+  const BOX_H = 48;
+  const AIR_OFFSET = 120;
+
+  function pickSpawnPlatforms() {
+    const floats = platforms.filter(p => p.h === GEN.h).sort((a,b)=>a.x-b.x);
+    const usable = floats.slice(Math.min(2, floats.length));
+    const base = (usable.length >= 4) ? usable : floats;
+
+    if (!base.length) return [];
+    const n = base.length;
+    const q = (a,b) => base.slice(Math.floor(n*a), Math.max(Math.floor(n*a)+1, Math.floor(n*b)));
+    const q1=q(0.00,0.25), q2=q(0.25,0.50), q3=q(0.50,0.75), q4=q(0.75,1.00);
+    const pick = (bucket) => bucket[Math.floor(Math.random()*bucket.length)];
+
+    if (n >= 4) return [pick(q1), pick(q2), pick(q3), pick(q4)];
+    const out = [];
+    for (let i=0;i<4;i++) out.push(base[i % n]);
+    return out;
+  }
+
+  function buildCollectiblesForLevel(i) {
+    const lvl = LEVELS[i];
+    const opts = shuffle([...lvl.options]);
+    const spawnPlats = pickSpawnPlatforms();
+
+    collectibles = opts.map((label, idx) => {
+      const p = spawnPlats[idx % spawnPlats.length];
+      const x = p ? (p.x + Math.floor((p.w - BOX_W) / 2)) : (520 + idx*140);
+      const y = p ? ((p.y - AIR_OFFSET) - BOX_H) : 220;
+            const corrects = Array.isArray(lvl.correct) ? lvl.correct : [lvl.correct];
+      return { x, y, w: BOX_W, h: BOX_H, label, isCorrect: corrects.includes(label), active: true };
+    });
+  }
+
+  function setFeedback(text, seconds = 1.2) {
+    feedback.text = text;
+    feedback.timer = seconds;
+  }
+
+  function beginNextLevelDelay(nextIdx, seconds, message) {
+    transition.active = true;
+    transition.t = seconds;
+    transition.nextLevel = nextIdx;
+    setFeedback(message, seconds);
+  }
+
+  function finishGame() {
+    collectibles = [];
+    setFeedback("All done. Tap Restart (or press R) to play again.", 999);
+  }
+
+  function loseLife() {
+    lives = Math.max(0, lives - 1);
+    if (lives <= 0) {
+      gameOver = true;
+      setFeedback("Game over. Tap Restart (or press R) to try again.", 999);
+      // End-of-run review (shows mistakes + explanations)
+      setTimeout(() => showReviewModal(), 180);
+    }
+  }
+
+  function onCorrectPick() {
+    soundCorrect();
+    triggerFlash("rgba(34,197,94,1)", 0.18);
+    score += 100;
+    if (levelIndex < LEVELS.length - 1) beginNextLevelDelay(levelIndex + 1, 1.1, "Correct (+100).");
+    else { setFeedback("Correct (+100).", 1.2); setTimeout(() => finishGame(), 700); }
+  }
+
+  function onWrongPick(chosenLabel) {
+    // Record the first wrong attempt for this sentence (for the end-of-run review)
+    recordMistake(levelIndex, chosenLabel);
+    soundWrong();
+    triggerFlash("rgba(239,68,68,1)", 0.22);
+    loseLife();
+    if (!gameOver) setFeedback("Incorrect. Try again.", 1.4);
+  }
+
+  function handleCollectibleCollision() {
+    for (const c of collectibles) {
+      if (!c.active) continue;
+      if (aabb(player.x, player.y, player.w, player.h, c.x, c.y, c.w, c.h)) {
+        c.active = false;
+        if (c.isCorrect) onCorrectPick();
+        else onWrongPick(c.label);
+        break;
+      }
+    }
+  }
+
+  // ----------------------------
+  // DRAW HELPERS
+  // ----------------------------
+  function roundRect(x, y, w, h, r, fill) {
+    r = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+    if (fill) ctx.fill(); else ctx.stroke();
+  }
+
+  function drawWrappedText(text, x, y, maxWidth, lineHeight) {
+    const words = String(text || "").split(/\s+/);
+    let line = "";
+    let yy = y;
+    for (let n = 0; n < words.length; n++) {
+      const test = line + words[n] + " ";
+      const w = ctx.measureText(test).width;
+      if (w > maxWidth && n > 0) {
+        ctx.fillText(line.trimEnd(), x, yy);
+        line = words[n] + " ";
+        yy += lineHeight;
+      } else {
+        line = test;
+      }
+    }
+    if (line) ctx.fillText(line.trimEnd(), x, yy);
+  }
+
+  // ----------------------------
+  // DRAWING
+  // ----------------------------
+  function drawBackground() {
+    // Sky base (keeps the same clean look as before)
+    ctx.save();
+    const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    g.addColorStop(0, "#bfe9ff");
+    g.addColorStop(0.55, "#d9f4ff");
+    g.addColorStop(1, "#f4fbff");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    // In-game background image (adapted 'background_side') with parallax scrolling.
+    // The image scrolls slower than the camera for depth.
+    if (bgReady) {
+      const parallax = 0.20;
+      const iw = bgImg.naturalWidth || bgImg.width;
+      const ih = bgImg.naturalHeight || bgImg.height;
+
+      // Scale image to fill the canvas height (maintains aspect ratio).
+      const scale = canvas.height / ih;
+      const dw = iw * scale;
+      const dh = canvas.height;
+
+      // Parallax tiling in X with a *soft crossfade* at the seam.
+      // This avoids visible hard edges when the artwork is not perfectly tileable.
+      const raw = -camera.x * parallax;
+      let offsetX = raw % dw;
+      if (offsetX > 0) offsetX -= dw;
+
+      // Width of the blended seam region (in screen pixels).
+      const blend = Math.max(40, Math.min(140, dw * 0.14));
+      const steps = 24; // more steps = smoother blend (costs a few more draw calls)
+      const stripW = blend / steps;
+
+      ctx.save();
+      const _prevSmooth = ctx.imageSmoothingEnabled;
+      ctx.imageSmoothingEnabled = true;
+      ctx.globalAlpha = 0.95;
+
+      // 1) Draw the base tiles.
+      for (let x = offsetX; x < canvas.width + dw; x += dw) {
+        ctx.drawImage(bgImg, x, 0, dw, dh);
+      }
+
+      // 2) Crossfade the seam between adjacent tiles.
+      // We overlay the *start* of the next tile over the *end* of the current tile
+      // with an alpha ramp, creating a smooth transition.
+      for (let x = offsetX; x < canvas.width + dw; x += dw) {
+        const seamStart = x + dw - blend;
+        const nextTileX = x + dw - blend; // shift next tile left so its left edge aligns with seamStart
+
+        for (let i = 0; i < steps; i++) {
+          const a = i / (steps - 1);
+          const sx = seamStart + i * stripW;
+
+          ctx.save();
+          ctx.globalAlpha = 0.95 * a;
+          ctx.beginPath();
+          ctx.rect(sx, 0, stripW + 0.5, dh);
+          ctx.clip();
+
+          // Draw the next tile, shifted left by `blend`, so only its left edge occupies the seam region.
+          ctx.drawImage(bgImg, nextTileX, 0, dw, dh);
+          ctx.restore();
+        }
+      }
+
+      ctx.imageSmoothingEnabled = _prevSmooth;
+      ctx.restore();
+
+      ctx.save();
+
+      // Overlay: subtle atmospheric haze
+      const haze = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      haze.addColorStop(0, "rgba(255,255,255,0.20)");
+      haze.addColorStop(0.55, "rgba(255,255,255,0.08)");
+      haze.addColorStop(1, "rgba(255,255,255,0.00)");
+      ctx.fillStyle = haze;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const v = ctx.createRadialGradient(canvas.width*0.5, canvas.height*0.45, 40, canvas.width*0.5, canvas.height*0.45, canvas.width*0.9);
+      v.addColorStop(0, "rgba(0,0,0,0)");
+      v.addColorStop(1, "rgba(0,0,0,0.10)");
+      ctx.fillStyle = v;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    // Moving clouds (independent parallax, keeps motion even if player stands still)
+    function puff(x, y, s=1) {
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.16)";
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 6;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.ellipse(x, y, 56*s, 30*s, 0, 0, Math.PI*2);
+      ctx.ellipse(x + 42*s, y - 10*s, 48*s, 26*s, 0, 0, Math.PI*2);
+      ctx.ellipse(x + 92*s, y, 60*s, 32*s, 0, 0, Math.PI*2);
+      ctx.ellipse(x + 52*s, y + 16*s, 68*s, 32*s, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowColor = "transparent";
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.ellipse(x + 18*s, y - 10*s, 22*s, 12*s, 0, 0, Math.PI*2);
+      ctx.ellipse(x + 62*s, y - 16*s, 18*s, 10*s, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    const cloudOffset = (camera.x * 0.35) % 720;
+    ctx.save();
+    ctx.translate(-cloudOffset, 0);
+    for (let i = -1; i < 7; i++) {
+      const cx = i * 720 + 120;
+      const cy = 90 + (i % 2) * 24;
+      puff(cx, cy, 0.95);
+      puff(cx + 280, cy + 34, 0.78);
+    }
+    ctx.restore();
+  }
+
+
+
+  function drawPlatforms() {
+    // Ground keeps the 3D soil/grass look; floating platforms become wooden planks.
+    const grassTop = "#63d36f";
+    const grassTop2 = "#54c862";
+    const dirt = "#b1683d";
+    const dirt2 = "#9f5b34";
+
+    function tileFace(x, y, w, h, alpha=0.12) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 2;
+      const step = 26;
+      for (let xx = x + step; xx < x + w; xx += step) {
+        ctx.beginPath();
+        ctx.moveTo(xx, y + 8);
+        ctx.lineTo(xx, y + h - 8);
+        ctx.stroke();
+      }
+      for (let yy = y + step; yy < y + h; yy += step) {
+        ctx.beginPath();
+        ctx.moveTo(x + 8, yy);
+        ctx.lineTo(x + w - 8, yy);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function groundBlock(sx, sy, w, h) {
+      const capH = Math.max(10, Math.min(16, h));
+      const bevel = 10;
+
+      // Drop shadow
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.22)";
+      ctx.shadowBlur = 14;
+      ctx.shadowOffsetY = 10;
+      ctx.fillStyle = dirt2;
+      roundRect(sx, sy, w, h, 10, true);
+      ctx.restore();
+
+      // Dirt body
+      ctx.fillStyle = dirt;
+      roundRect(sx, sy, w, h, 10, true);
+
+      // Facet shade
+      ctx.save();
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = "#000";
+      ctx.beginPath();
+      ctx.moveTo(sx + w, sy + 10);
+      ctx.lineTo(sx + w - bevel, sy + 18);
+      ctx.lineTo(sx + w - bevel, sy + h - 14);
+      ctx.lineTo(sx + w, sy + h - 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // Inner band
+      ctx.fillStyle = dirt2;
+      ctx.fillRect(sx + 2, sy + capH + 2, w - 4, Math.max(0, h - capH - 4));
+
+      // Seams
+      tileFace(sx + 6, sy + capH + 6, w - 12, h - capH - 12, 0.10);
+
+      // Grass cap
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.18)";
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 6;
+      ctx.fillStyle = grassTop;
+      roundRect(sx - 2, sy - 2, w + 4, capH + 6, 12, true);
+      ctx.restore();
+
+      // Grass highlight
+      ctx.save();
+      ctx.globalAlpha = 0.22;
+      ctx.fillStyle = "#fff";
+      roundRect(sx + 6, sy + 2, w - 12, Math.max(6, capH*0.45), 10, true);
+      ctx.restore();
+
+      // Grass underside shade
+      ctx.fillStyle = grassTop2;
+      ctx.fillRect(sx - 2, sy + capH + 1, w + 4, 6);
+
+      // Outline
+      ctx.strokeStyle = "rgba(15,23,42,0.18)";
+      ctx.lineWidth = 2;
+      roundRect(sx, sy, w, h, 10, false);
+    }
+
+    function woodPlatform(sx, sy, w, h) {
+      // render as a chunky plank with plank seams + subtle grain
+      const r = 12;
+      const topH = Math.max(10, Math.min(16, h));
+
+      // shadow
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.25)";
+      ctx.shadowBlur = 14;
+      ctx.shadowOffsetY = 10;
+      ctx.fillStyle = "rgba(0,0,0,0.10)";
+      roundRect(sx, sy, w, h, r, true);
+      ctx.restore();
+
+      // body gradient
+      const grad = ctx.createLinearGradient(sx, sy, sx, sy + h);
+      grad.addColorStop(0, "#c98a55");
+      grad.addColorStop(0.55, "#b77745");
+      grad.addColorStop(1, "#9f643a");
+      ctx.fillStyle = grad;
+      roundRect(sx, sy, w, h, r, true);
+
+      // top highlight strip
+      ctx.save();
+      ctx.globalAlpha = 0.22;
+      ctx.fillStyle = "#fff";
+      roundRect(sx + 6, sy + 4, w - 12, Math.min(10, topH), 10, true);
+      ctx.restore();
+
+      // plank seams (vertical)
+      const plankCount = Math.max(2, Math.round(w / 90));
+      const plankW = w / plankCount;
+      ctx.save();
+      ctx.globalAlpha = 0.22;
+      ctx.strokeStyle = "rgba(15,23,42,0.35)";
+      ctx.lineWidth = 2;
+      for (let i = 1; i < plankCount; i++) {
+        const x = sx + i * plankW;
+        ctx.beginPath();
+        ctx.moveTo(x, sy + 6);
+        ctx.lineTo(x, sy + h - 6);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // wood grain (subtle wavy lines)
+      ctx.save();
+      ctx.globalAlpha = 0.10;
+      ctx.strokeStyle = "rgba(15,23,42,0.45)";
+      ctx.lineWidth = 2;
+      const lines = Math.max(2, Math.round(h / 10));
+      for (let i = 0; i < lines; i++) {
+        const yy = sy + 10 + i * (h - 20) / Math.max(1, lines - 1);
+        ctx.beginPath();
+        ctx.moveTo(sx + 10, yy);
+        const amp = 4;
+        for (let xx = sx + 10; xx <= sx + w - 10; xx += 30) {
+          ctx.quadraticCurveTo(xx + 15, yy + (i % 2 ? amp : -amp), xx + 30, yy);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // nails
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = "rgba(15,23,42,0.65)";
+      for (let i = 0; i < plankCount; i++) {
+        const nx1 = sx + i * plankW + 14;
+        const nx2 = sx + (i + 1) * plankW - 14;
+        const ny = sy + topH + 10;
+        for (const nx of [nx1, nx2]) {
+          ctx.beginPath();
+          ctx.ellipse(nx, ny, 3.2, 3.2, 0, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+
+      // underside shade band
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = "#000";
+      roundRect(sx + 4, sy + h - 12, w - 8, 10, 8, true);
+      ctx.restore();
+
+      // outline
+      ctx.strokeStyle = "rgba(15,23,42,0.22)";
+      ctx.lineWidth = 2;
+      roundRect(sx, sy, w, h, r, false);
+
+      // optional simple supports on thicker platforms
+      if (h >= 26 && w >= 90) {
+        ctx.save();
+        ctx.globalAlpha = 0.22;
+        ctx.fillStyle = "rgba(0,0,0,0.20)";
+        const postW = 10;
+        const postH = Math.min(26, h - 6);
+        const left = sx + 18;
+        const right = sx + w - 18 - postW;
+        roundRect(left, sy + h - postH, postW, postH, 6, true);
+        roundRect(right, sy + h - postH, postW, postH, 6, true);
+        ctx.restore();
+      }
+    }
+
+    for (const plat of platforms) {
+      const sx = plat.x - camera.x;
+      const sy = plat.y - camera.y;
+      const isGround = plat.h === GROUND_H;
+      if (isGround) groundBlock(sx, sy, plat.w, plat.h);
+      else woodPlatform(sx, sy, plat.w, plat.h);
+    }
+  }
+  function drawPlayer(p) {
+    const x = p.x - camera.x;
+    const y = p.y - camera.y;
+
+    ctx.fillStyle = "rgba(30, 41, 59, 0.95)";
+    roundRect(x, y, p.w, p.h, 8, true);
+
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    const visorW = p.w * 0.55;
+    const visorH = p.h * 0.22;
+    const visorX = x + (p.facing === 1 ? p.w*0.30 : p.w*0.15);
+    const visorY = y + p.h*0.20;
+    roundRect(visorX, visorY, visorW, visorH, 6, true);
+
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(x + 5, y + p.h - 6, p.w - 10, 6);
+
+    ctx.strokeStyle = "rgba(15,23,42,0.35)";
+    ctx.lineWidth = 2;
+    roundRect(x, y, p.w, p.h, 8, false);
+  }
+
+  function drawCollectibles() {
+    for (const c of collectibles) {
+      if (!c.active) continue;
+      const x = c.x - camera.x;
+      const y = c.y - camera.y;
+
+      // Soft shadow
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.22)";
+      ctx.shadowBlur = 16;
+      ctx.shadowOffsetY = 10;
+      ctx.fillStyle = "rgba(255,255,255,0.96)";
+      roundRect(x, y, c.w, c.h, 14, true);
+      ctx.restore();
+
+      // Face
+      ctx.fillStyle = "rgba(255,255,255,0.98)";
+      roundRect(x, y, c.w, c.h, 14, true);
+
+      // Top lip (subtle 3D cue)
+      ctx.save();
+      ctx.globalAlpha = 0.10;
+      ctx.fillStyle = "#000";
+      roundRect(x + 2, y + 2, c.w - 4, 12, 12, true);
+      ctx.restore();
+
+      // Border
+      ctx.strokeStyle = "rgba(15,23,42,0.22)";
+      ctx.lineWidth = 2;
+      roundRect(x, y, c.w, c.h, 14, false);
+
+      // Label
+      ctx.fillStyle = "rgba(15,23,42,0.92)";
+      ctx.font = "800 17px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(c.label, x + c.w/2, y + c.h/2 + 1);
+    }
+  }
+
+
+    function updateHud() {
+    if (!hudLevelEl || !hudHeartsEl || !hudScoreEl || !hudTimeEl || !hudPromptEl || !hudFeedbackEl) return;
+
+    const finished = (levelIndex >= LEVELS.length - 1) && collectibles.length === 0 && feedback.timer > 100;
+    hudLevelEl.textContent = finished ? "Finished" : `Level ${levelIndex + 1} / ${LEVELS.length}`;
+
+    const heartsFull = "♥".repeat(lives);
+    const heartsEmpty = "♡".repeat(MAX_LIVES - lives);
+    hudHeartsEl.textContent = `${heartsFull}${heartsEmpty}`;
+
+    hudScoreEl.textContent = `Score: ${score}`;
+    hudTimeEl.textContent = `Time: ${fmtTime(elapsedSeconds())}`;
+
+    hudPromptEl.textContent = finished ? "You completed all sentences." : (LEVELS[levelIndex] ? LEVELS[levelIndex].prompt : "");
+
+    const showFeedback = (feedback.timer > 0 && feedback.text);
+
+    hudFeedbackEl.textContent = showFeedback ? feedback.text : "";
+    hudFeedbackEl.style.display = showFeedback ? "block" : "none";
+    if (hudHintEl) hudHintEl.style.display = showFeedback ? "none" : "";
+
+    // If HUD height changed (e.g., feedback appears), refit the canvas.
+    if (hudEl) {
+      const h = hudEl.offsetHeight;
+      if (Math.abs(h - lastHudHeight) > 1) {
+        lastHudHeight = h;
+        fitCanvasToViewport();
+      }
+    }
+  }
+
+  function drawTopUI() {
+    const pad = 14;
+    const boxW = canvas.width - pad * 2;
+    const boxH = 70;
+    const x = pad;
+    const y = pad;
+
+    ctx.save();
+    ctx.fillStyle = "rgba(255,255,255,0.88)";
+    roundRect(x, y, boxW, boxH, 14, true);
+
+    ctx.strokeStyle = "rgba(15,23,42,0.20)";
+    ctx.lineWidth = 2;
+    roundRect(x, y, boxW, boxH, 14, false);
+
+    const finished = (levelIndex >= LEVELS.length - 1) && collectibles.length === 0 && feedback.timer > 100;
+
+    ctx.fillStyle = "rgba(15,23,42,0.85)";
+    ctx.font = "700 14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText(finished ? "Finished" : `Level ${levelIndex + 1} / ${LEVELS.length}`, x + 16, y + 10);
+
+    ctx.font = "600 18px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.textBaseline = "bottom";
+    ctx.fillText(finished ? "You completed all sentences." : LEVELS[levelIndex].prompt, x + 16, y + boxH - 12);
+
+    ctx.textAlign = "right";
+    ctx.textBaseline = "top";
+    ctx.font = "700 14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillText(`Score: ${score}   Time: ${fmtTime(elapsedSeconds())}`, x + boxW - 16, y + 10);
+
+    const heartsFull = "♥".repeat(lives);
+    const heartsEmpty = "♡".repeat(MAX_LIVES - lives);
+    ctx.font = "700 16px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillStyle = "rgba(15,23,42,0.85)";
+    ctx.fillText(`${heartsFull}${heartsEmpty}`, x + boxW - 16, y + 30);
+
+    ctx.font = "500 13px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillStyle = "rgba(15,23,42,0.65)";
+    ctx.textBaseline = "bottom";
+    ctx.fillText("←/→ move  •  ↑/Space jump (double jump)  •  R restart", x + boxW - 16, y + boxH - 14);
+
+    if (feedback.timer > 0 && feedback.text) {
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      ctx.font = "600 15px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.fillStyle = "rgba(15,23,42,0.88)";
+      drawWrappedText(feedback.text, x + 16, y + boxH + 8, boxW - 32, 18);
+    }
+
+    ctx.restore();
+  }
+
+  // ----------------------------
+  // GAME FLOW
+  // ----------------------------
+  function spawnRound(i, resetRun = false) {
+    levelIndex = clamp(i, 0, LEVELS.length - 1);
+    generatePlatforms();
+    buildCollectiblesForLevel(levelIndex);
+    player = makePlayer();
+    camera.x = 0;
+    camera.y = 0; // locked
+    jumpQueued = false;
+    restartQueued = false;
+    transition.active = false;
+    transition.t = 0;
+
+    if (resetRun) {
+      score = 0;
+      lives = MAX_LIVES;
+      gameOver = false;
+      runStartMs = performance.now();
+      feedback = { text: "", timer: 0 };
+      mistakeLog = [];
+      mistakeSeenByLevel = new Set();
+      closeReviewModal();
+    }
+  }
+
+  // ----------------------------
+  // UPDATE / RENDER LOOP
+  // ----------------------------
+  function update(dt) {
+        if (restartQueued) {
+      restartQueued = false;
+      // Restart always randomizes the sentence order for the next run and resets run state.
+      shuffleLevels();
+      closeReviewModal();
+      spawnRound(0, true);
+      return;
+    }
+
+    if (flash.t > 0) flash.t = Math.max(0, flash.t - dt);
+
+    if (feedback.timer > 0 && feedback.timer < 900) {
+      feedback.timer = Math.max(0, feedback.timer - dt);
+      if (feedback.timer === 0) feedback.text = "";
+    }
+
+    if (gameOver) return;
+
+    if (transition.active) {
+      transition.t = Math.max(0, transition.t - dt);
+      if (transition.t === 0) {
+        const next = transition.nextLevel;
+        transition.active = false;
+        spawnRound(next, false);
+      }
+      return;
+    }
+
+    const leftPressed  = isDown("arrowleft")  || touch.left;
+    const rightPressed = isDown("arrowright") || touch.right;
+
+    let ax = 0;
+    if (leftPressed) ax -= WORLD.moveAccel;
+    if (rightPressed) ax += WORLD.moveAccel;
+    if (ax !== 0) player.facing = ax > 0 ? 1 : -1;
+
+    player.vx += ax * dt;
+    player.vx = clamp(player.vx, -WORLD.maxSpeed, WORLD.maxSpeed);
+
+    if (ax === 0) {
+      const fr = Math.pow(WORLD.friction, dt * 60);
+      player.vx *= fr;
+      if (Math.abs(player.vx) < 10) player.vx = 0;
+    }
+
+    player.coyote = Math.max(0, player.coyote - dt);
+    player.jumpBuf = Math.max(0, player.jumpBuf - dt);
+
+    if (jumpQueued) { player.jumpBuf = WORLD.jumpBuffer; jumpQueued = false; }
+
+    player.vy += WORLD.gravity * dt;
+    player.vy = clamp(player.vy, -2000, 2000);
+
+    if (player.jumpBuf > 0) {
+      const canGroundJump = player.onGround || player.coyote > 0;
+      const canAirJump = !canGroundJump && player.airJumpsLeft > 0;
+      if (canGroundJump || canAirJump) {
+        player.vy = -WORLD.jumpSpeed;
+        player.onGround = false;
+        player.coyote = 0;
+        player.jumpBuf = 0;
+        if (canAirJump) player.airJumpsLeft -= 1;
+      }
+    }
+
+    resolveCollisions(player, dt);
+    if (collectibles.length) handleCollectibleCollision();
+
+    if (player.y > 1200) { setFeedback("Fell. Respawning.", 0.9); spawnRound(levelIndex, false); }
+
+    // Horizontal camera follow only (vertical locked)
+    const targetX = player.x - canvas.width * 0.35;
+    camera.x += (targetX - camera.x) * (1 - Math.pow(0.001, dt));
+    camera.x = Math.max(-300, camera.x);
+    camera.y = 0;
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground();
+    drawPlatforms();
+    drawCollectibles();
+    drawPlayer(player);
+    updateHud();
+
+    if (flash.t > 0) {
+      const a = (flash.t / flash.dur) * 0.30;
+      ctx.save();
+      ctx.globalAlpha = a;
+      ctx.fillStyle = flash.color;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+  }
+
+  let lastTs = 0;
+  function loop(ts) {
+    const t = ts / 1000;
+    const dt = Math.min(0.033, (t - lastTs) || 0);
+    lastTs = t;
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  spawnRound(0, true);
+  requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
