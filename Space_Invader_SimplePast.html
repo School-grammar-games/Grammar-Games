@@ -1,0 +1,2362 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Space Past Tense Invaders</title>
+  <style>
+    :root { font-family: system-ui, Arial, sans-serif; }
+
+    *,*::before,*::after{ box-sizing:border-box; }
+
+    html,body{
+      height: 100%;
+      height: calc(var(--vh, 1vh) * 100);
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    body {
+      margin: 0;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      padding-top: calc(10px + env(safe-area-inset-top));
+      padding-right: calc(10px + env(safe-area-inset-right));
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+      padding-left: calc(10px + env(safe-area-inset-left));
+      color: #e8eefc;
+      background:
+        url('Space Invaders_Images/outside.png') center / cover no-repeat fixed,
+        #050814;
+    }
+
+    .wrap {
+      width: min(1040px, 100%);
+      padding: 14px 14px 10px;
+      border-radius: 14px;
+      position: relative;
+      background: rgba(7, 10, 25, 0.55);
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+      backdrop-filter: blur(6px);
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      margin: 0 auto;
+      border: 2px solid #2a3566;
+      border-radius: 10px;
+      display: block;
+      background: transparent;
+    }
+
+    /* Responsive sizing: keep the whole game visible in landscape phones */
+    .wrap {
+      max-height: calc(var(--vh, 1vh) * 100);
+      overflow: hidden;
+    }
+
+    canvas {
+      /* JS will fine-tune width/height to fit the viewport; these are safe fallbacks */
+      max-height: 70svh;
+      touch-action: none;
+    }
+
+    @media (orientation: landscape) and (max-height: 520px) {
+      .wrap { padding: 10px 10px 8px; }
+      .hud { font-size: 12px; margin: 4px 2px 6px; }
+      .lifeIcon{ width:22px; height:22px; line-height:22px; font-size:22px; }
+      .question { font-size: 16px; font-weight: 700; margin: 6px 2px 8px; padding: 8px 10px; }
+      .controls { margin: 8px 2px 4px; gap: 10px; }
+      .controls button { font-size: 16px; padding: 10px 10px; }
+      .hint { display: none; }
+    }
+
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 6px 2px 10px;
+      font-size: 14px;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Lives icons */
+    .livesIcons{ display:inline-flex; gap:8px; align-items:center; }
+    .lifeIcon{
+      display:inline-block;
+      width:26px;
+      height:26px;
+      object-fit:contain;
+      image-rendering:auto;
+      filter: drop-shadow(0 0 2px rgba(0,0,0,0.65));
+      user-select:none;
+      -webkit-user-drag:none;
+    }
+    .lifeIcon.isLost{ opacity:0.25; filter: grayscale(1) drop-shadow(0 0 2px rgba(0,0,0,0.65)); }
+
+    /* Shield charger + shield icons */
+    .chargerWrap{ display:inline-flex; align-items:center; gap:8px; }
+    .charger{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:4px;
+      border-radius:10px;
+      border:1px solid rgba(180,220,255,0.35);
+      background: rgba(6, 9, 20, 0.60);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35);
+      min-width: 170px;
+      height: 20px;
+    }
+    .chargerSeg{
+      flex:1;
+      height: 100%;
+      border-radius:6px;
+      background: rgba(120, 150, 190, 0.18);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    .chargerSeg.isFilled{
+      background: linear-gradient(90deg, rgba(90,220,255,0.95), rgba(40,180,255,0.92));
+      box-shadow: 0 0 10px rgba(90,220,255,0.25), inset 0 0 0 1px rgba(255,255,255,0.12);
+    }
+
+    .shieldIcons{ display:inline-flex; gap:6px; align-items:center; }
+    .shieldIconSmall{
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 2px rgba(0,0,0,0.65));
+      user-select:none;
+      -webkit-user-drag:none;
+    }
+    .shieldIconSmall.isEmpty{ opacity:0.20; filter: grayscale(1) drop-shadow(0 0 2px rgba(0,0,0,0.65)); }
+
+    
+    /* Hard mode badge */
+    .hardBadge{
+      display:inline-flex;
+      align-items:center;
+      padding:2px 8px;
+      border-radius:999px;
+      font-weight:800;
+      font-size:12px;
+      letter-spacing:0.2px;
+      border:1px solid rgba(255,255,255,0.22);
+      background: rgba(6, 9, 20, 0.55);
+      user-select:none;
+      white-space:nowrap;
+    }
+    .hardBadge.off{ opacity:0.70; }
+    .hardBadge.on{
+      opacity:1;
+      border-color: rgba(120, 180, 255, 0.70);
+      box-shadow: 0 0 10px rgba(120, 180, 255, 0.22);
+    }
+
+/*
+      Shield GIF handling
+      -------------------
+      We preload the animated GIF off-screen (".gif-preload") and render it onto the canvas.
+      This avoids any DOM overlay covering the gameplay area (a common cause of "everything disappears").
+    */
+
+    /*
+      Keep animated GIFs animating even when used only as canvas sources.
+      Some browsers pause animation if the <img> is never attached to the DOM.
+    */
+    .gif-preload{
+      position:absolute;
+      left:-9999px;
+      top:-9999px;
+      width:1px;
+      height:1px;
+      opacity:0.01;
+      pointer-events:none;
+    }
+
+    /* Animated ship-damage fire overlays (DOM <img> so GIFs animate reliably) */
+    .shipFire{
+      position:absolute;
+      display:none;
+      pointer-events:none;
+      user-select:none;
+      -webkit-user-drag:none;
+      image-rendering:auto;
+      z-index: 5;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+    }
+
+.shipShield{
+  position:absolute;
+  display:none;
+  transform: translate(-50%, -50%);
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-drag:none;
+  z-index: 8;
+  filter: drop-shadow(0 0 6px rgba(90,220,255,0.30));
+  image-rendering:auto;
+}
+
+
+
+/* Red damage flash when a life is lost */
+.damageFlash{
+  position:absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: rgba(255, 35, 35, 0.38);
+  opacity: 0;
+  pointer-events:none;
+  z-index: 20;
+}
+.damageFlash.show{
+  animation: damageFlash 240ms ease-out forwards;
+}
+@keyframes damageFlash{
+  0%   { opacity: 0; }
+  18%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+button {
+      background: #23306a;
+      color: #e8eefc;
+      border: 1px solid #2a3566;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.1); }
+
+    .question {
+      margin: 8px 2px 12px;
+      padding: 10px 12px;
+      background: rgba(11, 16, 38, 0.78);
+      border: 1px solid rgba(42, 53, 102, 0.95);
+      border-radius: 10px;
+      color: #e8eefc;
+      font-size: 18px;
+      font-weight: 700;
+      text-align: center;
+      min-height: 22px;
+    }
+
+    .hint {
+      opacity: 0.88;
+      font-size: 13px;
+      margin-top: 10px;
+      line-height: 1.35;
+    }
+    .kbd {
+      border: 1px solid #2a3566;
+      border-bottom-width: 2px;
+      padding: 0 6px;
+      border-radius: 6px;
+      background: rgba(11, 16, 38, 0.75);
+    }
+
+    .controls{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      margin: 12px 2px 6px;
+      user-select:none;
+      touch-action: manipulation;
+    }
+    .controls button{
+      flex:1;
+      font-size: 18px;
+      padding: 14px 12px;
+      border-radius: 12px;
+    }
+    #btnShoot{ flex: 1.2; font-weight: 700; }
+
+    /* Intro / explanation overlay (Space Invaders style) */
+    .introOverlay{
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(0,0,0,0.62);
+      backdrop-filter: blur(6px);
+    }
+
+    .introCard{
+      width: min(840px, 100%);
+      border-radius: 14px;
+      background: rgba(7, 10, 25, 0.86);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 18px 70px rgba(0,0,0,0.55);
+      padding: 18px 18px 14px;
+    }
+
+    .introTitle{
+      margin: 2px 0 8px;
+      font-size: 28px;
+      letter-spacing: 0.2px;
+      text-align: center;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.55);
+    }
+
+    .introSubtitle{
+      margin: 0 0 14px;
+      text-align: center;
+      opacity: 0.92;
+      line-height: 1.35;
+    }
+
+    .introGrid{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .introPanel{
+      border-radius: 12px;
+      border: 1px solid rgba(42, 53, 102, 0.95);
+      background: rgba(11, 16, 38, 0.78);
+      padding: 12px 12px 10px;
+    }
+
+    .introPanel h3{
+      margin: 0 0 8px;
+      font-size: 15px;
+      letter-spacing: 0.2px;
+      text-transform: uppercase;
+      opacity: 0.95;
+    }
+
+    .introPanel ul{
+      margin: 0;
+      padding-left: 18px;
+      line-height: 1.45;
+      font-size: 14px;
+      opacity: 0.96;
+    }
+
+    .introFooter{
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .btnStart{
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 800;
+      border: 1px solid rgba(42, 53, 102, 0.95);
+      background: linear-gradient(180deg, rgba(44, 66, 170, 0.95), rgba(26, 36, 92, 0.95));
+      box-shadow: 0 10px 28px rgba(0,0,0,0.35);
+    }
+
+    .btnStart:hover{ filter: brightness(1.12); }
+
+    .btnSecondary{
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 16px;
+    }
+
+    /* Hard Mode selection (step 2 in intro overlay) */
+    .modeRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin: 10px 0 6px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(42, 53, 102, 0.95);
+      background: rgba(11, 16, 38, 0.78);
+    }
+    .toggle{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      user-select:none;
+    }
+    .toggle input{
+      width: 46px;
+      height: 26px;
+      appearance: none;
+      -webkit-appearance: none;
+      background: rgba(120,150,190,0.25);
+      border: 1px solid rgba(180,220,255,0.35);
+      border-radius: 20px;
+      position: relative;
+      outline: none;
+      cursor: pointer;
+      transition: background 120ms ease;
+    }
+    .toggle input::after{
+      content:'';
+      position:absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(230,240,255,0.95);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.45);
+      transition: transform 120ms ease;
+    }
+    .toggle input:checked{
+      background: rgba(40,180,255,0.55);
+    }
+    .toggle input:checked::after{
+      transform: translateX(20px);
+    }
+    .modeHint{
+      margin-top: 10px;
+      opacity: 0.92;
+      line-height: 1.35;
+      font-size: 14px;
+    }
+
+    @media (max-width: 720px){
+      .introGrid{ grid-template-columns: 1fr; }
+      .introTitle{ font-size: 24px; }
+    }
+  
+    .streakHud { opacity: 0.95; margin-left: 8px; font-weight: 600; }
+    .streakHud strong { font-weight: 800; }
+    .multHud { opacity: 0.9; }
+
+
+
+    /* Big streak level-up banner (arcade style) */
+    .streakBanner{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform: translate(-50%, -50%);
+      pointer-events:none;
+      z-index: 25;
+      opacity: 0;
+      padding: 12px 22px;
+      border-radius: 14px;
+      border: 2px solid rgba(255,255,255,0.18);
+      background: rgba(6, 9, 20, 0.72);
+      box-shadow: 0 18px 60px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(0,0,0,0.35);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-family: "Arial Black", Impact, system-ui, Arial, sans-serif;
+      font-weight: 900;
+      font-size: 44px;
+      line-height: 1;
+      text-shadow:
+        0 2px 0 rgba(0,0,0,0.55),
+        0 0 18px rgba(120,180,255,0.25),
+        0 0 34px rgba(120,180,255,0.15);
+      filter: drop-shadow(0 0 18px rgba(120,180,255,0.15));
+      will-change: transform, opacity;
+    }
+    .streakBanner::before{
+      content:'';
+      position:absolute;
+      inset: -10px;
+      border-radius: 18px;
+      border: 1px solid rgba(120,180,255,0.22);
+      box-shadow: 0 0 18px rgba(120,180,255,0.12);
+      pointer-events:none;
+    }
+    .streakBanner.show{
+      animation: streakBannerPop 1440ms ease-out forwards;
+    }
+    /* Color accents by multiplier */
+    .streakBanner[data-mult="2"]{ color: rgba(160, 255, 200, 0.98); border-color: rgba(160,255,200,0.28); }
+    .streakBanner[data-mult="3"]{ color: rgba(120, 200, 255, 0.98); border-color: rgba(120,200,255,0.32); }
+    .streakBanner[data-mult="4"]{ color: rgba(255, 215, 120, 0.98); border-color: rgba(255,215,120,0.32); }
+    .streakBanner[data-mult="5"]{ color: rgba(230, 140, 255, 0.98); border-color: rgba(230,140,255,0.34); }
+
+    @keyframes streakBannerPop{
+      0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.60) translateY(10px); }
+      18%  { opacity: 1; transform: translate(-50%, -50%) scale(1.18) translateY(-4px); }
+      40%  { opacity: 1; transform: translate(-50%, -50%) scale(1.00) translateY(-10px); }
+      72%  { opacity: 1; transform: translate(-50%, -50%) scale(1.03) translateY(-18px); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1.08) translateY(-26px); }
+    }
+
+    @media (max-width: 720px){
+      .streakBanner{ font-size: 34px; padding: 10px 18px; }
+    }
+
+  </style>
+</head>
+<body>
+  <div id="introOverlay" class="introOverlay" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+    <div class="introCard">
+      <div id="introTitle" class="introTitle">Grammar Galaxy Defender</div>
+      <div id="introStepExplain">
+      <div class="introSubtitle">Shoot the correct <strong>simple past</strong> form to defend your ship.</div>
+
+      <div class="introGrid">
+        <div class="introPanel">
+          <h3>Controls</h3>
+          <ul>
+            <li>Keyboard: <span class="kbd">←</span>/<span class="kbd">→</span> move, <span class="kbd">Space</span> shoot</li>
+            <li>Touch: use <strong>◀</strong> / <strong>▶</strong> and <strong>Shoot</strong> buttons</li>
+            <li>Use <strong>Mute</strong> to toggle sound</li>
+          </ul>
+        </div>
+
+        <div class="introPanel">
+          <h3>How to play</h3>
+<ul>
+  <li>Each round shows a base verb (e.g. <em>go</em>).</li>
+  <li>Three aliens carry answer options.</li>
+  <li>Shoot the <strong>correct simple past</strong> form to score points.</li>
+  <li><strong>Streaks:</strong> correct answers build a streak that increases your score multiplier (up to x5).</li>
+  <li><strong>Shield:</strong> correct answers charge your shield. When the charger is full, you gain a shield charge.</li>
+  <li>If you have a shield charge, the next mistake/hit is absorbed (no life lost).</li>
+  <li>Wrong answer, getting hit by alien shots, or aliens reaching your ship: <strong>-1 life</strong> (unless a shield absorbs it).</li>
+  <li>Finish all questions as fast as you can.</li>
+</ul>
+        </div>
+      </div>
+
+      <div class="introFooter">
+        <button id="startBtn" class="btnStart" type="button" autofocus>Continue</button>
+        <button id="startRestartBtn" class="btnSecondary" type="button" title="Reset and return here">Reset</button>
+      </div>
+
+      <div class="hint" style="margin-top:10px;">Tip: If you play on mobile, rotate to landscape for a larger play area.</div>
+    </div>
+
+    <div id="introStepMode" style="display:none;">
+      <div class="introSubtitle">Hard Mode On/Off</div>
+
+      <div class="modeRow">
+        <div>
+          <div style="font-weight:800;">Hard Mode</div>
+          <div style="opacity:.88; font-size:13px; margin-top:2px;">Faster aliens and increased enemy fire.</div>
+        </div>
+        <label class="toggle" aria-label="Hard mode toggle">
+          <span id="hardModeLabel" style="min-width:34px; text-align:right; font-weight:800;">Off</span>
+          <input id="hardModeToggle" type="checkbox" />
+        </label>
+      </div>
+
+      <div class="modeHint">
+        <div style="font-weight:800; margin-bottom:6px;">Hard Mode changes</div>
+        <ul style="margin:0; padding-left:18px;">
+  <li>Correct answers are worth more points (15 instead of 10), before the streak multiplier.</li>
+  <li>Aliens move 50% faster. Their movement speed increases by 10% every 250 points.</li>
+  <li>Every 2nd alien volley fires from two aliens instead of one.</li>
+</ul>
+      </div>
+
+      <div class="introFooter">
+        <button id="modeContinueBtn" class="btnStart" type="button" autofocus>Start Game</button>
+        <button id="modeBackBtn" class="btnSecondary" type="button">Back</button>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    
+    <div id="damageFlash" class="damageFlash" aria-hidden="true"></div>
+<div class="hud">
+      <div><strong>Score:</strong> <span id="score">0</span> <span class="streakHud">| <strong>Streak:</strong> <span id="streak">0</span> <span class="multHud">(x<span id="mult">1</span>)</span></span> <span style="opacity:.9">|</span> <strong>High:</strong> <span id="highscore">0</span></div>
+      <div><strong>Lives:</strong> <span id="lives" class="livesIcons" aria-label="Lives"></span></div>
+      <div class="chargerWrap"><strong>Charger:</strong> <div id="shieldCharger" class="charger" aria-label="Shield charger"></div></div>
+      <div><strong>Shields:</strong> <span id="shieldIcons" class="shieldIcons" aria-label="Shield charges"></span></div>
+      <div><strong>Time:</strong> <span id="timer">0:00.0</span> <span id="hardModeBadge" class="hardBadge off" title="Hard Mode status">Hard: OFF</span></div>
+      <div><strong>Question:</strong> <span id="qnum">1</span></div>
+      <div style="display:flex; gap:8px; align-items:center;"><button id="restart" type="button">Restart</button><button id="mute" type="button">Mute</button></div>
+    </div>
+
+    <div id="question" class="question" aria-live="polite"></div>
+
+    <canvas id="game" width="720" height="480" aria-label="Past Tense Game"></canvas>
+    <div id="streakBanner" class="streakBanner" aria-hidden="true"></div>
+
+    <div class="controls" aria-label="Touch controls">
+      <button id="btnLeft" type="button" aria-label="Move left">◀</button>
+      <button id="btnShoot" type="button" aria-label="Shoot">Shoot</button>
+      <button id="btnRight" type="button" aria-label="Move right">▶</button>
+    </div>
+
+    <div class="hint">
+      Controls: <span class="kbd">←</span>/<span class="kbd">→</span> move, <span class="kbd">Space</span> shoot.<br />
+      Task: Shoot the <strong>correct simple past</strong> form.
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    const IMG_DIR = 'Space Invaders_Images/';
+    // SFX (played on alien spit)
+    const SPIT_AUDIO_SRC = IMG_DIR + 'Spit.mp3';
+    const SPIT_AUDIO_FALLBACK = 'Spit.mp3';
+    const spitAudio = new Audio(SPIT_AUDIO_SRC);
+    spitAudio.preload = 'auto';
+    // Reduce volume by 30%
+    spitAudio.volume = 0.595;
+    // Fallback if the file is served from project root instead of the images folder
+    let spitAudioTriedFallback = false;
+    spitAudio.addEventListener('error', () => {
+      if (spitAudioTriedFallback) return;
+      spitAudioTriedFallback = true;
+      spitAudio.src = SPIT_AUDIO_FALLBACK;
+      try { spitAudio.load(); } catch (e) {}
+    });
+
+
+    // Explosion SFX (file-based)
+    const EXPLOSION_AUDIO_SRC = IMG_DIR + 'Explosion.mp3';
+    const EXPLOSION_AUDIO_FALLBACK = 'Explosion.mp3';
+    const explosionAudio = new Audio(EXPLOSION_AUDIO_SRC);
+    explosionAudio.preload = 'auto';
+    explosionAudio.volume = 0.85;
+    let explosionAudioTriedFallback = false;
+    explosionAudio.addEventListener('error', () => {
+      if (explosionAudioTriedFallback) return;
+      explosionAudioTriedFallback = true;
+      explosionAudio.src = EXPLOSION_AUDIO_FALLBACK;
+      try { explosionAudio.load(); } catch (e) {}
+    });
+
+    // Background music (starts on Start click)
+    const BGM_SOURCES = [
+      IMG_DIR + 'background.mp3',
+      IMG_DIR + 'Background.mp3',
+      'background.mp3',
+      'Background.mp3'
+    ];
+    let bgmSrcIndex = 0;
+    const bgMusic = new Audio(BGM_SOURCES[bgmSrcIndex]);
+    bgMusic.preload = 'auto';
+    bgMusic.loop = true;
+    bgMusic.volume = 0.35;
+    bgMusic.addEventListener('error', () => {
+      if (bgmSrcIndex >= BGM_SOURCES.length - 1) return;
+      bgmSrcIndex += 1;
+      bgMusic.src = BGM_SOURCES[bgmSrcIndex];
+      try { bgMusic.load(); } catch (e) {}
+    });
+
+    function startBackgroundMusic() {
+      if (muted) return;
+      // Must be called from a user gesture to satisfy autoplay policies.
+      bgMusic.muted = muted;
+      const p = bgMusic.play();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    }
+
+    function stopBackgroundMusic() {
+      try {
+        bgMusic.pause();
+        bgMusic.currentTime = 0;
+      } catch (e) {}
+    }
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    const scoreEl = document.getElementById('score');
+    const streakEl = document.getElementById('streak');
+    const multEl = document.getElementById('mult');
+
+    // Big streak level-up banner (2x / 3x / 4x / 5x)
+    const streakBannerEl = document.getElementById('streakBanner');
+    let streakBannerHideT = null;
+
+    function showStreakLevelUp(mult) {
+      if (!streakBannerEl) return;
+      // Stylized banner in the middle of the playfield.
+      streakBannerEl.dataset.mult = String(mult);
+      streakBannerEl.textContent = `${mult}x STREAK!`;
+
+      // Restart CSS animation reliably.
+      streakBannerEl.classList.remove('show');
+      // Force reflow
+      void streakBannerEl.offsetWidth;
+      streakBannerEl.classList.add('show');
+
+      if (streakBannerHideT) clearTimeout(streakBannerHideT);
+      streakBannerHideT = setTimeout(() => {
+        streakBannerEl.classList.remove('show');
+      }, 1520);
+    }
+
+    const highScoreEl = document.getElementById('highscore');
+
+    // Persistent high score (localStorage), similar to the Fruit Ninja implementation.
+    const HIGH_SCORE_KEY = 'sp_inv_highscore';
+    function safeGetHighScore(){
+      try {
+        const v = localStorage.getItem(HIGH_SCORE_KEY);
+        const n = Number(v);
+        return Number.isFinite(n) ? n : 0;
+      } catch { return 0; }
+    }
+    function safeSetHighScore(v){
+      try { localStorage.setItem(HIGH_SCORE_KEY, String(v)); } catch { /* ignore */ }
+    }
+    const livesEl = document.getElementById('lives');
+    const MAX_LIVES = 5;
+    const LIFE_ICON_SRC = IMG_DIR + 'astronaut.png';
+    const LIFE_ICON_FALLBACK = 'astronaut.png';
+
+    function renderLives() {
+      if (!livesEl) return;
+      livesEl.innerHTML = '';
+      for (let i = 0; i < MAX_LIVES; i++) {
+        const img = document.createElement('img');
+        img.className = 'lifeIcon' + (i < lives ? '' : ' isLost');
+        img.src = LIFE_ICON_SRC;
+        img.alt = '';
+        img.setAttribute('aria-label', i < lives ? 'Life' : 'Lost life');
+        img.setAttribute('draggable', 'false');
+        img.addEventListener('error', () => {
+          if (img.src.endsWith(LIFE_ICON_FALLBACK)) return;
+          img.src = LIFE_ICON_FALLBACK;
+        }, { once: true });
+        livesEl.appendChild(img);
+      }
+    }
+
+    const shieldChargerEl = document.getElementById('shieldCharger');
+    const shieldIconsEl = document.getElementById('shieldIcons');
+
+    const SHIELD_STAGES = 7;
+    const MAX_SHIELD_CHARGES = 3;
+
+    function buildShieldHud() {
+      if (shieldChargerEl && !shieldChargerEl.children.length) {
+        for (let i = 0; i < SHIELD_STAGES; i++) {
+          const seg = document.createElement('span');
+          seg.className = 'chargerSeg';
+          shieldChargerEl.appendChild(seg);
+        }
+      }
+      renderShieldIcons();
+      renderShieldCharger();
+    }
+
+    function renderShieldCharger() {
+      if (!shieldChargerEl) return;
+      const segs = shieldChargerEl.children;
+      for (let i = 0; i < segs.length; i++) {
+        const el = segs[i];
+        if (i < shieldStage) el.classList.add('isFilled');
+        else el.classList.remove('isFilled');
+      }
+    }
+
+    const SHIELD_GIF_SRC = IMG_DIR + 'Shield.gif';
+    const SHIELD_GIF_FALLBACK = 'Shield.gif';
+
+    // HUD icon for shield charges (requested: "Shield icon" in Space Invaders_Images)
+    const SHIELD_ICON_SRC = IMG_DIR + 'Shield icon.png';
+    const SHIELD_ICON_FALLBACK = 'Shield icon.png';
+
+    function renderShieldIcons() {
+      if (!shieldIconsEl) return;
+      shieldIconsEl.innerHTML = '';
+      for (let i = 0; i < MAX_SHIELD_CHARGES; i++) {
+        const img = document.createElement('img');
+        img.className = 'shieldIconSmall' + (i < shieldCharges ? '' : ' isEmpty');
+        img.src = SHIELD_ICON_SRC;
+        img.alt = '';
+        img.setAttribute('aria-hidden', 'true');
+        img.setAttribute('draggable', 'false');
+        img.addEventListener('error', () => {
+          if (img.src.endsWith(SHIELD_ICON_FALLBACK)) return;
+          img.src = SHIELD_ICON_FALLBACK;
+        }, { once: true });
+        shieldIconsEl.appendChild(img);
+      }
+    }
+
+    function updateShieldHud() {
+      renderShieldCharger();
+      renderShieldIcons();
+    }
+
+    function updateHardModeBadge() {
+      if (!hardModeBadgeEl) return;
+      const on = !!hardMode;
+      hardModeBadgeEl.textContent = on ? 'Hard: ON' : 'Hard: OFF';
+      hardModeBadgeEl.classList.toggle('on', on);
+      hardModeBadgeEl.classList.toggle('off', !on);
+    }
+
+
+    const timerEl = document.getElementById('timer');
+    const hardModeBadgeEl = document.getElementById('hardModeBadge');
+    const qnumEl = document.getElementById('qnum');
+    const questionEl = document.getElementById('question');
+    const restartBtn = document.getElementById('restart');
+    const muteBtn = document.getElementById('mute');
+
+    // Intro overlay
+    const introOverlay = document.getElementById('introOverlay');
+    const startBtn = document.getElementById('startBtn');
+    const startRestartBtn = document.getElementById('startRestartBtn');
+    const introStepExplain = document.getElementById('introStepExplain');
+    const introStepMode = document.getElementById('introStepMode');
+    const hardModeToggle = document.getElementById('hardModeToggle');
+    const hardModeLabel = document.getElementById('hardModeLabel');
+    const modeContinueBtn = document.getElementById('modeContinueBtn');
+    const modeBackBtn = document.getElementById('modeBackBtn');
+
+    // Fit the canvas into the available viewport height (important on landscape phones).
+    // Uses a JS-driven --vh and visualViewport (when available) to handle iOS/Android browser chrome.
+    const wrapEl = document.querySelector('.wrap');
+    const hudEl = document.querySelector('.hud');
+    const controlsEl = document.querySelector('.controls');
+    const hintEl = document.querySelector('.hint');
+
+
+    const damageFlashEl = document.getElementById('damageFlash');
+    const W = canvas.width;
+    const H = canvas.height;
+
+    function setVhVar(){
+      const vv = window.visualViewport;
+      const vh = (vv ? vv.height : window.innerHeight) * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+
+    function getViewportSize(){
+      const vv = window.visualViewport;
+      if (vv) return { w: vv.width, h: vv.height };
+      return { w: window.innerWidth, h: window.innerHeight };
+    }
+
+    let fitRaf = 0;
+    function fitCanvasToViewport() {
+      if (!wrapEl) return;
+
+      const vp = getViewportSize();
+
+      // Width: wrap content width (exclude padding)
+      const ws = getComputedStyle(wrapEl);
+      const padX = (parseFloat(ws.paddingLeft) || 0) + (parseFloat(ws.paddingRight) || 0);
+      const availableW = Math.max(160, wrapEl.clientWidth - padX);
+
+      // Height: viewport height minus UI elements and wrap padding
+      const hintVisible = hintEl && window.getComputedStyle(hintEl).display !== 'none';
+      const uiH = (hudEl?.offsetHeight || 0)
+        + (questionEl?.offsetHeight || 0)
+        + (controlsEl?.offsetHeight || 0)
+        + (hintVisible ? (hintEl.offsetHeight || 0) : 0);
+
+      const padY = (parseFloat(ws.paddingTop) || 0) + (parseFloat(ws.paddingBottom) || 0);
+      const buffer = 18;
+      const availableH = Math.max(160, vp.h - uiH - padY - buffer);
+
+      // Keep the original game aspect ratio (720x480 = 3:2).
+      const scale = Math.min(availableW / W, availableH / H);
+      const cssW = Math.max(1, Math.floor(W * scale));
+      const cssH = Math.max(1, Math.floor(H * scale));
+
+      canvas.style.width = cssW + 'px';
+      canvas.style.height = cssH + 'px';
+      canvas.style.margin = '0 auto';
+    }
+
+    function scheduleFitCanvas() {
+      if (fitRaf) cancelAnimationFrame(fitRaf);
+      fitRaf = requestAnimationFrame(() => {
+        fitRaf = 0;
+        setVhVar();
+        fitCanvasToViewport();
+      });
+    }
+
+    // Initial sizing and resize/orientation handling
+    setVhVar();
+    scheduleFitCanvas();
+    window.addEventListener('resize', scheduleFitCanvas, { passive: true });
+    window.addEventListener('orientationchange', () => setTimeout(scheduleFitCanvas, 120), { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', scheduleFitCanvas, { passive: true });
+      window.visualViewport.addEventListener('scroll', scheduleFitCanvas, { passive: true });
+    }
+
+    const bgImg = new Image(); bgImg.src = IMG_DIR + 'ingame.jpg';
+    const shipImg = new Image(); shipImg.src = IMG_DIR + 'ship.png';
+    const missileImg = new Image(); missileImg.src = IMG_DIR + 'Missile.png';
+    // Alien sprite (static image)
+    const alienImg = new Image(); alienImg.src = IMG_DIR + 'Alien.png';
+    const spitImg = new Image(); spitImg.src = IMG_DIR + 'Alien_spit.png';
+
+
+    const explosionImg = new Image(); explosionImg.src = IMG_DIR + 'Explosion.png';
+
+    // Fire effect (shows on ship when lives are low)
+    const FIRE_GIF_SRC = IMG_DIR + 'Fire.gif';
+    const FIRE_GIF_FALLBACK = 'Fire.gif';
+    const fireImg = new Image();
+    fireImg.src = FIRE_GIF_SRC;
+    fireImg.addEventListener('error', () => {
+      if (fireImg.src.endsWith(FIRE_GIF_FALLBACK)) return;
+      fireImg.src = FIRE_GIF_FALLBACK;
+      try { fireImg.load(); } catch (e) {}
+    }, { once: true });
+
+    // Attach to the DOM (off-screen) so the GIF animation advances reliably across browsers.
+    fireImg.className = 'gif-preload';
+    fireImg.alt = '';
+    fireImg.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(fireImg);
+
+    // Use DOM overlays for the fire effect so the GIF animates reliably.
+    // (Many browsers draw only the first GIF frame when using ctx.drawImage.)
+    const fireOverlays = [];
+    const fireSrcCandidates = [FIRE_GIF_SRC, FIRE_GIF_FALLBACK];
+
+    function createFireOverlays() {
+      if (!wrapEl || !canvas) return;
+      if (fireOverlays.length) return;
+
+      for (let i = 0; i < 3; i++) {
+        const img = document.createElement('img');
+        img.className = 'shipFire';
+        img.alt = '';
+        img.setAttribute('aria-hidden', 'true');
+        img.setAttribute('draggable', 'false');
+
+        // Load with simple fallback.
+        let idx = 0;
+        img.src = fireSrcCandidates[idx];
+        img.addEventListener('error', () => {
+          idx += 1;
+          if (idx < fireSrcCandidates.length) img.src = fireSrcCandidates[idx];
+        });
+
+        wrapEl.appendChild(img);
+        fireOverlays.push(img);
+      }
+    }
+
+    
+// Shield GIF overlay (DOM <img> positioned above the ship)
+// Rationale:
+// - Drawing external images onto a canvas can behave inconsistently under file:// on some systems/browsers.
+// - A DOM overlay is reliable for animated GIFs and cannot taint or crash the canvas render loop.
+const shieldGifCandidates = [SHIELD_GIF_SRC, SHIELD_GIF_FALLBACK];
+let shieldShipOverlay = null;
+
+function createShieldShipOverlay() {
+  if (shieldShipOverlay) return;
+
+  const img = document.createElement('img');
+  img.className = 'shipShield';
+  img.alt = '';
+  img.setAttribute('aria-hidden', 'true');
+  img.setAttribute('draggable', 'false');
+
+  // Load with simple fallback.
+  let idx = 0;
+  img.src = shieldGifCandidates[idx];
+  img.addEventListener('error', () => {
+    idx += 1;
+    if (idx < shieldGifCandidates.length) img.src = shieldGifCandidates[idx];
+  });
+
+  wrapEl.appendChild(img);
+  shieldShipOverlay = img;
+}
+
+function updateShieldShipOverlay() {
+  if (!shieldShipOverlay) return;
+
+  // Visible as long as player has shield charges and is alive.
+  if (!gameStarted || lives <= 0 || shieldCharges <= 0) {
+    shieldShipOverlay.style.display = 'none';
+    return;
+  }
+
+  const canvasRect = canvas.getBoundingClientRect();
+  const wrapRect = wrapEl.getBoundingClientRect();
+  const scaleX = canvasRect.width / W;
+  const scaleY = canvasRect.height / H;
+
+  // Center on the ship.
+  const cx = player.x + player.w / 2;
+  const cy = player.y + player.h / 2;
+
+  // Size slightly larger than the ship, clamped for safety.
+  const base = Math.max(player.w, player.h);
+  const size = Math.max(44, Math.min(140, Math.round(base * 1.65)));
+
+  const wCss = size * scaleX;
+  const hCss = size * scaleY;
+
+  const left = (canvasRect.left - wrapRect.left) + (cx * scaleX);
+  const top  = (canvasRect.top  - wrapRect.top)  + (cy * scaleY);
+
+  shieldShipOverlay.style.width = wCss + 'px';
+  shieldShipOverlay.style.height = hCss + 'px';
+  shieldShipOverlay.style.left = left + 'px';
+  shieldShipOverlay.style.top = top + 'px';
+  shieldShipOverlay.style.display = 'block';
+}
+
+function updateFireOverlays() {
+      if (!fireOverlays.length) return;
+
+      // 3 lives or fewer => 1 fire; 2 or fewer => 2 fires; 1 => 3 fires.
+      const count = Math.min(3, Math.max(0, 4 - lives));
+
+      const canvasRect = canvas.getBoundingClientRect();
+      const wrapRect = wrapEl.getBoundingClientRect();
+      const scaleX = canvasRect.width / W;
+      const scaleY = canvasRect.height / H;
+
+      // Fire positions relative to the ship.
+      const anchors = [
+        { ox: 0.18, oy: 0.30 },
+        { ox: 0.50, oy: 0.18 },
+        { ox: 0.82, oy: 0.30 }
+      ];
+
+      for (let i = 0; i < fireOverlays.length; i++) {
+        const el = fireOverlays[i];
+        if (i >= count || !running) {
+          el.style.display = 'none';
+          continue;
+        }
+
+        const fw = Math.max(16, Math.round(player.w * 0.42));
+        const fh = fw;
+
+        const a = anchors[i];
+        const cx = player.x + player.w * a.ox;
+        const cy = player.y + player.h * a.oy;
+
+        const wCss = fw * scaleX;
+        const hCss = fh * scaleY;
+
+        const left = (canvasRect.left - wrapRect.left) + (cx * scaleX) - (wCss / 2);
+        const top = (canvasRect.top - wrapRect.top) + (cy * scaleY) - (hCss / 2);
+
+        el.style.width = wCss + 'px';
+        el.style.height = hCss + 'px';
+        el.style.left = left + 'px';
+        el.style.top = top + 'px';
+        el.style.display = 'block';
+      }
+    }
+
+    createFireOverlays();
+
+    const PLAYER = { w: 60, h: 60, speed: 6 };
+    const BULLET = { w: 14, h: 30, speed: 9, cooldownMs: 250 };
+
+    // Verb list (unchanged)
+    const VERBS = [
+      {"base":"be","past":"was","pastForms":["was","were"],"pp":"been","ppForms":["been"]},
+      {"base":"become","past":"became","pastForms":["became"],"pp":"become","ppForms":["become"]},
+      {"base":"begin","past":"began","pastForms":["began"],"pp":"begun","ppForms":["begun"]},
+      {"base":"bet","past":"bet","pastForms":["bet"],"pp":"bet","ppForms":["bet"]},
+      {"base":"bite","past":"bit","pastForms":["bit"],"pp":"bitten","ppForms":["bitten"]},
+      {"base":"blow","past":"blew","pastForms":["blew"],"pp":"blown","ppForms":["blown"]},
+      {"base":"break","past":"broke","pastForms":["broke"],"pp":"broken","ppForms":["broken"]},
+      {"base":"bring","past":"brought","pastForms":["brought"],"pp":"brought","ppForms":["brought"]},
+      {"base":"build","past":"built","pastForms":["built"],"pp":"built","ppForms":["built"]},
+      {"base":"burn","past":"burnt","pastForms":["burnt","burned"],"pp":"burnt","ppForms":["burnt","burned"]},
+      {"base":"burst","past":"burst","pastForms":["burst"],"pp":"burst","ppForms":["burst"]},
+      {"base":"buy","past":"bought","pastForms":["bought"],"pp":"bought","ppForms":["bought"]},
+      {"base":"catch","past":"caught","pastForms":["caught"],"pp":"caught","ppForms":["caught"]},
+      {"base":"choose","past":"chose","pastForms":["chose"],"pp":"chosen","ppForms":["chosen"]},
+      {"base":"come","past":"came","pastForms":["came"],"pp":"come","ppForms":["come"]},
+      {"base":"cost","past":"cost","pastForms":["cost"],"pp":"cost","ppForms":["cost"]},
+      {"base":"creep","past":"crept","pastForms":["crept"],"pp":"crept","ppForms":["crept"]},
+      {"base":"cut","past":"cut","pastForms":["cut"],"pp":"cut","ppForms":["cut"]},
+      {"base":"deal","past":"dealt","pastForms":["dealt"],"pp":"dealt","ppForms":["dealt"]},
+      {"base":"dig","past":"dug","pastForms":["dug"],"pp":"dug","ppForms":["dug"]},
+      {"base":"do","past":"did","pastForms":["did"],"pp":"done","ppForms":["done"]},
+      {"base":"draw","past":"drew","pastForms":["drew"],"pp":"drawn","ppForms":["drawn"]},
+      {"base":"dream","past":"dreamt","pastForms":["dreamt","dreamed"],"pp":"dreamt","ppForms":["dreamt","dreamed"]},
+      {"base":"drink","past":"drank","pastForms":["drank"],"pp":"drunk","ppForms":["drunk"]},
+      {"base":"drive","past":"drove","pastForms":["drove"],"pp":"driven","ppForms":["driven"]},
+      {"base":"eat","past":"ate","pastForms":["ate"],"pp":"eaten","ppForms":["eaten"]},
+      {"base":"fall","past":"fell","pastForms":["fell"],"pp":"fallen","ppForms":["fallen"]},
+      {"base":"feed","past":"fed","pastForms":["fed"],"pp":"fed","ppForms":["fed"]},
+      {"base":"feel","past":"felt","pastForms":["felt"],"pp":"felt","ppForms":["felt"]},
+      {"base":"fight","past":"fought","pastForms":["fought"],"pp":"fought","ppForms":["fought"]},
+      {"base":"find","past":"found","pastForms":["found"],"pp":"found","ppForms":["found"]},
+      {"base":"fit","past":"fit","pastForms":["fit","fitted"],"pp":"fit","ppForms":["fit","fitted"]},
+      {"base":"fly","past":"flew","pastForms":["flew"],"pp":"flown","ppForms":["flown"]},
+      {"base":"forget","past":"forgot","pastForms":["forgot"],"pp":"forgotten","ppForms":["forgotten"]},
+      {"base":"forgive","past":"forgave","pastForms":["forgave"],"pp":"forgiven","ppForms":["forgiven"]},
+      {"base":"freeze","past":"froze","pastForms":["froze"],"pp":"frozen","ppForms":["frozen"]},
+      {"base":"get","past":"got","pastForms":["got"],"pp":"got","ppForms":["got","gotten"]},
+      {"base":"give","past":"gave","pastForms":["gave"],"pp":"given","ppForms":["given"]},
+      {"base":"go","past":"went","pastForms":["went"],"pp":"gone","ppForms":["gone"]},
+      {"base":"grow","past":"grew","pastForms":["grew"],"pp":"grown","ppForms":["grown"]},
+      {"base":"hang","past":"hung","pastForms":["hung"],"pp":"hung","ppForms":["hung"]},
+      {"base":"have","past":"had","pastForms":["had"],"pp":"had","ppForms":["had"]},
+      {"base":"hear","past":"heard","pastForms":["heard"],"pp":"heard","ppForms":["heard"]},
+      {"base":"hide","past":"hid","pastForms":["hid"],"pp":"hidden","ppForms":["hidden"]},
+      {"base":"hit","past":"hit","pastForms":["hit"],"pp":"hit","ppForms":["hit"]},
+      {"base":"hold","past":"held","pastForms":["held"],"pp":"held","ppForms":["held"]},
+      {"base":"hurt","past":"hurt","pastForms":["hurt"],"pp":"hurt","ppForms":["hurt"]},
+      {"base":"keep","past":"kept","pastForms":["kept"],"pp":"kept","ppForms":["kept"]},
+      {"base":"know","past":"knew","pastForms":["knew"],"pp":"known","ppForms":["known"]},
+      {"base":"lay","past":"laid","pastForms":["laid"],"pp":"laid","ppForms":["laid"]},
+      {"base":"lead","past":"led","pastForms":["led"],"pp":"led","ppForms":["led"]},
+      {"base":"learn","past":"learnt","pastForms":["learnt","learned"],"pp":"learnt","ppForms":["learnt","learned"]},
+      {"base":"leave","past":"left","pastForms":["left"],"pp":"left","ppForms":["left"]},
+      {"base":"lend","past":"lent","pastForms":["lent"],"pp":"lent","ppForms":["lent"]},
+      {"base":"let","past":"let","pastForms":["let"],"pp":"let","ppForms":["let"]},
+      {"base":"lie","past":"lay","pastForms":["lay"],"pp":"lain","ppForms":["lain"]},
+      {"base":"lose","past":"lost","pastForms":["lost"],"pp":"lost","ppForms":["lost"]},
+      {"base":"make","past":"made","pastForms":["made"],"pp":"made","ppForms":["made"]},
+      {"base":"mean","past":"meant","pastForms":["meant"],"pp":"meant","ppForms":["meant"]},
+      {"base":"meet","past":"met","pastForms":["met"],"pp":"met","ppForms":["met"]},
+      {"base":"pay","past":"paid","pastForms":["paid"],"pp":"paid","ppForms":["paid"]},
+      {"base":"put","past":"put","pastForms":["put"],"pp":"put","ppForms":["put"]},
+      {"base":"read","past":"read","pastForms":["read"],"pp":"read","ppForms":["read"]},
+      {"base":"ride","past":"rode","pastForms":["rode"],"pp":"ridden","ppForms":["ridden"]},
+      {"base":"ring","past":"rang","pastForms":["rang"],"pp":"rung","ppForms":["rung"]},
+      {"base":"rise","past":"rose","pastForms":["rose"],"pp":"risen","ppForms":["risen"]},
+      {"base":"run","past":"ran","pastForms":["ran"],"pp":"run","ppForms":["run"]},
+      {"base":"say","past":"said","pastForms":["said"],"pp":"said","ppForms":["said"]},
+      {"base":"see","past":"saw","pastForms":["saw"],"pp":"seen","ppForms":["seen"]},
+      {"base":"sell","past":"sold","pastForms":["sold"],"pp":"sold","ppForms":["sold"]},
+      {"base":"send","past":"sent","pastForms":["sent"],"pp":"sent","ppForms":["sent"]},
+      {"base":"set","past":"set","pastForms":["set"],"pp":"set","ppForms":["set"]},
+      {"base":"sew","past":"sewed","pastForms":["sewed"],"pp":"sewn","ppForms":["sewn","sewed"]},
+      {"base":"shake","past":"shook","pastForms":["shook"],"pp":"shaken","ppForms":["shaken"]},
+      {"base":"shine","past":"shone","pastForms":["shone"],"pp":"shone","ppForms":["shone"]},
+      {"base":"shoot","past":"shot","pastForms":["shot"],"pp":"shot","ppForms":["shot"]},
+      {"base":"show","past":"showed","pastForms":["showed"],"pp":"shown","ppForms":["shown","showed"]},
+      {"base":"sing","past":"sang","pastForms":["sang"],"pp":"sung","ppForms":["sung"]},
+      {"base":"sink","past":"sank","pastForms":["sank"],"pp":"sunk","ppForms":["sunk"]},
+      {"base":"sit","past":"sat","pastForms":["sat"],"pp":"sat","ppForms":["sat"]},
+      {"base":"sleep","past":"slept","pastForms":["slept"],"pp":"slept","ppForms":["slept"]},
+      {"base":"slide","past":"slid","pastForms":["slid"],"pp":"slid","ppForms":["slid"]},
+      {"base":"smell","past":"smelt","pastForms":["smelt","smelled"],"pp":"smelt","ppForms":["smelt","smelled"]},
+      {"base":"speak","past":"spoke","pastForms":["spoke"],"pp":"spoken","ppForms":["spoken"]},
+      {"base":"spell","past":"spelt","pastForms":["spelt","spelled"],"pp":"spelt","ppForms":["spelt","spelled"]},
+      {"base":"spend","past":"spent","pastForms":["spent"],"pp":"spent","ppForms":["spent"]},
+      {"base":"spit","past":"spat","pastForms":["spat"],"pp":"spat","ppForms":["spat"]},
+      {"base":"stand","past":"stood","pastForms":["stood"],"pp":"stood","ppForms":["stood"]},
+      {"base":"steal","past":"stole","pastForms":["stole"],"pp":"stolen","ppForms":["stolen"]},
+      {"base":"sting","past":"stung","pastForms":["stung"],"pp":"stung","ppForms":["stung"]},
+      {"base":"swim","past":"swam","pastForms":["swam"],"pp":"swum","ppForms":["swum"]},
+      {"base":"take","past":"took","pastForms":["took"],"pp":"taken","ppForms":["taken"]},
+      {"base":"teach","past":"taught","pastForms":["taught"],"pp":"taught","ppForms":["taught"]},
+      {"base":"tell","past":"told","pastForms":["told"],"pp":"told","ppForms":["told"]},
+      {"base":"think","past":"thought","pastForms":["thought"],"pp":"thought","ppForms":["thought"]},
+      {"base":"throw","past":"threw","pastForms":["threw"],"pp":"thrown","ppForms":["thrown"]},
+      {"base":"understand","past":"understood","pastForms":["understood"],"pp":"understood","ppForms":["understood"]},
+      {"base":"wake","past":"woke","pastForms":["woke"],"pp":"woken","ppForms":["woken"]},
+      {"base":"wear","past":"wore","pastForms":["wore"],"pp":"worn","ppForms":["worn"]},
+      {"base":"win","past":"won","pastForms":["won"],"pp":"won","ppForms":["won"]},
+      {"base":"write","past":"wrote","pastForms":["wrote"],"pp":"written","ppForms":["written"]}
+    ];
+
+    // Alien (answer) hitbox size. Slightly taller to avoid image distortion.
+    const BOX = { w: 170, h: 56, gapX: 18 };
+    const BOX_MOVE = { stepX: 16, stepY: 18, intervalMs: 520 };
+    const TOTAL_QUESTIONS = VERBS.length;
+
+    let keys = new Set();
+    let player, bullets, boxes, boxDir, boxLastMoveAt;
+    let score, lives, highScore;
+    let streak = 0;
+    let bestStreak = 0;
+    let hardMode = false;
+    let alienVolleyCount = 0;
+    let shieldStage = 0;
+    let shieldCharges = 0;
+    let shieldGlowUntil = 0;
+    let shieldPulses = [];
+      alienVolleyCount = 0;
+    let alienShots = [];
+    // Alien spit timing is independent of questions/levels.
+    let nextAlienShotDue = 0;
+    const ALIEN_SHOT = { w: 22, h: 22, speed: 3.00, intervalMs: 2500 };
+    let lastShotAt = 0;
+    let running = false;
+    let gameStarted = false;
+
+    let startTimeMs = 0;
+    let endTimeMs = 0;
+    let finished = false;
+
+    let bag = [];
+    let qNum = 0;
+    let current = null;
+
+    let correctAnswer = '';
+
+    let feedbackText = '';
+    let feedbackUntil = 0;
+
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+    function safeLower(s) { return String(s || '').trim().toLowerCase(); }
+
+    function rectsOverlap(a, b) {
+      return (
+        a.x < b.x + b.w &&
+        a.x + a.w > b.x &&
+        a.y < b.y + b.h &&
+        a.y + a.h > b.y &&
+        a.alive !== false &&
+        b.alive !== false
+      );
+    }
+
+    function showFeedback(text, ms = 800) {
+      feedbackText = text;
+      feedbackUntil = performance.now() + ms;
+    }
+
+
+    function triggerDamageFlash(){
+      if (!damageFlashEl) return;
+      damageFlashEl.classList.remove('show');
+      // Force reflow so the animation restarts reliably
+      void damageFlashEl.offsetWidth;
+      damageFlashEl.classList.add('show');
+    }
+
+    function shuffle(arr) {
+      const a = Array.from(arr);
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function formatTime(ms) {
+      const total = Math.max(0, ms);
+      const minutes = Math.floor(total / 60000);
+      const seconds = Math.floor((total % 60000) / 1000);
+      const tenths = Math.floor((total % 1000) / 100);
+      return `${minutes}:${String(seconds).padStart(2,'0')}.${tenths}`;
+    }
+
+    function updateTimer(now) {
+      if (!gameStarted) {
+        timerEl.textContent = '0:00.0';
+        return;
+      }
+      const t = (running ? (now - startTimeMs) : (endTimeMs - startTimeMs));
+      timerEl.textContent = formatTime(t);
+    }
+
+    function drawCover(img) {
+      const iw = img.naturalWidth || img.width;
+      const ih = img.naturalHeight || img.height;
+      if (!iw || !ih) return;
+
+      const scale = Math.max(W / iw, H / ih);
+      const dw = iw * scale;
+      const dh = ih * scale;
+      const dx = (W - dw) / 2;
+      const dy = (H - dh) / 2;
+      ctx.drawImage(img, dx, dy, dw, dh);
+    }
+
+    // Regularised "-ed" with common learner-relevant spelling rules (no vowel swap):
+    // - e -> +d
+    // - consonant+y -> -y + ied
+    // - short CVC -> double final consonant + ed (fit->fitted, stop->stopped)
+    // else +ed
+    function regularEdSmart(base) {
+      const b = String(base || '').trim();
+      if (!b) return 'ed';
+      if (b.endsWith('e')) return b + 'd';
+      if (/[^aeiou]y$/i.test(b)) return b.slice(0, -1) + 'ied';
+      if (/[^aeiou][aeiou][^aeiou]$/i.test(b) && b.length <= 4 && !/[wxy]$/i.test(b)) {
+        return b + b.slice(-1) + 'ed';
+      }
+      return b + 'ed';
+    }
+
+    function simpleEd(base) {
+      const b = String(base || '').trim();
+      if (!b) return 'ed';
+      return b.endsWith('e') ? (b + 'd') : (b + 'ed');
+    }
+
+    // OPTIONS RULE (your rule) with duplicate handling for invariant verbs:
+    // Base 3: [past], [regular -ed], [pp]
+    // If pp duplicates => try alternate forms from ppForms/pastForms.
+    // If still duplicates => use simple +ed (if different from the regularised form).
+    // Final fallback => base + "en".
+    function makeOptionsForVerb(v) {
+      const base = String(v.base || '').trim();
+      let canonical = String(v.past || '').trim();
+      const pp = String(v.pp || '').trim();
+
+      // Keep "be" unambiguous as "was"
+      if (safeLower(base) === 'be') canonical = 'was';
+
+      const edMain = regularEdSmart(base);
+      const edSimple = simpleEd(base);
+
+      const options = [];
+      const used = new Set();
+
+      function add(s) {
+        const t = String(s || '').trim();
+        if (!t) return false;
+        const k = safeLower(t);
+        if (used.has(k)) return false;
+        used.add(k);
+        options.push(t);
+        return true;
+      }
+
+      // Build a candidate list and add until we have 3 unique options
+      const ppForms = Array.isArray(v.ppForms) ? v.ppForms : [];
+      const pastForms = Array.isArray(v.pastForms) ? v.pastForms : [];
+
+      const candidates = [
+        canonical,
+        edMain,
+        pp,
+        ...ppForms,
+        ...pastForms,
+        (safeLower(edSimple) !== safeLower(edMain) ? edSimple : ''),
+        base + 'en'
+      ];
+
+      for (const c of candidates) {
+        add(c);
+        if (options.length === 3) break;
+      }
+
+      // If still short, pull distractors from other verbs (preferably different past forms)
+      let guard = 0;
+      while (options.length < 3 && guard++ < 200) {
+        const other = VERBS[Math.floor(Math.random() * VERBS.length)];
+        add(String(other.past || '').trim());
+      }
+
+      // Absolute last resort: only then repeat (should be extremely rare)
+      while (options.length < 3) options.push(options[0]);
+
+      return { canonical, options: shuffle(options) };
+    }
+
+    function updateHud() {
+      buildShieldHud();
+      scoreEl.textContent = String(score);
+
+      if (typeof highScore !== 'number') {
+        highScore = safeGetHighScore();
+      }
+      if (score > highScore) {
+        highScore = score;
+        safeSetHighScore(highScore);
+      }
+      if (highScoreEl) highScoreEl.textContent = String(highScore);
+      renderLives();
+      qnumEl.textContent = `${qNum}/${TOTAL_QUESTIONS}`;
+      updateShieldHud();
+      if (streakEl) streakEl.textContent = String(streak);
+      if (multEl) multEl.textContent = String(getScoreMultiplierForStreak(streak));
+      updateHardModeBadge();
+    }
+
+    function setQuestionText() {
+      if (safeLower(current.base) === 'be') {
+        questionEl.textContent = `Which is the correct simple past form of “be” (I/he/she/it)?`;
+      } else {
+        questionEl.textContent = `Which is the correct simple past form of “${current.base}”?`;
+      }
+    }
+
+    function buildBoxes(options) {
+      boxes = [];
+      const totalW = options.length * BOX.w + (options.length - 1) * BOX.gapX;
+      const startX = (W - totalW) / 2;
+      const startY = 70;
+
+      for (let i = 0; i < options.length; i++) {
+        boxes.push({
+          x: startX + i * (BOX.w + BOX.gapX),
+          y: startY,
+          w: BOX.w,
+          h: BOX.h,
+          text: options[i],
+          alive: true
+        });
+      }
+
+      boxDir = 1;
+      boxLastMoveAt = performance.now();
+    }
+
+    function boxesBounds() {
+      let minX = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const bx of boxes) {
+        if (!bx.alive) continue;
+        minX = Math.min(minX, bx.x);
+        maxX = Math.max(maxX, bx.x + bx.w);
+        maxY = Math.max(maxY, bx.y + bx.h);
+      }
+      return { minX, maxX, maxY };
+    }
+
+    function refillBag() { bag = shuffle(VERBS); }
+
+    function nextQuestion() {
+      if (!bag.length) refillBag();
+      current = bag.pop();
+      qNum += 1;
+
+      const built = makeOptionsForVerb(current);
+      correctAnswer = built.canonical;
+
+      buildBoxes(built.options);
+      bullets.length = 0;
+      setQuestionText();
+      updateHud();
+      scheduleFitCanvas();
+    }
+
+    function restartQuestionSameVerb() {
+      const built = makeOptionsForVerb(current);
+      correctAnswer = built.canonical;
+
+      buildBoxes(built.options);
+      bullets.length = 0;
+      alienShots.length = 0;
+      setQuestionText();
+      updateHud();
+      scheduleFitCanvas();
+    }
+
+    function resetGame(opts = {}) {
+      const startImmediately = opts.startImmediately === true;
+      const showIntro = opts.showIntro !== false;
+
+      if (typeof highScore !== 'number') {
+        highScore = safeGetHighScore();
+      }
+      if (highScoreEl) highScoreEl.textContent = String(highScore);
+      if (muteBtn && muteBtn.textContent !== 'Mute' && muteBtn.textContent !== 'Unmute') {
+        // no-op
+      }
+      setMuted(muted);
+
+      score = 0;
+      streak = 0;
+      bestStreak = 0;
+      lives = 5;
+      shieldStage = 0;
+      shieldCharges = 0;
+      shieldPulses = [];
+      qNum = 0;
+      running = false;
+      finished = false;
+      startTimeMs = performance.now();
+      endTimeMs = startTimeMs;
+      nextAlienShotDue = performance.now() + ALIEN_SHOT.intervalMs;
+      gameStarted = startImmediately;
+      running = startImmediately;
+      if (!startImmediately && showIntro) {
+        hardMode = false;
+        updateHardModeBadge();
+        if (hardModeToggle) hardModeToggle.checked = false;
+        if (hardModeLabel) hardModeLabel.textContent = 'Off';
+        if (introStepExplain) introStepExplain.style.display = '';
+        if (introStepMode) introStepMode.style.display = 'none';
+      }
+      if (introOverlay && showIntro) introOverlay.style.display = startImmediately ? 'none' : 'flex';
+
+      player = {
+        x: (W - PLAYER.w) / 2,
+        y: H - PLAYER.h - 14,
+        w: PLAYER.w,
+        h: PLAYER.h
+      };
+
+      createFireOverlays();
+      createShieldShipOverlay();
+
+      bullets = [];
+      alienShots = [];
+      refillBag();
+      nextQuestion();
+
+      feedbackText = '';
+      feedbackUntil = 0;
+
+      scheduleFitCanvas();
+    }
+
+    // Intro flow (2 steps: explanation -> hard mode selection)
+    function showExplainStep() {
+      if (introStepExplain) introStepExplain.style.display = '';
+      if (introStepMode) introStepMode.style.display = 'none';
+    }
+
+    function showModeStep() {
+      if (introStepExplain) introStepExplain.style.display = 'none';
+      if (introStepMode) introStepMode.style.display = '';
+      if (hardModeToggle) hardModeToggle.checked = !!hardMode;
+      if (hardModeLabel) hardModeLabel.textContent = (hardModeToggle && hardModeToggle.checked) ? 'On' : 'Off';
+    }
+
+    function beginGameAfterModeSelection() {
+      hardMode = !!(hardModeToggle && hardModeToggle.checked);
+      updateHardModeBadge();
+      if (hardModeLabel) hardModeLabel.textContent = hardMode ? 'On' : 'Off';
+
+      // Ensure the board is ready (resetGame builds the first question).
+      if (!gameStarted) {
+        gameStarted = true;
+        running = true;
+        startTimeMs = performance.now();
+        endTimeMs = startTimeMs;
+        nextAlienShotDue = performance.now() + ALIEN_SHOT.intervalMs;
+      } else {
+        running = true;
+      }
+
+      if (introOverlay) introOverlay.style.display = 'none';
+      startBackgroundMusic();
+    }
+
+    function resetToIntro() {
+      stopBackgroundMusic();
+      resetGame({ startImmediately: false, showIntro: true });
+      showExplainStep();
+    }
+
+    if (startBtn) {
+      startBtn.addEventListener('click', () => {
+        showModeStep();
+      });
+    }
+
+    if (hardModeToggle) {
+      hardModeToggle.addEventListener('change', () => {
+        if (hardModeLabel) hardModeLabel.textContent = hardModeToggle.checked ? 'On' : 'Off';
+      });
+    }
+
+    if (modeBackBtn) {
+      modeBackBtn.addEventListener('click', () => {
+        showExplainStep();
+      });
+    }
+
+    if (modeContinueBtn) {
+      modeContinueBtn.addEventListener('click', () => {
+        beginGameAfterModeSelection();
+      });
+    }
+
+    if (startRestartBtn) {
+      startRestartBtn.addEventListener('click', resetToIntro);
+    }
+
+// Input
+    window.addEventListener('keydown', (e) => {
+      if (['ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+      keys.add(e.key);
+    }, { passive: false });
+
+    window.addEventListener('keyup', (e) => keys.delete(e.key));
+    restartBtn.addEventListener('click', () => {
+      resetGame({ startImmediately: true, showIntro: false });
+      // Preserve selected hard mode on restarts (no intro shown).
+      if (!muted) startBackgroundMusic();
+    });
+
+    if (muteBtn) {
+      muteBtn.addEventListener('click', () => {
+        setMuted(!muted);
+        if (muted) {
+          try { bgMusic.pause(); } catch (e) {}
+        } else if (gameStarted && running && introOverlay && introOverlay.style.display === 'none') {
+          // If the game is active, resume music when unmuting.
+          startBackgroundMusic();
+        }
+      });
+      setMuted(false);
+    }
+
+    // Touch controls
+    let moveDir = 0;
+    const btnLeft = document.getElementById('btnLeft');
+    const btnRight = document.getElementById('btnRight');
+    const btnShoot = document.getElementById('btnShoot');
+
+    function bindHoldButton(btn, dir) {
+      const down = (e) => { e.preventDefault(); moveDir = dir; };
+      const up = (e) => { e.preventDefault(); if (moveDir === dir) moveDir = 0; };
+
+      btn.addEventListener('pointerdown', down, { passive: false });
+      btn.addEventListener('pointerup', up, { passive: false });
+      btn.addEventListener('pointercancel', up, { passive: false });
+      btn.addEventListener('pointerleave', up, { passive: false });
+
+      btn.addEventListener('touchstart', down, { passive: false });
+      btn.addEventListener('touchend', up, { passive: false });
+      btn.addEventListener('touchcancel', up, { passive: false });
+
+      btn.addEventListener('mousedown', down);
+      btn.addEventListener('mouseup', up);
+      btn.addEventListener('mouseleave', up);
+    }
+
+    bindHoldButton(btnLeft, -1);
+    bindHoldButton(btnRight, +1);
+
+    if (btnShoot) {
+      const shootNow = (e) => { e.preventDefault(); tryShoot(performance.now()); };
+      btnShoot.addEventListener('pointerdown', shootNow, { passive: false });
+      btnShoot.addEventListener('touchstart', shootNow, { passive: false });
+      btnShoot.addEventListener('mousedown', shootNow);
+    }
+
+    canvas.style.touchAction = 'none';
+
+    // Audio + mute
+    var muted = false;
+
+    // No-op helpers kept for backward compatibility with earlier builds.
+    function ensureAudio() {}
+    function resumeAudioIfNeeded() {}
+
+
+    function setMuted(v) {
+      muted = !!v;
+      if (spitAudio) spitAudio.muted = muted;
+      if (typeof explosionAudio !== 'undefined') explosionAudio.muted = muted;
+      if (typeof bgMusic !== 'undefined') bgMusic.muted = muted;
+      if (muteBtn) muteBtn.textContent = muted ? 'Unmute' : 'Mute';
+    }
+
+
+    function playExplosionSound() {
+      if (muted) return;
+      // Use a clone so multiple explosions can overlap.
+      try {
+        const a = explosionAudio.cloneNode();
+        a.muted = muted;
+        a.volume = explosionAudio.volume;
+        a.currentTime = 0;
+        const p = a.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch (e) {}
+    }
+
+    // Shield activate SFX (file-based)
+    const SHIELD_SFX_SOURCES = [
+      IMG_DIR + 'Shield.mp3',
+      IMG_DIR + 'shield.mp3',
+      'Shield.mp3',
+      'shield.mp3'
+    ];
+    let shieldSfxSrcIndex = 0;
+    let shieldAudioBase = null;
+
+    function getShieldAudioBase() {
+      if (shieldAudioBase) return shieldAudioBase;
+      try {
+        shieldAudioBase = new Audio(SHIELD_SFX_SOURCES[shieldSfxSrcIndex]);
+        shieldAudioBase.preload = 'auto';
+        shieldAudioBase.volume = 0.85;
+
+        // Rotate through fallbacks if a path/filename fails (common with file:// + case sensitivity)
+        shieldAudioBase.addEventListener('error', () => {
+          if (shieldSfxSrcIndex >= SHIELD_SFX_SOURCES.length - 1) return;
+          shieldSfxSrcIndex += 1;
+          shieldAudioBase.src = SHIELD_SFX_SOURCES[shieldSfxSrcIndex];
+          try { shieldAudioBase.load(); } catch (e) {}
+        });
+      } catch (e) {
+        shieldAudioBase = null;
+      }
+      return shieldAudioBase;
+    }
+
+    function playShieldActivateSound() {
+      if (muted) return;
+      const base = getShieldAudioBase();
+      if (!base) return;
+
+      // Clone so repeated shield gains can overlap without cutting each other off.
+      try {
+        const a = base.cloneNode(true);
+        a.muted = muted;
+        a.volume = base.volume;
+        a.currentTime = 0;
+        const p = a.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch (e) {}
+    }
+
+
+    function playSplashSound() {
+      if (muted) return;
+      // Prefer the provided MP3 for a natural, liquid "slosh".
+      try {
+        spitAudio.pause();
+        spitAudio.currentTime = 0;
+        spitAudio.play().catch(() => {});
+      } catch (e) {
+        // If autoplay is blocked, ignore; the next user interaction will allow playback.
+      }
+    }
+
+    // Explosions (visual)
+    const EXPLOSION = { durationMs: 360 };
+    let explosions = [];
+
+    // Success FX (floating popup + quick flash + micro shake)
+    let popups = [];
+    let successFlashUntil = 0;
+
+    let shakeUntil = 0;
+    let shakeStrength = 0;
+
+    function spawnPopup(text, x, y) {
+      popups.push({
+        text,
+        x,
+        y,
+        vx: (Math.random() * 0.6 - 0.3),
+        vy: -1.4,
+        start: performance.now(),
+        duration: 650
+      });
+    }
+
+    function triggerSuccessFx() {
+      successFlashUntil = performance.now() + 140; // quick green flash
+      shakeUntil = performance.now() + 110;        // micro shake
+      shakeStrength = 3;                           // px
+    }
+
+    // Shield pulse (canvas)
+    function spawnShieldPulse() {
+      const cx = player.x + player.w / 2;
+      const cy = player.y + player.h / 2;
+      shieldPulses.push({
+        x: cx,
+        y: cy,
+        start: performance.now(),
+        duration: 520,
+        maxR: Math.max(W, H) * 0.85
+      });
+    }
+
+    function drawShieldPulses(now) {
+      if (!shieldPulses.length) return;
+      const alive = [];
+      for (const p of shieldPulses) {
+        const t = (now - p.start) / p.duration;
+        if (t >= 1) continue;
+        alive.push(p);
+
+        const r = p.maxR * t;
+        const a = (1 - t) * 0.45;
+
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(90, 220, 255, 1)';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.globalAlpha = a * 0.55;
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(170, 240, 255, 1)';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r * 0.72, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+      shieldPulses = alive;
+    }
+
+    function awardShieldStage() {
+      // If shields are already maxed and charger is full, do nothing.
+      if (shieldCharges >= MAX_SHIELD_CHARGES && shieldStage >= SHIELD_STAGES) return;
+
+      shieldStage = Math.min(SHIELD_STAGES, shieldStage + 1);
+
+      if (shieldStage >= SHIELD_STAGES) {
+        if (shieldCharges < MAX_SHIELD_CHARGES) {
+          shieldCharges += 1;
+          // Brief activation feedback (sound + rim glow)
+          shieldGlowUntil = performance.now() + 320;
+          playShieldActivateSound();
+          shieldStage = 0;
+          spawnShieldPulse();
+          spawnPopup('Shield +1', player.x + player.w / 2, player.y - 6);
+        } else {
+          // Stay full when maxed.
+          shieldStage = SHIELD_STAGES;
+        }
+      }
+
+      updateShieldHud();
+    }
+
+    function absorbDamageWithShield(reasonText) {
+      // Consume one shield charge instead of losing a life.
+      shieldCharges = Math.max(0, shieldCharges - 1);
+      updateShieldHud();
+      spawnShieldPulse();
+      showFeedback(reasonText || 'Shield absorbed!', 800);
+    }
+
+    // baseSize is typically derived from the hit alien's size so the explosion replaces the alien visually.
+    function spawnExplosion(x, y, baseSize) {
+      const base = Number(baseSize) || 70;
+      explosions.push({ x, y, base, start: performance.now() });
+      playExplosionSound();
+    }
+
+    // Mechanics
+    function tryShoot(now) {
+      ensureAudio();
+      resumeAudioIfNeeded();
+
+      if (now - lastShotAt < BULLET.cooldownMs) return;
+
+      bullets.push({
+        x: player.x + player.w / 2 - BULLET.w / 2,
+        y: player.y - BULLET.h,
+        w: BULLET.w,
+        h: BULLET.h,
+        alive: true
+      });
+
+      lastShotAt = now;
+    }
+
+    function movePlayer() {
+      const left = keys.has('ArrowLeft') || moveDir === -1;
+      const right = keys.has('ArrowRight') || moveDir === 1;
+      if (left) player.x -= PLAYER.speed;
+      if (right) player.x += PLAYER.speed;
+      player.x = clamp(player.x, 8, W - player.w - 8);
+    }
+
+    function moveBullets() {
+      for (const b of bullets) b.y -= BULLET.speed;
+      bullets = bullets.filter(b => b.y + b.h > 0 && !b._dead);
+    }
+
+    
+    function getScoreMultiplierForStreak(streakCount) {
+      // 1x for 1–5, 2x for 6–10, 3x for 11–15, 4x for 16–20, 5x for 21–25+ (capped at 5x)
+      if (streakCount <= 5) return 1;
+      if (streakCount <= 10) return 2;
+      if (streakCount <= 15) return 3;
+      if (streakCount <= 20) return 4;
+      return 5;
+    }
+
+    function resetStreak() {
+      streak = 0;
+      updateHud();
+    }
+
+function getAlienSpeedMultiplier() {
+      // Hard Mode: +50% base speed, then +10% per 250 points
+      if (hardMode) {
+        const tiers = Math.floor(Math.max(0, score) / 250);
+        return 1.5 * Math.pow(1.1, tiers);
+      }
+
+      // Normal Mode scaling: +5% per 500 points (gentle difficulty ramp)
+      const tiers = Math.floor(Math.max(0, score) / 500);
+      return Math.pow(1.05, tiers);
+    }
+
+    function getAlienMoveIntervalMs() {
+      return BOX_MOVE.intervalMs / getAlienSpeedMultiplier();
+    }
+
+    function moveBoxes(now) {
+      const interval = getAlienMoveIntervalMs();
+      if (now - boxLastMoveAt < interval) return;
+      boxLastMoveAt = now;
+
+      const { minX, maxX } = boxesBounds();
+      if (!isFinite(minX) || !isFinite(maxX)) return;
+
+      const hitRight = maxX + BOX_MOVE.stepX >= W - 10;
+      const hitLeft = minX - BOX_MOVE.stepX <= 10;
+
+      if ((boxDir === 1 && hitRight) || (boxDir === -1 && hitLeft)) {
+        for (const bx of boxes) bx.y += BOX_MOVE.stepY;
+        boxDir *= -1;
+      } else {
+        for (const bx of boxes) bx.x += BOX_MOVE.stepX * boxDir;
+      }
+    }
+
+    function spawnAlienShotFrom(shooter) {
+      const s = Math.max(14, Math.min(28, Math.floor(shooter.h * 0.60)));
+      const w = s;
+      const h = s;
+      alienShots.push({
+        x: shooter.x + shooter.w / 2 - w / 2,
+        y: shooter.y + shooter.h - 2,
+        w, h,
+        vy: ALIEN_SHOT.speed,
+        alive: true
+      });
+    }
+
+    function fireAlienVolley(now) {
+      if (!running) return;
+      const alive = boxes.filter(b => b.alive);
+      if (!alive.length) return;
+
+      alienVolleyCount += 1;
+
+      const twoShots = hardMode && (alienVolleyCount % 2 === 0) && alive.length > 1;
+      const shooter1 = alive[Math.floor(Math.random() * alive.length)];
+      spawnAlienShotFrom(shooter1);
+
+      if (twoShots) {
+        let shooter2 = shooter1;
+        for (let i = 0; i < 10 && shooter2 === shooter1; i++) {
+          shooter2 = alive[Math.floor(Math.random() * alive.length)];
+        }
+        if (shooter2 !== shooter1) spawnAlienShotFrom(shooter2);
+      }
+
+      playSplashSound();
+    }
+
+    function fireRandomAlienShot(now) {
+      // Backwards-compatible alias; this is what the main loop calls.
+      fireAlienVolley(now);
+    }
+
+    function moveAlienShots() {
+      for (const s of alienShots) {
+        if (s._dead) continue;
+        s.y += s.vy;
+      }
+      alienShots = alienShots.filter(s => !s._dead && s.y < H + 40);
+    }
+
+    function loseLife(reasonText) {
+      alienShots.length = 0;
+
+      // Any penalty breaks the combo
+      streak = 0;
+
+      if (shieldCharges > 0) {
+        absorbDamageWithShield('Shield absorbed!');
+        restartQuestionSameVerb();
+        return;
+      }
+
+      lives -= 1;
+      triggerDamageFlash();
+      updateHud();
+
+      if (lives <= 0) {
+        running = false;
+        finished = false;
+        endTimeMs = performance.now();
+        return;
+      }
+
+      showFeedback(reasonText, 900);
+      restartQuestionSameVerb();
+    }
+
+    function handleCollisions() {
+      // Alien spit hits player
+      for (const s of alienShots) {
+        if (s._dead) continue;
+        if (rectsOverlap(s, player)) {
+          s._dead = true;
+          loseLife('Hit! -1 life');
+          return;
+        }
+      }
+
+      for (const b of bullets) {
+        if (b._dead) continue;
+
+        for (const bx of boxes) {
+          if (!bx.alive) continue;
+
+          if (rectsOverlap(b, bx)) {
+            b._dead = true;
+
+            // Replace the hit alien with an explosion (not the missile).
+            bx.alive = false;
+            spawnExplosion(bx.x + bx.w / 2, bx.y + bx.h / 2, Math.max(bx.w, bx.h));
+
+            const hitText = safeLower(bx.text);
+            const isCorrect = hitText === safeLower(correctAnswer);
+
+            if (isCorrect) {
+              streak += 1;
+              bestStreak = Math.max(bestStreak, streak);
+
+              const mult = getScoreMultiplierForStreak(streak);
+              const basePoints = hardMode ? 15 : 10;
+              const points = basePoints * mult;
+
+              score += points;
+              updateHud();
+
+              showFeedback(mult > 1 ? `Correct! x${mult}` : 'Correct!', 700);
+              awardShieldStage();
+              spawnPopup(`+${points}`, bx.x + bx.w / 2, bx.y + bx.h / 2);
+
+              // Milestone popup when multiplier increases (do not re-show at max multiplier)
+              const prevMult = getScoreMultiplierForStreak(streak - 1);
+              if (mult > prevMult && mult > 1) {
+                showStreakLevelUp(mult);
+                spawnPopup(`Combo x${mult}!`, player.x + player.w / 2, player.y - 18);
+              }
+
+              triggerSuccessFx();
+
+              if (qNum >= TOTAL_QUESTIONS) {
+                running = false;
+                finished = true;
+                endTimeMs = performance.now();
+              } else {
+                nextQuestion();
+              }
+            } else {
+              loseLife('Wrong! -1 life');
+            }
+            break;
+          }
+        }
+      }
+
+      const { maxY } = boxesBounds();
+      if (running && isFinite(maxY) && maxY >= player.y) {
+        loseLife('Too late! -1 life');
+      }
+    }
+
+    // Rendering
+    function drawBackground() {
+      ctx.clearRect(0, 0, W, H);
+
+      if (bgImg.complete && bgImg.naturalWidth) {
+        drawCover(bgImg);
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.fillRect(0, 0, W, H);
+      } else {
+        ctx.fillStyle = '#060914';
+        ctx.fillRect(0, 0, W, H);
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = '#9bb3ff';
+        for (let i = 0; i < 70; i++) {
+          const x = (i * 97) % W;
+          const y = (i * 53) % H;
+          ctx.fillRect(x, y, 2, 2);
+        }
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function drawShipFire() {
+      // Draw via DOM overlays so GIFs animate reliably.
+      updateFireOverlays();
+      updateShieldShipOverlay();
+    }
+
+    function drawPlayer(now) {
+      const x = player.x;
+      const y = player.y;
+
+      if (shipImg.complete && shipImg.naturalWidth) {
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(shipImg, x, y, player.w, player.h);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = '#e8eefc';
+        ctx.fillRect(x, y + player.h*0.65, player.w, player.h*0.35);
+        ctx.fillRect(x + player.w/2 - 6, y + player.h*0.35, 12, player.h*0.30);
+      }
+
+
+      // Brief blue rim glow when a shield charge is gained.
+      if (now && now < shieldGlowUntil) {
+        const p = (shieldGlowUntil - now) / 320; // 1 -> 0
+        ctx.save();
+        ctx.globalAlpha = 0.85 * p;
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(120, 210, 255, 1)';
+        ctx.shadowColor = 'rgba(120, 210, 255, 1)';
+        ctx.shadowBlur = 14;
+        ctx.strokeRect(x - 3, y - 3, player.w + 6, player.h + 6);
+        ctx.restore();
+      }
+
+      // Draw damage fire on top of the ship when lives are low.
+      drawShipFire();
+    }
+
+    function drawBullets() {
+      for (const b of bullets) {
+        if (missileImg.complete && missileImg.naturalWidth) {
+          ctx.save();
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(missileImg, b.x, b.y, b.w, b.h);
+          ctx.restore();
+        } else {
+          ctx.fillStyle = '#ffd66b';
+          ctx.fillRect(b.x, b.y, b.w, b.h);
+        }
+      }
+    }
+
+    function drawAlienShots() {
+      for (const s of alienShots) {
+        if (s._dead) continue;
+        if (spitImg && spitImg.complete && spitImg.naturalWidth) {
+          ctx.save();
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(spitImg, s.x, s.y, s.w, s.h);
+          ctx.restore();
+        } else {
+          ctx.fillStyle = '#7ee081';
+          ctx.beginPath();
+          ctx.ellipse(s.x + s.w/2, s.y + s.h/2, s.w/2, s.h/2, 0, 0, Math.PI*2);
+          ctx.fill();
+        }
+      }
+    }
+
+    function drawExplosions(now) {
+      if (!explosions.length) return;
+
+      const alive = [];
+      for (const ex of explosions) {
+        const p = (now - ex.start) / EXPLOSION.durationMs;
+        if (p >= 1) continue;
+        alive.push(ex);
+
+        const scale = 0.35 + p * 1.25;
+        const alpha = 1 - p;
+        const s = ex.base * scale;
+
+        if (explosionImg.complete && explosionImg.naturalWidth) {
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(explosionImg, ex.x - s / 2, ex.y - s / 2, s, s);
+          ctx.restore();
+        } else {
+          // Fallback: simple expanding ring
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = '#ffd66b';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(ex.x, ex.y, s / 2, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+      explosions = alive;
+    }
+
+    function drawBoxes(now) {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // Bold, white verbs for better readability on the alien background.
+      ctx.font = 'bold 18px system-ui, Arial';
+
+      for (const bx of boxes) {
+        if (!bx.alive) continue;
+
+        if (alienImg.complete && alienImg.naturalWidth) {
+          ctx.save();
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(alienImg, bx.x, bx.y, bx.w, bx.h);
+          ctx.restore();
+        } else {
+          ctx.fillStyle = '#7ee081';
+          ctx.fillRect(bx.x, bx.y, bx.w, bx.h);
+
+          ctx.strokeStyle = '#e8eefc';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(bx.x, bx.y, bx.w, bx.h);
+        }
+
+        // Text readability: outline + fill
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#060914';
+        ctx.strokeText(bx.text, bx.x + bx.w / 2, bx.y + bx.h / 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(bx.text, bx.x + bx.w / 2, bx.y + bx.h / 2);
+      }
+    }
+
+    function drawFeedback(now) {
+      if (!feedbackText || now > feedbackUntil) return;
+
+      ctx.fillStyle = 'rgba(0,0,0,0.60)';
+      ctx.fillRect(0, H - 70, W, 70);
+
+      ctx.fillStyle = '#e8eefc';
+      ctx.font = '18px system-ui, Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(feedbackText, W / 2, H - 35);
+    }
+
+    function drawPopups(now) {
+      if (!popups.length) return;
+
+      const alive = [];
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold 18px system-ui, Arial';
+
+      for (const p of popups) {
+        const t = (now - p.start) / p.duration;
+        if (t >= 1) continue;
+        alive.push(p);
+
+        const alpha = 1 - t;
+        const yy = p.y + p.vy * (t * 60);
+        const xx = p.x + p.vx * (t * 40);
+
+        ctx.globalAlpha = alpha;
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#060914';
+        ctx.strokeText(p.text, xx, yy);
+        ctx.fillStyle = '#7CFF9B';
+        ctx.fillText(p.text, xx, yy);
+      }
+
+      ctx.restore();
+      popups = alive;
+    }
+
+    function drawSuccessFlash(now) {
+      if (now > successFlashUntil) return;
+      const a = (successFlashUntil - now) / 140;
+      ctx.save();
+      ctx.globalAlpha = 0.18 * a;
+      ctx.fillStyle = '#7CFF9B';
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
+
+    function drawOverlay() {
+      ctx.fillStyle = 'rgba(0,0,0,0.62)';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.fillStyle = '#e8eefc';
+      ctx.font = '28px system-ui, Arial';
+      ctx.textAlign = 'center';
+
+      const title = finished ? 'Finished!' : 'Game Over';
+      ctx.fillText(title, W / 2, H / 2 - 28);
+
+      ctx.font = '18px system-ui, Arial';
+      const t = formatTime(endTimeMs - startTimeMs);
+      ctx.fillText(`Time: ${t}`, W / 2, H / 2 + 6);
+
+      ctx.font = '16px system-ui, Arial';
+      ctx.fillText('Press Restart to play again', W / 2, H / 2 + 34);
+    }
+
+    function loop(now) {
+      try {
+        updateTimer(now);
+
+        if (running) {
+          movePlayer();
+          if (keys.has(' ')) tryShoot(now);
+          moveBullets();
+          moveBoxes(now);
+          if (now >= nextAlienShotDue) {
+            fireRandomAlienShot(now);
+            // Keep cadence stable even if frames are delayed.
+            nextAlienShotDue += ALIEN_SHOT.intervalMs;
+            if (nextAlienShotDue < now) nextAlienShotDue = now + ALIEN_SHOT.intervalMs;
+          }
+          moveAlienShots();
+          handleCollisions();
+        }
+
+        
+// Reset canvas state defensively (prevents "permanent transparency" if any draw path ever throws mid-frame).
+ctx.setTransform(1, 0, 0, 1, 0, 0);
+ctx.globalAlpha = 1;
+ctx.globalCompositeOperation = 'source-over';
+
+drawBackground();
+
+// Apply micro shake to the game layer only (HUD-style overlays stay stable).
+ctx.save();
+try {
+  if (now < shakeUntil) {
+    const dx = (Math.random() * 2 - 1) * shakeStrength;
+    const dy = (Math.random() * 2 - 1) * shakeStrength;
+    ctx.translate(dx, dy);
+  }
+
+  drawShieldPulses(now);
+
+  drawBoxes(now);
+  drawExplosions(now);
+  drawAlienShots();
+  drawPlayer(now);
+  drawBullets();
+  drawFeedback(now);
+  drawPopups(now);
+} finally {
+  ctx.restore();
+}
+
+// Flash sits on top (not shaken)
+drawSuccessFlash(now);
+
+
+        if (!running && gameStarted) drawOverlay();
+      } catch (err) {
+        console.error('Game loop error:', err);
+        // Never end or fade gameplay due to a render error.
+        // If something goes wrong, hide the shield overlay for safety and continue.
+        if (shieldShipOverlay) shieldShipOverlay.style.display = 'none';
+      } finally {
+        requestAnimationFrame(loop);
+      }
+    }
+
+    resetGame({ startImmediately: false, showIntro: true });
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
