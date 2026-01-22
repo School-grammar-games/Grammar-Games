@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>School Grammar Games</title>
+  <style>
+    :root{
+      --bg0:#070915;
+      --bg1:#0b1024;
+      --panel: rgba(255,255,255,0.08);
+      --stroke: rgba(255,255,255,0.14);
+      --text:#eef2ff;
+      --muted: rgba(238,242,255,0.78);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1100px 600px at 20% 15%, rgba(124,58,237,0.22), transparent 55%),
+        radial-gradient(900px 600px at 80% 25%, rgba(34,211,238,0.16), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+    }
+
+    .wrap{
+      width: min(1100px, 100%);
+      margin: 0 auto;
+      padding: 28px 16px 40px;
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+      text-align:center;
+    }
+
+    h1{
+      margin:0;
+      font-size: clamp(24px, 2.6vw, 34px);
+      letter-spacing: 0.2px;
+    }
+    .sub{
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.35;
+      max-width: 72ch;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .card{
+      grid-column: span 6;
+      background: var(--panel);
+      border: 1px solid var(--stroke);
+      border-radius: 18px;
+      overflow:hidden;
+      text-decoration:none;
+      color: inherit;
+      box-shadow: 0 18px 55px rgba(0,0,0,0.38);
+      transform: translateZ(0);
+      transition: transform 160ms ease, filter 160ms ease, border-color 160ms ease;
+      position:relative;
+    }
+    .card:focus-visible{
+      outline: 3px solid rgba(34,211,238,0.55);
+      outline-offset: 2px;
+    }
+    .card:hover{
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.22);
+      filter: brightness(1.04);
+    }
+
+    .thumb{
+      width:100%;
+      display:block;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      background: rgba(0,0,0,0.25);
+    }
+
+    .meta{
+      padding: 12px 14px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    .title{
+      font-weight: 850;
+      letter-spacing: 0.2px;
+      line-height:1.2;
+    }
+    .cta{
+      font-size: 13px;
+      font-weight: 750;
+      color: rgba(34,211,238,0.95);
+      white-space: nowrap;
+    }
+
+    footer{
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 860px){
+      .card{ grid-column: span 12; }
+
+      /* Keep the full image visible on phones (no cropping) */
+      .thumb{
+        aspect-ratio: 16 / 9;
+        object-fit: contain;
+        background: rgba(0,0,0,0.25);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .card{ transition:none; }
+      .card:hover{ transform:none; }
+    }
+      /* Modal (topic picker) — anchored to clicked card */
+    .modal-backdrop[hidden]{
+      display: none !important; /* ensure hidden works even with custom display rules */
+    }
+    .modal-backdrop{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      z-index: 1000;
+      padding: 18px;
+    }
+    .modal{
+      position: absolute;
+      width: min(560px, calc(100% - 36px));
+      background: rgba(8,12,28,0.92);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 18px;
+      box-shadow: 0 30px 90px rgba(0,0,0,0.55);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      color: var(--text);
+      overflow: hidden;
+      left: 50%;
+      top: 20%;
+      transform: translateX(-50%);
+    }
+    .modal-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+    }
+    .modal-close{
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .modal-body{ padding: 14px 16px 4px 16px; }
+    .meta{
+      font-size: 12.5px;
+      color: rgba(238,242,255,0.78);
+      margin-bottom: 10px;
+    }
+    .modal-label{
+      display:block;
+      font-size: 12.5px;
+      color: rgba(238,242,255,0.78);
+    }
+    .modal-label span{ display:block; margin-bottom: 6px; }
+    .modal-select{
+      width:100%;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.15);
+      color: var(--text);
+    }
+    .modal-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap: 10px;
+      padding: 12px 16px 16px 16px;
+    }
+    .btn-secondary, .btn-primary{
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.18);
+      cursor: pointer;
+      color: var(--text);
+    }
+    .btn-secondary{ background: rgba(255,255,255,0.06); }
+    .btn-primary{ background: rgba(255,255,255,0.10); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div style="text-align:center;">
+        <h1>School Grammar Games</h1>
+        <p class="sub">Choose a game to play. Each image opens the corresponding game in a new tab.</p>
+      </div>
+    </header>
+
+    <main class="grid" aria-label="Game list">
+      <a class="card" href="/Grammar-Games/Space-Invader/Space_Invader_Articles.html" data-game="Grammar Galaxy Defender" data-card-id="gamecard1" target="_blank" rel="noopener noreferrer" aria-label="Open Grammar Galaxy Defender">
+        <img class="thumb" src="Titelbilder Spiele/Grammar Galaxy Defender.png" alt="Grammar Galaxy Defender promotional image" />
+        <div class="meta">
+          <div class="title">Grammar Galaxy Defender</div>
+          <div class="cta">Play ▸</div>
+        </div>
+      </a>
+
+      <a class="card" href="/Grammar-Games/Sidescroller/Sidescroller_Articles.htm" data-game="The Grammar Runner" data-card-id="gamecard2" target="_blank" rel="noopener noreferrer" aria-label="Open The Grammar Runner">
+        <img class="thumb" src="Titelbilder Spiele/The Grammar Runner.png" alt="The Grammar Runner promotional image" />
+        <div class="meta">
+          <div class="title">The Grammar Runner</div>
+          <div class="cta">Play ▸</div>
+        </div>
+      </a>
+
+      <a class="card" href="/Grammar-Games/Fruit-Ninja/Fruit-Ninja_Articles.htm" data-game="Grammar Chop" data-card-id="gamecard3" target="_blank" rel="noopener noreferrer" aria-label="Open Grammar Chop">
+        <img class="thumb" src="Titelbilder Spiele/Grammar Chop.png" alt="Grammar Chop promotional image" />
+        <div class="meta">
+          <div class="title">Grammar Chop</div>
+          <div class="cta">Play ▸</div>
+        </div>
+      </a>
+
+      <a class="card" href="/Grammar-Games/Tetris/Tetris.htm" data-game="Syntax Cascade" data-card-id="gamecard4" target="_blank" rel="noopener noreferrer" aria-label="Open Syntax Cascade">
+        <img class="thumb" src="Titelbilder Spiele/Syntax Cascade.png" alt="Syntax Cascade promotional image" />
+        <div class="meta">
+          <div class="title">Syntax Cascade</div>
+          <div class="cta">Play ▸</div>
+        </div>
+      </a>
+    </main>
+
+    <footer>
+      Tip: keep this <code>index.html</code> file and the folder <code>Titelbilder Spiele</code> in the same location on your GitHub Pages site. The four PNG images should be inside <code>Titelbilder Spiele</code>.
+    </footer>
+  </div>
+  <!-- Topic Picker Modal (anchored to clicked card) -->
+  <div id="topicModal" class="modal-backdrop" hidden aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <div class="title" id="modalTitle">Choose a grammar topic</div>
+        <button type="button" id="closeModalBtn" class="modal-close" aria-label="Close">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="modalGameName" class="meta"></div>
+
+        <label class="modal-label">
+          <span>Grammar topic</span>
+          <select id="modalTopicSelect" class="modal-select"></select>
+        </label>
+
+        <div id="modalHint" class="meta" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="cancelBtn" class="btn-secondary">Cancel</button>
+        <button type="button" id="playBtn" class="btn-primary">Play ▸</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Hybrid approach: students click the game image card, then choose a grammar topic for that game.
+    // All topic pages remain separate HTML files inside each game's folder.
+
+        const GAME_CONFIG = {
+      "Grammar Galaxy Defender": {
+        topics: {
+          "Articles (a/an/the/X)": "/Grammar-Games/Space-Invader/Space_Invader_Articles.html",
+          "Simple Past": "/Grammar-Games/Space_Invader_SimplePast.html"
+        }
+      },
+      "The Grammar Runner": {
+        topics: {
+          "Articles (a/an/the/X)": "/Grammar-Games/Sidescroller/Sidescroller_Articles.htm",
+          "Prepositions": "/Grammar-Games/Sidescroller/Sidescroller_Prepositions.htm"
+        }
+      },
+      "Grammar Chop": {
+        topics: {
+          "Articles (a/an/the/X)": "/Grammar-Games/Fruit-Ninja/Fruit-Ninja_Articles.htm",
+          "Conditional Sentences": "/Grammar-Games/Fruit-Ninja/Fruit-Ninja_Conditional-Sentences.htm"
+        }
+      },
+      "Syntax Cascade": {
+        topics: {
+          "Tetris": "/Grammar-Games/Tetris/Tetris.htm"
+        }
+      }
+    };
+
+const modalBackdrop = document.getElementById("topicModal");
+    const modalEl = modalBackdrop.querySelector(".modal");
+    const closeModalBtn = document.getElementById("closeModalBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const playBtn = document.getElementById("playBtn");
+    const topicSelect = document.getElementById("modalTopicSelect");
+    const modalGameName = document.getElementById("modalGameName");
+    const modalHint = document.getElementById("modalHint");
+
+    let activeGame = null;
+    let anchorRect = null;
+    let lastFocusedEl = null;
+
+    function setOptions(selectEl, labels) {
+      selectEl.innerHTML = "";
+      labels.forEach(label => {
+        const opt = document.createElement("option");
+        opt.value = label;
+        opt.textContent = label;
+        selectEl.appendChild(opt);
+      });
+    }
+
+    function clamp(val, min, max) {
+      return Math.max(min, Math.min(max, val));
+    }
+
+    function positionModalNear(rect) {
+      // rect is in viewport coordinates
+      const padding = 18;
+      const desiredWidth = Math.min(560, window.innerWidth - padding * 2);
+
+      modalEl.style.width = desiredWidth + "px";
+
+      // initial placement: centered horizontally over the clicked card, slightly below its top
+      let left = rect.left + rect.width / 2;
+      left = clamp(left, padding + desiredWidth / 2, window.innerWidth - padding - desiredWidth / 2);
+
+      modalEl.style.left = left + "px";
+      modalEl.style.transform = "translateX(-50%)";
+
+      // prefer placing over the card (inside its area), near its top
+      let top = rect.top + 18;
+
+      // After render, ensure it fits vertically; if not, shift upward/downward
+      requestAnimationFrame(() => {
+        const m = modalEl.getBoundingClientRect();
+        top = clamp(top, padding, window.innerHeight - padding - m.height);
+        modalEl.style.top = top + "px";
+      });
+    }
+
+    function openModalForGame(gameName, anchorEl) {
+      const cfg = GAME_CONFIG[gameName];
+      if (!cfg || !cfg.topics || !Object.keys(cfg.topics).length) return;
+
+      activeGame = gameName;
+      anchorRect = anchorEl.getBoundingClientRect();
+
+      const topics = Object.keys(cfg.topics);
+      setOptions(topicSelect, topics);
+
+      modalGameName.textContent = `Game: ${gameName}`;
+      modalHint.textContent = topics.length ? `Selected: ${topics[0]}` : "No topics configured.";
+
+      lastFocusedEl = document.activeElement;
+
+      modalBackdrop.hidden = false;
+      modalBackdrop.setAttribute("aria-hidden", "false");
+
+      positionModalNear(anchorRect);
+
+      // Focus for accessibility
+      setTimeout(() => topicSelect.focus(), 0);
+    }
+
+    function closeModal() {
+      modalBackdrop.hidden = true;
+      modalBackdrop.setAttribute("aria-hidden", "true");
+
+      if (lastFocusedEl && typeof lastFocusedEl.focus === "function") {
+        lastFocusedEl.focus();
+      }
+
+      activeGame = null;
+      anchorRect = null;
+    }
+
+    // Open modal only when clicking on a configured game card
+    document.querySelectorAll('a.card[data-game]').forEach(card => {
+      card.addEventListener("click", (e) => {
+        const gameName = card.getAttribute("data-game");
+        const cfg = GAME_CONFIG[gameName];
+
+        if (cfg && cfg.topics && Object.keys(cfg.topics).length) {
+          e.preventDefault();
+          openModalForGame(gameName, card);
+        }
+      });
+    });
+
+    // Reposition on resize/scroll (keeps it anchored visually)
+    window.addEventListener("resize", () => {
+      if (!modalBackdrop.hidden && anchorRect) positionModalNear(anchorRect);
+    }, { passive: true });
+
+    window.addEventListener("scroll", () => {
+      if (!modalBackdrop.hidden && activeGame) {
+        // recompute from the last clicked card if possible
+        const card = document.querySelector(`a.card[data-game="${activeGame}"]`);
+        if (card) {
+          anchorRect = card.getBoundingClientRect();
+          positionModalNear(anchorRect);
+        }
+      }
+    }, { passive: true });
+
+    topicSelect.addEventListener("change", () => {
+      modalHint.textContent = `Selected: ${topicSelect.value}`;
+    });
+
+        function normalizeGameUrl(u) {
+      if (!u) return u;
+      // Absolute URLs are fine
+      if (/^https?:\/\//i.test(u)) return u;
+      // Root-relative is fine
+      if (u.startsWith("/")) return u;
+      // Otherwise force root-relative under /Grammar-Games/
+      return "/Grammar-Games/" + u.replace(/^\.?\//, "");
+    }
+
+playBtn.addEventListener("click", () => {
+      if (!activeGame) return;
+
+      const cfg = GAME_CONFIG[activeGame];
+      const topicLabel = topicSelect.value;
+      const url = cfg?.topics?.[topicLabel];
+
+      if (!url) {
+        alert("No matching file configured for this selection.");
+        return;
+      }
+
+      window.open(normalizeGameUrl(url), "_blank", "noopener,noreferrer");
+      closeModal();
+    });
+
+    closeModalBtn.addEventListener("click", closeModal);
+    cancelBtn.addEventListener("click", closeModal);
+
+    // Click outside modal closes it
+    modalBackdrop.addEventListener("click", (e) => {
+      if (e.target === modalBackdrop) closeModal();
+    });
+
+    // Esc closes modal
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !modalBackdrop.hidden) closeModal();
+    });
+  </script>
+</body>
+</html>
