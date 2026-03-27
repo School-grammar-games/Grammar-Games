@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Exam Trainer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+
+  :root {
+    --bg: #f0eee8;
+    --surface: #ffffff;
+    --surface2: #f7f5f0;
+    --border: #ddd9d0;
+    --border-strong: #b8b4aa;
+    --accent-talk: #e8420a;
+    --accent-picture: #d4860a;
+    --accent-dialogue: #1a7f4e;
+    --accent-blue: #1a5fd4;
+    --text: #1a1815;
+    --text-muted: #7a766e;
+    --radius: 14px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60vw 35vh at 10% 0%, rgba(26,95,212,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 50vw 40vh at 90% 100%, rgba(26,127,78,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    padding: 1rem 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow: hidden;
+  }
+
+  /* ── Mode tabs ────────────────────────────────── */
+  .mode-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+    flex-shrink: 0;
+  }
+
+  .mode-tab {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.65rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .mode-tab:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+
+  .mode-tab[data-mode="talk"].active   { border-color: var(--accent-talk);     background: #fff5f2; box-shadow: 0 2px 12px rgba(232,66,10,0.15); }
+  .mode-tab[data-mode="picture"].active { border-color: var(--accent-picture);  background: #fffbf0; box-shadow: 0 2px 12px rgba(212,134,10,0.15); }
+  .mode-tab[data-mode="dialogue"].active{ border-color: var(--accent-dialogue); background: #f0fff6; box-shadow: 0 2px 12px rgba(26,127,78,0.12); }
+
+  .mode-icon { font-size: 1.25rem; line-height: 1; }
+
+  .mode-tab h3 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .mode-tab[data-mode="talk"].active   h3 { color: var(--accent-talk); }
+  .mode-tab[data-mode="picture"].active h3 { color: var(--accent-picture); }
+  .mode-tab[data-mode="dialogue"].active h3 { color: var(--accent-dialogue); }
+
+  /* ── Main card ────────────────────────────────── */
+  .main-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.5rem 1rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    overflow: hidden;
+    min-height: 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  .main-card.picture-mode {
+    gap: 0.45rem;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+
+  .topic-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .topic-header-row.task-mode {
+    justify-content: center;
+    gap: 0.25rem;
+    min-height: 1.9rem;
+  }
+
+  .topic-header-row.task-mode .section-label {
+    display: none;
+  }
+
+  .section-note {
+    font-size: 0.86rem;
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 300;
+    text-align: right;
+    display: none;
+  }
+
+  .section-note.active {
+    display: block;
+  }
+
+  .topic-header-row.task-mode .section-note.active {
+    display: block;
+    width: 100%;
+    text-align: center;
+    color: var(--text);
+    font-style: normal;
+    font-weight: 700;
+    font-size: 0.98rem;
+    letter-spacing: 0.01em;
+    background: #fff7e6;
+    border: 1px solid #ead7ad;
+    border-radius: 10px;
+    padding: 0.5rem 0.9rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+
+  /* Topic area */
+  .topic-area {
+    position: relative;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 1.8rem 2.2rem;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: visible;
+    min-height: 0;
+  }
+
+  .topic-area.picture-layout {
+    padding: 0.3rem 0.55rem;
+    overflow: hidden;
+  }
+
+  .topic-inner {
+    overflow: visible;
+    width: 100%;
+    max-width: 780px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .topic-inner.picture-topic {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .topic-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+
+  .topic-title {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: clamp(1.5rem, 3.2vw, 2.2rem);
+    font-weight: 800;
+    line-height: 1.25;
+    overflow: visible;
+    padding: 0.08em 0 0.18em;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+
+  .topic-inner.talk-topic,
+  .topic-inner.dialogue-topic {
+    align-items: center;
+  }
+
+  .topic-inner.talk-topic .topic-title,
+  .topic-inner.dialogue-topic .topic-title {
+    text-align: center;
+    font-size: clamp(2rem, 4.8vw, 3.1rem);
+    margin-bottom: 0.5rem;
+  }
+
+  .topic-inner.dialogue-topic .topic-bullets {
+    width: fit-content;
+    max-width: min(100%, 900px);
+    margin: 0 auto;
+    align-self: center;
+  }
+
+  .topic-inner.dialogue-topic .topic-bullets li {
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .topic-inner.dialogue-topic .topic-bullets li::before {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .topic-subtitle {
+    font-size: clamp(0.82rem, 1.5vw, 0.92rem);
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 300;
+    margin-bottom: 0.9rem;
+  }
+
+  .topic-divider {
+    height: 1.5px;
+    background: var(--border);
+    border: none;
+    border-radius: 2px;
+    margin-bottom: 0.8rem;
+  }
+
+  .topic-bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .topic-bullets li {
+    font-size: clamp(0.92rem, 1.8vw, 1.05rem);
+    color: var(--text-muted);
+    font-weight: 400;
+    display: flex;
+    align-items: baseline;
+    gap: 0.65rem;
+    line-height: 1.45;
+  }
+
+  .topic-bullets li::before {
+    content: '–';
+    flex-shrink: 0;
+    color: var(--border-strong);
+    font-weight: 600;
+  }
+
+  .partner-dialogue {
+    width: 100%;
+    max-width: 980px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2.2rem;
+    margin-top: 0.1rem;
+  }
+
+  .partner-column {
+    min-width: 0;
+  }
+
+  .partner-heading {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: clamp(1.1rem, 2vw, 1.45rem);
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 0.95rem;
+  }
+
+  .partner-bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .partner-bullets li {
+    font-size: clamp(1rem, 2vw, 1.12rem);
+    color: var(--text);
+    font-weight: 700;
+    display: flex;
+    align-items: baseline;
+    gap: 0.65rem;
+    line-height: 1.45;
+  }
+
+  .partner-bullets li::before {
+    content: '–';
+    flex-shrink: 0;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .placeholder {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--border-strong);
+  }
+
+  .placeholder-icon  { font-size: 2rem; opacity: 0.45; }
+  .placeholder-text  { font-size: 1rem; font-style: italic; }
+  .placeholder-hint  { font-size: 0.75rem; font-family: 'DM Mono', monospace; letter-spacing: 0.06em; opacity: 0.7; }
+
+  /* ── Picture ──────────────────────────────────── */
+  .picture-display {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 10px;
+    margin: 0 auto;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+  }
+
+  .picture-placeholder {
+    width: 100%;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    border-radius: 8px;
+    border: 2px dashed var(--border);
+    color: var(--text-muted);
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .picture-topic-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .topic-number-inline {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.45rem;
+    opacity: 0.82;
+  }
+
+  .picture-number-inline {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.6rem;
+    margin-bottom: 0;
+    padding: 0.2rem 0.42rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.85);
+    border: 1px solid rgba(0,0,0,0.08);
+    backdrop-filter: blur(2px);
+  }
+
+  .selection-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: none;
+    align-items: stretch;
+    justify-content: center;
+    background: rgba(240, 238, 232, 0.92);
+    backdrop-filter: blur(4px);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  .selection-overlay.visible {
+    display: flex;
+  }
+
+  .selection-panel {
+    width: min(100%, 980px);
+    height: 100%;
+    max-height: 100%;
+    background: rgba(255,255,255,0.98);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.10);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .selection-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .selection-title {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .selection-close {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.18s;
+  }
+
+  .selection-close:hover {
+    color: var(--text);
+    border-color: var(--text);
+  }
+
+  .selection-grid {
+    padding: 0.95rem;
+    overflow: auto;
+    display: grid;
+    gap: 0.7rem;
+    align-content: start;
+  }
+
+  .selection-grid.talk-grid,
+  .selection-grid.dialogue-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .selection-grid.picture-grid {
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  }
+
+  .selection-item {
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 0.75rem 0.85rem;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.18s ease;
+    color: var(--text);
+    min-width: 0;
+  }
+
+  .selection-item:hover {
+    transform: translateY(-1px);
+    border-color: var(--border-strong);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    background: var(--surface);
+  }
+
+  .selection-item-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+  }
+
+  .selection-item-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--text);
+  }
+
+  .selection-item-subtitle {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 0.28rem;
+    line-height: 1.35;
+  }
+
+  .selection-item.picture-choice {
+    text-align: center;
+    padding: 0.7rem 0.5rem 0.75rem;
+  }
+
+  .selection-item.picture-choice .selection-item-title {
+    font-size: 0.92rem;
+  }
+
+  .selection-item-picture-figure {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .selection-item-picture-thumb {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #ece8e0;
+    display: block;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);
+  }
+
+  .selection-item.picture-choice .selection-item-number {
+    margin-bottom: 0;
+    text-align: center;
+  }
+
+  /* ── Controls row ─────────────────────────────── */
+  .controls-row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.88fr) minmax(360px, 1.24fr) minmax(0, 0.88fr);
+    align-items: stretch;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .controls-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    min-width: 0;
+    align-items: stretch;
+  }
+
+  .controls-left { justify-self: stretch; }
+  .controls-right { justify-self: stretch; }
+
+  .controls-group > * {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* ── TIMER – centrepiece ──────────────────────── */
+  .timer-block {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
+    gap: 0;
+    min-width: 0;
+    height: 100%;
+  }
+
+  .timer-card {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 0.5rem 1.1rem 0.5rem 0.8rem;
+    transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+    width: 100%;
+    min-height: 4rem;
+    height: 100%;
+    justify-content: center;
+  }
+
+  .timer-card.running {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(26,95,212,0.1), 0 2px 12px rgba(26,95,212,0.12);
+    background: #f0f5ff;
+  }
+
+  /* Warning: last 10 s – aggressive red highlight */
+  .timer-card.warning-state {
+    border-color: var(--accent-talk);
+    box-shadow: 0 0 0 4px rgba(232,66,10,0.15), 0 2px 16px rgba(232,66,10,0.2);
+    background: #fff2ee;
+    animation: shakeCard 0.4s ease;
+  }
+
+  .timer-card.done-state {
+    border-color: var(--accent-dialogue);
+    background: #edfff5;
+    box-shadow: 0 0 0 3px rgba(26,127,78,0.12);
+  }
+
+  @keyframes shakeCard {
+    0%,100% { transform: translateX(0); }
+    25%      { transform: translateX(-4px); }
+    75%      { transform: translateX(4px); }
+  }
+
+  .timer-display {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(1.65rem, 3vw, 2.2rem);
+    font-weight: 500;
+    min-width: 3.3ch;
+    color: var(--text);
+    transition: color 0.3s;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    text-align: center;
+  }
+
+  .timer-display.warning {
+    color: var(--accent-talk);
+    animation: timerPulse 0.5s infinite alternate;
+    font-weight: 700;
+  }
+
+  .timer-display.done { color: var(--accent-dialogue); }
+
+  @keyframes timerPulse {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0.65; transform: scale(0.97); }
+  }
+
+  .timer-sub {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .timer-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    border-radius: 50%;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    transition: all 0.18s;
+    line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    width: 1.8rem; height: 1.8rem;
+    background: var(--surface);
+  }
+
+  .timer-btn:hover { color: var(--text); border-color: var(--text); background: var(--surface2); }
+
+  .btn-time-setting {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    min-height: 4rem;
+    padding: 0.5rem 0.9rem;
+    color: white;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    background: linear-gradient(135deg, #6c8bb5, #88a5cb);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .btn-time-setting-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.38rem;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .btn-time-setting select {
+    width: 100%;
+    max-width: 10.4rem;
+    background: rgba(255,255,255,0.96);
+    border: 1.5px solid rgba(255,255,255,0.85);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 0.38rem 0.7rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    text-align: center;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+  }
+
+  .btn-time-setting select:focus {
+    outline: 2px solid rgba(255,255,255,0.9);
+    outline-offset: 1px;
+  }
+
+  /* ── Action buttons ───────────────────────────── */
+  .btn-randomize,
+  .btn-selection,
+  .btn-reset-view,
+  .btn-time-setting {
+    flex-shrink: 0;
+    border: none;
+    border-radius: 12px;
+    padding: 0 1.05rem;
+    min-height: 4rem;
+    color: white;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.22s;
+    letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  .btn-randomize,
+  .btn-selection,
+  .btn-reset-view,
+  .btn-time-setting {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .btn-reset-view {
+    background: linear-gradient(135deg, #6d6a63, #8b877f);
+  }
+
+  .btn-randomize:hover,
+  .btn-selection:hover,
+  .btn-reset-view:hover,
+  .btn-time-setting:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+  }
+
+  .btn-randomize:active,
+  .btn-selection:active,
+  .btn-reset-view:active,
+  .btn-time-setting:active {
+    transform: scale(0.97);
+  }
+
+  .btn-randomize[data-mode="talk"],
+  .btn-selection[data-mode="talk"]     { background: linear-gradient(135deg, #e8420a, #ff6b35); }
+  .btn-randomize[data-mode="picture"],
+  .btn-selection[data-mode="picture"]  { background: linear-gradient(135deg, #d4860a, #f5a623); }
+  .btn-randomize[data-mode="dialogue"],
+  .btn-selection[data-mode="dialogue"] { background: linear-gradient(135deg, #1a7f4e, #00b87a); }
+
+  .btn-time-setting {
+    padding: 0.5rem 0.9rem;
+    min-height: 4rem;
+  }
+
+
+  @media (max-width: 1100px) {
+    .controls-row {
+      grid-template-columns: 1fr;
+    }
+
+    .controls-group {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .timer-block {
+      order: -1;
+    }
+  }
+
+  /* ── Share section ────────────────────────────── */
+  .share-section {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.8rem 1.4rem;
+    flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+
+  .share-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .share-header h3 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .share-toggle-icon { color: var(--text-muted); transition: transform 0.3s; font-size: 0.7rem; }
+  .share-toggle-icon.open { transform: rotate(180deg); }
+
+  .share-content {
+    display: none;
+    grid-template-columns: auto 1fr;
+    gap: 1.2rem;
+    align-items: start;
+    margin-top: 1rem;
+  }
+
+  .share-content.visible { display: grid; }
+
+  #qr-canvas {
+    border-radius: 6px;
+    background: white;
+    display: block;
+    border: 1px solid var(--border);
+    width: 152px;
+    height: 152px;
+  }
+
+  .share-info { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .share-url-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent-blue);
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  .share-note {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .btn-copy {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .btn-copy:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+
+  .live-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #c0000a;
+    letter-spacing: 0.08em;
+    animation: livePulse 1.4s infinite;
+  }
+
+  @keyframes livePulse {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+  }
+
+  .share-mode-row {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .share-mode-btn {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.3rem 0.75rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.18s;
+  }
+
+  .share-mode-btn.active {
+    background: var(--text);
+    color: var(--surface);
+    border-color: var(--text);
+  }
+
+  /* Viewer overlay – covers full screen for student view */
+  #viewer-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    gap: 1.5rem;
+  }
+
+  #viewer-overlay.active { display: flex; }
+  #viewer-overlay.viewer-picture-mode { padding: 0.9rem 1rem 1rem; gap: 0; }
+
+  .viewer-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    color: #c0000a;
+    animation: livePulse 1.4s infinite;
+  }
+
+  .viewer-topic-area {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem 2.2rem;
+    width: 100%;
+    max-width: 1180px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .viewer-topic-area .topic-inner.picture-topic {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .viewer-picture-frame {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .viewer-topic-area .picture-display {
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  #viewer-overlay.viewer-picture-mode .viewer-topic-area {
+    width: min(96vw, 1700px);
+    max-width: none;
+    height: min(86vh, 1100px);
+    padding: 0.8rem;
+    border-radius: 18px;
+  }
+
+  #viewer-overlay.viewer-picture-mode .viewer-picture-frame {
+    width: 100%;
+    height: 100%;
+  }
+
+  #viewer-overlay.viewer-picture-mode .viewer-picture-frame .picture-display {
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .viewer-timer {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(3rem, 8vw, 5rem);
+    font-weight: 500;
+    text-align: center;
+    color: var(--text);
+    letter-spacing: 0.04em;
+    transition: color 0.3s;
+    padding: 0.5rem 2rem;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+  }
+
+  #viewer-overlay.viewer-picture-mode .viewer-timer {
+    position: fixed;
+    right: 1.35rem;
+    bottom: 1.35rem;
+    left: auto;
+    transform: none;
+    z-index: 120;
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    padding: 0.28rem 1.2rem;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(4px);
+    border: 2px solid rgba(0,0,0,0.12);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+  }
+
+  .viewer-timer.warning { color: var(--accent-talk); animation: timerPulse 0.5s infinite alternate; }
+  .viewer-timer.done    { color: var(--accent-dialogue); }
+
+  #viewer-overlay.viewer-picture-mode .viewer-badge {
+    position: fixed;
+    top: 0.9rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 121;
+  }
+
+  .viewer-waiting {
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* ── Animations ───────────────────────────────── */
+  @keyframes spinPop {
+    0%   { transform: rotate(0deg) scale(1); }
+    50%  { transform: rotate(180deg) scale(1.2); }
+    100% { transform: rotate(360deg) scale(1); }
+  }
+
+  .spin { animation: spinPop 0.4s ease; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .slide-in { animation: slideIn 0.3s ease; }
+
+  /* ── Responsive ───────────────────────────────── */
+  @media (max-width: 800px) {
+    .partner-dialogue {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .app { padding: 0.6rem; gap: 0.5rem; }
+    .mode-tab { padding: 0.55rem 0.5rem; }
+    .mode-icon { font-size: 1.1rem; }
+    .mode-tab h3 { font-size: 0.7rem; }
+    .controls-row { grid-template-columns: 1fr; gap: 0.5rem; }
+    .timer-block { width: 100%; min-width: 0; }
+    .timer-card { width: 100%; min-height: 3.4rem; }
+    .btn-randomize, .btn-selection, .btn-reset-view, .btn-time-setting { width: 100%; justify-content: center; min-height: 2.8rem; }
+    .share-content { grid-template-columns: 1fr; }
+    .timer-display { font-size: 2rem; }
+    .selection-grid.talk-grid,
+    .selection-grid.dialogue-grid,
+    .selection-grid.picture-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-height: 600px) {
+    .app { gap: 0.4rem; padding: 0.5rem 1rem; }
+    .main-card { padding: 0.7rem 1.1rem; gap: 0.5rem; }
+    .topic-area { padding: 0.7rem 1.1rem; }
+    .topic-area.picture-layout { padding: 0.45rem 0.7rem; }
+    .topic-header-row { align-items: flex-start; }
+    .section-note { text-align: left; font-size: 0.8rem; }
+    .share-section { padding: 0.55rem 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Mode Tabs -->
+  <div class="mode-tabs">
+    <div class="mode-tab active" data-mode="talk" onclick="setMode('talk')">
+      <span class="mode-icon">🎤</span>
+      <h3>One Minute Talk</h3>
+    </div>
+    <div class="mode-tab" data-mode="picture" onclick="setMode('picture')">
+      <span class="mode-icon">🖼️</span>
+      <h3>Picture Description</h3>
+    </div>
+    <div class="mode-tab" data-mode="dialogue" onclick="setMode('dialogue')">
+      <span class="mode-icon">💬</span>
+      <h3>Dialogue</h3>
+    </div>
+  </div>
+
+  <!-- Main Card -->
+  <div class="main-card">
+    <div class="topic-header-row">
+      <div class="section-label" id="topic-label">Current Topic</div>
+      <div class="section-note" id="topic-note"></div>
+    </div>
+
+    <!-- Topic Area -->
+    <div class="topic-area" id="topic-area">
+      <div class="placeholder">
+        <span class="placeholder-icon">🎲</span>
+        <span class="placeholder-text">No topic selected yet</span>
+        <span class="placeholder-hint">Press &quot;Randomize&quot; or &quot;Selection&quot; to get started</span>
+      </div>
+
+      <div class="selection-overlay" id="selection-overlay" aria-hidden="true">
+        <div class="selection-panel">
+          <div class="selection-header">
+            <div class="selection-title" id="selection-title">Choose an item</div>
+            <button class="selection-close" type="button" onclick="hideSelectionOverlay()" aria-label="Close selection">✕</button>
+          </div>
+          <div class="selection-grid" id="selection-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-row">
+      <div class="controls-group controls-left">
+        <button class="btn-randomize" data-mode="talk" id="rand-btn" onclick="randomize()">
+          <span id="dice-icon">🎲</span> Randomize
+        </button>
+
+        <button class="btn-selection" data-mode="talk" id="selection-btn" onclick="openSelectionOverlay()">
+          <span>☰</span> Selection
+        </button>
+      </div>
+
+      <div class="timer-block">
+        <div class="timer-card" id="timer-group">
+          <button class="timer-btn" onclick="toggleTimer()" title="Start/Pause" id="play-btn">▶</button>
+          <span class="timer-display" id="timer-display">01:00</span>
+          <button class="timer-btn" onclick="resetTimer()" title="Reset timer">↺</button>
+        </div>
+      </div>
+
+      <div class="controls-group controls-right">
+        <label class="btn-time-setting" for="timer-preset">
+          <span class="btn-time-setting-label"><span>⏱</span> Zeiteinstellung</span>
+          <select id="timer-preset" onchange="setTimerPreset(this.value)">
+            <option value="30">0:30</option>
+            <option value="60" selected>1:00</option>
+            <option value="90">1:30</option>
+            <option value="120">2:00</option>
+            <option value="150">2:30</option>
+            <option value="180">3:00</option>
+            <option value="210">3:30</option>
+            <option value="240">4:00</option>
+            <option value="270">4:30</option>
+            <option value="300">5:00</option>
+            <option value="330">5:30</option>
+            <option value="360">6:00</option>
+            <option value="390">6:30</option>
+            <option value="420">7:00</option>
+            <option value="450">7:30</option>
+            <option value="480">8:00</option>
+          </select>
+        </label>
+
+        <button class="btn-reset-view" id="reset-view-btn" onclick="resetCurrentView()">
+          <span>↺</span> Reset
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share / QR Section -->
+  <div class="share-section">
+    <div class="share-header" onclick="toggleShare()">
+      <h3 id="share-header-title">📡 Live Share &amp; QR Code</h3>
+      <div style="display:flex;align-items:center;gap:0.6rem">
+        <span class="live-badge" id="live-badge" style="display:none">● LIVE</span>
+        <span class="share-toggle-icon" id="share-chevron">▼</span>
+      </div>
+    </div>
+    <div class="share-content" id="share-content">
+
+      <!-- Left: QR -->
+      <canvas id="qr-canvas" width="140" height="140"></canvas>
+
+      <!-- Right: info + controls -->
+      <div class="share-info">
+
+        <!-- Live sync panel -->
+        <div id="panel-live" style="display:flex;flex-direction:column;gap:0.5rem">
+          <div class="share-url-box" id="live-url-display">— Session wird gestartet …</div>
+          <p class="share-note" id="live-note">Schüler öffnen diesen Link und sehen <strong>in Echtzeit</strong> dasselbe Thema und den laufenden Timer.<br>Erfordert Internetverbindung (Firebase). Falls „Verbinde …“ länger als wenige Sekunden stehen bleibt, Seite mit <strong>Strg+F5</strong> neu laden oder Browser-Schutz/VPN testweise deaktivieren.</p>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+            <button class="btn-copy" id="btn-start-session" onclick="startSession()">▶ Session starten</button>
+            <button class="btn-copy" id="btn-copy-live" onclick="copyLiveLink()" style="display:none">📋 Link kopieren</button>
+            <button class="btn-copy" id="btn-stop-session" onclick="stopSession()" style="display:none;border-color:#e8420a;color:#e8420a">■ Stoppen</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Viewer overlay (shown to students in live mode) -->
+<div id="viewer-overlay">
+  <div class="viewer-badge">● LIVE SESSION</div>
+  <div class="viewer-topic-area" id="viewer-topic-area">
+    <div class="viewer-waiting">
+      <span style="font-size:2rem">⏳</span>
+      <span>Warte auf den Lehrer …</span>
+    </div>
+  </div>
+  <div class="viewer-timer" id="viewer-timer">—</div>
+</div>
+<!-- Firebase SDK (module) -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getDatabase, ref, set, onValue, remove, get }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+// ─── FIREBASE CONFIG ──────────────────────────────────────────────────────────
+// Uses a shared public demo database. Replace with your own Firebase project
+// for production (create one free at console.firebase.google.com).
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAX8bo0pwfVKQkSTvVb-4XWZyCHzLW05LA",
+  authDomain: "exam-trainer-f80e9.firebaseapp.com",
+  databaseURL: "https://exam-trainer-f80e9-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "exam-trainer-f80e9",
+  storageBucket: "exam-trainer-f80e9.firebasestorage.app",
+  messagingSenderId: "1057077260835",
+  appId: "1:1057077260835:web:381c58e4543b0e6af7b796"
+};
+
+let db = null;
+
+function initFB() {
+  if (db) return true;
+  try {
+    const app = initializeApp(FIREBASE_CONFIG);
+    db = getDatabase(app);
+    return true;
+  } catch(e) {
+    console.error('Firebase init failed:', e);
+    return false;
+  }
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function genId() { return Math.random().toString(36).slice(2,8).toUpperCase(); }
+
+function fmt(s) {
+  return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+}
+
+// ─── HOST API (called from main script via window.*) ──────────────────────────
+window._fb_startSession = async function() {
+  if (!initFB()) { window._fb_error('Firebase konnte nicht initialisiert werden.'); return false; }
+
+  const id = genId();
+  const sessionRef = ref(db, `sessions/${id}`);
+  window._activeSessionId = id;
+  window._sessionRef = sessionRef;
+
+  try {
+    await window._fb_push();
+
+    const confirmSnap = await get(sessionRef);
+    if (!confirmSnap.exists()) {
+      throw new Error('Die Session konnte nach dem Schreiben nicht bestätigt werden.');
+    }
+
+    window._fb_onSessionStarted(id);
+    return true;
+  } catch(e) {
+    console.error('FB startSession failed:', e);
+    try { await remove(sessionRef); } catch(_) {}
+    window._sessionRef = null;
+    window._activeSessionId = null;
+    window._fb_error(e && e.message ? e.message : 'Live-Sync konnte nicht gestartet werden.');
+    return false;
+  }
+}
+
+window._fb_push = async function() {
+  if (!window._sessionRef) return false;
+  if (typeof window._syncLiveState === 'function') window._syncLiveState();
+  const s = {
+    mode: window.currentMode,
+    topic: window.currentTopic ? JSON.stringify(window.currentTopic) : null,
+    timerTotal: window.timerTotal,
+    timerSeconds: window.timerSeconds,
+    timerRunning: window.timerRunning,
+    ts: Date.now()
+  };
+  try {
+    await set(window._sessionRef, s);
+    return true;
+  } catch(e) {
+    console.error('FB push failed:', e);
+    window._fb_error(e && e.message ? e.message : 'Live-Sync konnte nicht aktualisiert werden.');
+    throw e;
+  }
+}
+
+window._fb_stopSession = async function() {
+  if (window._sessionRef) {
+    try { await remove(window._sessionRef); } catch(e) { console.error('FB stopSession failed:', e); }
+  }
+  window._sessionRef = null;
+  window._activeSessionId = null;
+}
+
+// ─── VIEWER (student) ─────────────────────────────────────────────────────────
+const _p = new URLSearchParams(location.search);
+if (_p.get('viewer') === '1' && _p.has('session')) {
+  const sid = _p.get('session');
+  document.addEventListener('DOMContentLoaded', () => {
+    const topicArea = document.getElementById('viewer-topic-area');
+    const timerEl   = document.getElementById('viewer-timer');
+    const sessionPath = `sessions/${sid}`;
+    const sessionRestUrl = `${FIREBASE_CONFIG.databaseURL.replace(/\/$/, '')}/${sessionPath}.json`;
+
+    document.getElementById('viewer-overlay').classList.add('active');
+
+    let vTimer = null;
+    let hasSeenLiveData = false;
+    let hasReceivedAnyResponse = false;
+    let lastRenderedSignature = null;
+    let restPoll = null;
+
+    function resetViewerTimer() {
+      clearInterval(vTimer);
+      timerEl.textContent = '—';
+      timerEl.className = 'viewer-timer';
+    }
+
+    function renderViewerState(data) {
+      const signature = JSON.stringify(data ?? null);
+      if (signature === lastRenderedSignature) return;
+      lastRenderedSignature = signature;
+
+      clearInterval(vTimer);
+
+      if (!data) {
+        document.getElementById('viewer-overlay').classList.remove('viewer-picture-mode');
+        topicArea.innerHTML = hasSeenLiveData
+          ? `<div class="viewer-waiting"><span style="font-size:2rem">🔚</span><span>Session beendet</span></div>`
+          : `<div class="viewer-waiting"><span style="font-size:2rem">⚠️</span><span>Session nicht gefunden. Prüfe, ob der Lehrer die Session wirklich gestartet hat.</span></div>`;
+        resetViewerTimer();
+        return;
+      }
+
+      hasSeenLiveData = true;
+
+      let topic = null;
+      try {
+        topic = data.topic ? JSON.parse(data.topic) : null;
+      } catch (e) {
+        console.error('Viewer topic parse failed:', e);
+        topic = null;
+      }
+
+      if (!topic) {
+        document.getElementById('viewer-overlay').classList.remove('viewer-picture-mode');
+        topicArea.innerHTML = `<div class="viewer-waiting"><span style="font-size:2rem">⏳</span><span>Warte auf das nächste Thema …</span></div>`;
+      } else if (topic.type === 'talk') {
+        document.getElementById('viewer-overlay').classList.remove('viewer-picture-mode');
+        topicArea.innerHTML = `<div class="topic-inner talk-topic">
+          <div class="topic-title">${window.TALK_TOPICS[topic.idx] ?? ''}</div>
+        </div>`;
+      } else if (topic.type === 'picture') {
+        document.getElementById('viewer-overlay').classList.add('viewer-picture-mode');
+        topicArea.innerHTML = `<div class="topic-inner picture-topic">
+          <div class="viewer-picture-frame">
+            <img src="Bilder/Bild${topic.idx}.jpg" class="picture-display" onerror="this.style.display='none'" alt="Bild ${topic.idx}">
+          </div>
+        </div>`;
+      } else if (topic.type === 'dialogue') {
+        document.getElementById('viewer-overlay').classList.remove('viewer-picture-mode');
+        const t = window.DIALOGUE_TOPICS[topic.idx];
+        topicArea.innerHTML = `<div class="topic-inner dialogue-topic">
+          <div class="topic-title">${t?.title ?? ''}</div>
+          <hr class="topic-divider">
+          ${renderDialogueTaskHTML(t)}
+        </div>`;
+      }
+
+      let secs = data.timerSeconds ?? data.timerTotal ?? 60;
+      if (data.timerRunning) secs = Math.max(0, secs - Math.floor((Date.now() - data.ts) / 1000));
+
+      function tickV() {
+        timerEl.textContent = fmt(secs);
+        timerEl.className = 'viewer-timer';
+        if (secs <= 10 && secs > 0) timerEl.classList.add('warning');
+        else if (secs === 0) timerEl.classList.add('done');
+      }
+
+      tickV();
+      if (data.timerRunning && secs > 0) {
+        vTimer = setInterval(() => {
+          secs = Math.max(0, secs - 1);
+          tickV();
+          if (secs === 0) clearInterval(vTimer);
+        }, 1000);
+      }
+    }
+
+    async function fetchSessionViaRest() {
+      try {
+        const res = await fetch(`${sessionRestUrl}?_=${Date.now()}`, {
+          method: 'GET',
+          cache: 'no-store',
+          mode: 'cors'
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        hasReceivedAnyResponse = true;
+        renderViewerState(data);
+      } catch (err) {
+        console.error('Viewer REST polling failed:', err);
+      }
+    }
+
+    topicArea.innerHTML = `<div class="viewer-waiting"><span style="font-size:2rem">⏳</span><span>Verbinde zur Live-Session …</span></div>`;
+
+    const slowConnectionTimer = setTimeout(() => {
+      if (!hasReceivedAnyResponse) {
+        topicArea.innerHTML = `<div class="viewer-waiting"><span style="font-size:2rem">⏳</span><span>Verbindung dauert länger als erwartet …</span><span style="font-size:0.85rem">Es wird automatisch weiter versucht.</span></div>`;
+      }
+    }, 4000);
+
+    const softErrorTimer = setTimeout(() => {
+      if (!hasReceivedAnyResponse) {
+        topicArea.innerHTML = `<div class="viewer-waiting"><span style="font-size:2rem">⚠️</span><span>Direkte Live-Verbindung ist langsam.</span><span style="font-size:0.85rem">Die Seite versucht weiter, die Session automatisch zu laden.</span></div>`;
+        resetViewerTimer();
+      }
+    }, 9000);
+
+    // REST polling works as fallback even when the realtime SDK hangs in some browsers/networks.
+    fetchSessionViaRest();
+    restPoll = setInterval(fetchSessionViaRest, 2000);
+
+    // Realtime listener stays active for fast updates when the SDK connection succeeds.
+    if (initFB()) {
+      const sessionRef = ref(db, sessionPath);
+      onValue(sessionRef, snap => {
+        hasReceivedAnyResponse = true;
+        clearTimeout(slowConnectionTimer);
+        clearTimeout(softErrorTimer);
+        renderViewerState(snap.val());
+      }, err => {
+        console.error('Viewer live listener failed:', err);
+      });
+    } else {
+      console.error('Viewer Firebase SDK init failed; continuing with REST polling only.');
+    }
+  });
+}
+
+window._fb_ready = true;
+</script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+
+const TALK_TOPICS = [
+  "Holidays",
+  "Books & Films",
+  "Animals",
+  "Clubs and Activities at School",
+  "Friendship",
+  "Adventures",
+  "Sports",
+  "Free Time Activities",
+  "My Hometown"
+];
+
+// Pictures: expects Bilder/Bild1.jpg, Bild2.jpg, etc.
+// Supports Bild1 – Bild38 in the folder Bilder.
+const PICTURE_COUNT = 38;
+
+const DIALOGUE_TOPICS = [
+  { n: 1, title: "Planning a visit to a concert", bullets: ["date / time", "ticket prices & how to buy tickets", "sit / stand", "plan where to meet before and how to get there"] },
+  { n: 2, title: "Planning a dinner", bullets: ["day / time", "special food needs (vegan / vegetarian) / preferences", "what to eat (main course / dessert)", "shopping list"] },
+  { n: 3, title: "Planning Saturday night", bullets: ["fun activity", "who can join", "time / place", "transport options", "costs"] },
+  { n: 4, title: "Planning a holiday", bullets: ["where / when", "flight or train tickets", "place to stay", "activities", "prices"] },
+  { n: 5, title: "Planning a restaurant visit", bullets: ["who", "type of food", "special needs like vegetarian options", "time / place to meet and how you'll get there"] },
+  { n: 6, title: "Planning a summer weekend", bullets: ["place", "weather", "who can come", "plan food or snacks", "transport"] },
+  { n: 7, title: "Planning a winter weekend", bullets: ["weather", "indoor and outdoor activities", "clothes", "food"] },
+  { n: 8, title: "Planning a surprise party for a friend", bullets: ["date / time", "place", "people to invite", "decorations", "food and drinks"] },
+  { n: 9, title: "Planning a sleepover", bullets: ["who / how many friends", "whose house", "activities", "snacks"] },
+  { n: 10, title: "Choosing a costume for carnival", bullets: ["funny, traditional, or creative costume?", "group costume?", "make it yourself or buy it", "accessories or special makeup"] },
+  { n: 11, title: "Planning trick-or-treating on Halloween", bullets: ["costume", "where to go", "who", "time"] },
+  { n: 12, title: "Choosing a school club", bullets: ["your interests", "discuss offers at your school", "who is already in the club", "is time a problem?", "parents"] },
+  { n: 13, title: "Social media: A posted a photo of both of you", bullets: ["A: why he/she posted it · feelings · solution", "B: describe the picture · feelings · talk politely about your concerns"] },
+  { n: 14, title: "Planning a presentation on your favourite animal", bullets: ["which animal", "facts: where it lives and what it eats", "poster / PowerPoint / pictures", "who speaks / who says what"] },
+  { n: 15, title: "Talking about future jobs", bullets: ["ideas", "describe a typical workday", "skills / favourite subjects at school", "training you need"] },
+  { n: 16, title: "Planning to welcome a new classmate", bullets: ["what to do on his/her first day", "show school", "explain rules", "activities to help them get to know classmates"] },
+  { n: 17, title: "Giving advice: fitting in at school", bullets: ["change style or hobbies to be accepted?", "how to be cooler", "talk about the importance of being yourself"] },
+  { n: 18, title: "Taking care of a neighbour's dog", bullets: ["dog's daily routine", "where will the dog sleep?", "food / water", "walks", "emergencies"] },
+  { n: 19, title: "Lending your mobile phone to a friend", bullets: ["discuss how the phone broke and why they need yours", "worries", "rules", "agree on when you get your phone back and in what condition"] },
+  { n: 20, title: "Talk about ideal places to live", bullets: ["area: city, countryside, near the sea, near the mountains…", "compare to where you live now", "imagine the lifestyle you'd have in your dream location"] }
+];
+
+// Expose topic pools for the live-viewer script.
+window.TALK_TOPICS = TALK_TOPICS;
+window.DIALOGUE_TOPICS = DIALOGUE_TOPICS;
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+
+let currentMode = 'talk';
+let lastTalkIndex = -1;
+let lastPicIndex = -1;
+let lastDialogueIndex = -1;
+let currentTopic = null; // for URL encoding
+
+let timerSeconds = 60;
+let timerTotal = 60;
+let timerRunning = false;
+let timerInterval = null;
+
+function syncLiveState() {
+  window.currentMode = currentMode;
+  window.currentTopic = currentTopic;
+  window.timerSeconds = timerSeconds;
+  window.timerTotal = timerTotal;
+  window.timerRunning = timerRunning;
+}
+window._syncLiveState = syncLiveState;
+syncLiveState();
+
+// ─── MODE SWITCHING ───────────────────────────────────────────────────────────
+
+function setMode(mode) {
+  currentMode = mode;
+  syncLiveState();
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.mode-tab[data-mode="${mode}"]`).classList.add('active');
+  document.getElementById('rand-btn').dataset.mode = mode;
+  document.getElementById('selection-btn').dataset.mode = mode;
+
+  const labels = { talk: '', picture: '', dialogue: '' };
+  const notes = {
+    talk: 'Task: Speak for one minute about the topic.',
+    picture: 'Task: Describe the picture and think of a story that matches it.',
+    dialogue: 'Task: Discuss the situation with your partner and cover all points below.'
+  };
+  document.getElementById('topic-label').textContent = labels[mode];
+  const topicNote = document.getElementById('topic-note');
+  topicNote.textContent = notes[mode];
+  topicNote.classList.toggle('active', !!notes[mode]);
+
+  const headerRow = document.querySelector('.topic-header-row');
+  const mainCard = document.querySelector('.main-card');
+  headerRow.classList.toggle('task-mode', !!notes[mode]);
+  mainCard.classList.toggle('picture-mode', mode === 'picture');
+
+  resetTimer();
+  clearTopicArea();
+  updateShareURL();
+  maybePush();
+}
+
+function getPlaceholderConfig(mode = currentMode) {
+  const config = {
+    talk: { icon: '🎲', text: 'No topic selected yet' },
+    picture: { icon: '🖼️', text: 'No picture selected yet' },
+    dialogue: { icon: '💬', text: 'No dialogue selected yet' }
+  };
+  return config[mode] || config.talk;
+}
+
+function getPlaceholderHTML(mode = currentMode) {
+  const cfg = getPlaceholderConfig(mode);
+  return `<div class="placeholder">
+    <span class="placeholder-icon">${cfg.icon}</span>
+    <span class="placeholder-text">${cfg.text}</span>
+    <span class="placeholder-hint">Press "Randomize" or "Selection" to get started</span>
+  </div>`;
+}
+
+function clearTopicArea() {
+  const area = document.getElementById('topic-area');
+  area.classList.remove('picture-layout');
+  currentTopic = null;
+  syncLiveState();
+  hideSelectionOverlay();
+  area.querySelectorAll(':scope > :not(#selection-overlay)').forEach(node => node.remove());
+  area.insertAdjacentHTML('afterbegin', getPlaceholderHTML());
+}
+
+function renderTopicNumber(n) {
+  return String(n).padStart(2, '0');
+}
+
+function renderTalkTopicHTML(idx) {
+  return `
+    <div class="topic-inner talk-topic">
+      <div class="topic-number topic-number-inline">#${renderTopicNumber(idx + 1)}</div>
+      <div class="topic-title">${TALK_TOPICS[idx]}</div>
+    </div>
+  `;
+}
+
+function renderPictureTopicHTML(picNum) {
+  return `
+    <div class="topic-inner picture-topic">
+      <div class="picture-topic-wrap">
+        <div class="topic-number topic-number-inline picture-number-inline">#${renderTopicNumber(picNum)}</div>
+        <img src="Bilder/Bild${picNum}.jpg"
+             class="picture-display"
+             onerror="this.parentElement.innerHTML='<div class=\\'picture-placeholder\\'><span style=\\'font-size:2.5rem\\'>🖼️</span><span>Bild${picNum}.jpg not found<br><small style=\\'font-size:0.75rem\\'>Place images in the <code>Bilder/</code> folder</small></span></div>'"
+             alt="Bild ${picNum}">
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderDialogueTaskHTML(topic) {
+  const bullets = Array.isArray(topic?.bullets) ? topic.bullets : [];
+  const partnerLines = bullets
+    .map(line => String(line).trim())
+    .filter(Boolean)
+    .map(line => {
+      const match = line.match(/^([AB]):\s*(.+)$/i);
+      if (!match) return null;
+      return {
+        partner: match[1].toUpperCase(),
+        parts: match[2].split(/\s*[·•]\s*/).map(part => part.trim()).filter(Boolean)
+      };
+    })
+    .filter(Boolean);
+
+  if (partnerLines.length === 2 && partnerLines.some(item => item.partner === 'A') && partnerLines.some(item => item.partner === 'B')) {
+    const a = partnerLines.find(item => item.partner === 'A');
+    const b = partnerLines.find(item => item.partner === 'B');
+    const renderPartner = (label, items) => `
+      <div class="partner-column">
+        <div class="partner-heading">Partner ${label}</div>
+        <ul class="partner-bullets">
+          ${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+    return `<div class="partner-dialogue">${renderPartner('A', a.parts)}${renderPartner('B', b.parts)}</div>`;
+  }
+
+  return `
+    <ul class="topic-bullets">
+      ${bullets.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+    </ul>
+  `;
+}
+
+function renderDialogueTopicHTML(idx) {
+  const t = DIALOGUE_TOPICS[idx];
+  return `
+    <div class="topic-inner dialogue-topic">
+      <div class="topic-number topic-number-inline">#${renderTopicNumber(idx + 1)}</div>
+      <div class="topic-title">${t.title}</div>
+      <hr class="topic-divider">
+      ${renderDialogueTaskHTML(t)}
+    </div>
+  `;
+}
+
+function setAreaContent(html, kind) {
+  const area = document.getElementById('topic-area');
+  applyTopicLayout(kind);
+  hideSelectionOverlay();
+  area.querySelectorAll(':scope > :not(#selection-overlay)').forEach(node => node.remove());
+  area.insertAdjacentHTML('afterbegin', html);
+  area.classList.remove('slide-in');
+  void area.offsetWidth;
+  area.classList.add('slide-in');
+}
+
+function resetCurrentView() {
+  hideSelectionOverlay();
+  resetTimer();
+  clearTopicArea();
+  updateShareURL();
+  maybePush();
+}
+
+function applyTopicLayout(kind) {
+  const area = document.getElementById('topic-area');
+  area.classList.toggle('picture-layout', kind === 'picture');
+}
+
+// ─── RANDOMIZER ──────────────────────────────────────────────────────────────
+
+function randomize() {
+  resetTimer();
+  const dice = document.getElementById('dice-icon');
+  dice.classList.remove('spin');
+  void dice.offsetWidth;
+  dice.classList.add('spin');
+
+  if (currentMode === 'talk') randomizeTalk();
+  else if (currentMode === 'picture') randomizePicture();
+  else randomizeDialogue();
+
+  updateShareURL();
+  maybePush();
+}
+
+function pickRandom(arr, lastIndex) {
+  if (arr.length === 1) return 0;
+  let idx;
+  do { idx = Math.floor(Math.random() * arr.length); } while (idx === lastIndex);
+  return idx;
+}
+
+function setTalkTopic(idx) {
+  if (idx < 0 || idx >= TALK_TOPICS.length) return;
+  lastTalkIndex = idx;
+  currentTopic = { type: 'talk', idx };
+  syncLiveState();
+  setAreaContent(renderTalkTopicHTML(idx), 'talk');
+}
+
+function setPictureTopic(picNum) {
+  if (picNum < 1 || picNum > PICTURE_COUNT) return;
+  lastPicIndex = picNum;
+  currentTopic = { type: 'picture', idx: picNum };
+  syncLiveState();
+  setAreaContent(renderPictureTopicHTML(picNum), 'picture');
+}
+
+function setDialogueTopic(idx) {
+  if (idx < 0 || idx >= DIALOGUE_TOPICS.length) return;
+  lastDialogueIndex = idx;
+  currentTopic = { type: 'dialogue', idx };
+  syncLiveState();
+  setAreaContent(renderDialogueTopicHTML(idx), 'dialogue');
+}
+
+function randomizeTalk() {
+  const idx = pickRandom(TALK_TOPICS, lastTalkIndex);
+  setTalkTopic(idx);
+}
+
+function randomizePicture() {
+  const indices = Array.from({ length: PICTURE_COUNT }, (_, i) => i + 1);
+  const idx = pickRandom(indices, lastPicIndex - 1);
+  const picNum = idx + 1;
+  setPictureTopic(picNum);
+}
+
+function randomizeDialogue() {
+  const idx = pickRandom(DIALOGUE_TOPICS, lastDialogueIndex);
+  setDialogueTopic(idx);
+}
+
+function getSelectionItems() {
+  if (currentMode === 'talk') {
+    return {
+      title: 'Select a talk topic',
+      gridClass: 'talk-grid',
+      items: TALK_TOPICS.map((title, idx) => ({
+        number: renderTopicNumber(idx + 1),
+        title,
+        action: `selectItem('talk', ${idx})`
+      }))
+    };
+  }
+
+  if (currentMode === 'picture') {
+    return {
+      title: 'Select a picture',
+      gridClass: 'picture-grid',
+      items: Array.from({ length: PICTURE_COUNT }, (_, i) => ({
+        number: renderTopicNumber(i + 1),
+        title: '',
+        subtitle: '',
+        media: `<div class="selection-item-picture-figure"><img src="Bilder/Bild${i + 1}.jpg" alt="Picture ${i + 1}" class="selection-item-picture-thumb" loading="lazy" onerror="this.style.display='none'; this.parentElement.insertAdjacentHTML('afterbegin', '<div class=&quot;picture-placeholder&quot; style=&quot;min-height:96px;font-size:0.82rem;padding:0.8rem;&quot;>Bild${i + 1}.jpg not found</div>');"><div class="selection-item-number">#${renderTopicNumber(i + 1)}</div></div>`,
+        extraClass: 'picture-choice',
+        action: `selectItem('picture', ${i + 1})`
+      }))
+    };
+  }
+
+  return {
+    title: 'Select a dialogue task',
+    gridClass: 'dialogue-grid',
+    items: DIALOGUE_TOPICS.map((topic, idx) => ({
+      number: renderTopicNumber(idx + 1),
+      title: topic.title,
+      action: `selectItem('dialogue', ${idx})`
+    }))
+  };
+}
+
+function openSelectionOverlay() {
+  const overlay = document.getElementById('selection-overlay');
+  const titleEl = document.getElementById('selection-title');
+  const grid = document.getElementById('selection-grid');
+  const config = getSelectionItems();
+
+  titleEl.textContent = config.title;
+  grid.className = `selection-grid ${config.gridClass}`;
+  grid.innerHTML = config.items.map(item => `
+    <button type="button" class="selection-item ${item.extraClass || ''}" onclick="${item.action}">
+      ${item.media ? item.media : `<div class="selection-item-number">#${item.number}</div>`}
+      ${item.title ? `<div class="selection-item-title">${item.title}</div>` : ''}
+      ${item.subtitle ? `<div class="selection-item-subtitle">${item.subtitle}</div>` : ''}
+    </button>
+  `).join('');
+
+  overlay.classList.add('visible');
+  overlay.setAttribute('aria-hidden', 'false');
+}
+
+function hideSelectionOverlay() {
+  const overlay = document.getElementById('selection-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('visible');
+  overlay.setAttribute('aria-hidden', 'true');
+}
+
+function selectItem(kind, value) {
+  resetTimer();
+
+  if (kind === 'talk') setTalkTopic(value);
+  if (kind === 'picture') setPictureTopic(value);
+  if (kind === 'dialogue') setDialogueTopic(value);
+
+  updateShareURL();
+  maybePush();
+}
+
+// ─── TIMER ───────────────────────────────────────────────────────────────────
+
+
+function formatTime(s) {
+  const m = Math.floor(s / 60).toString().padStart(2, '0');
+  const sec = (s % 60).toString().padStart(2, '0');
+  return `${m}:${sec}`;
+}
+
+function updateTimerDisplay() {
+  syncLiveState();
+  const el = document.getElementById('timer-display');
+  const grp = document.getElementById('timer-group');
+  el.textContent = formatTime(timerSeconds);
+  el.className = 'timer-display';
+  grp.className = 'timer-card';
+  if (timerSeconds <= 10 && timerSeconds > 0) {
+    el.classList.add('warning');
+    grp.classList.add('warning-state');
+  } else if (timerSeconds === 0) {
+    el.classList.add('done');
+    grp.classList.add('done-state');
+  } else if (timerRunning) {
+    grp.classList.add('running');
+  }
+}
+
+function toggleTimer() {
+  if (timerSeconds === 0) { resetTimer(); return; }
+  timerRunning = !timerRunning;
+  document.getElementById('play-btn').textContent = timerRunning ? '⏸' : '▶';
+  if (timerRunning) {
+    document.getElementById('timer-group').classList.add('running');
+    maybePush();
+    timerInterval = setInterval(() => {
+      if (timerSeconds > 0) {
+        timerSeconds--;
+        updateTimerDisplay();
+      } else {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        document.getElementById('play-btn').textContent = '▶';
+        updateTimerDisplay();
+      }
+    }, 1000);
+  } else {
+    clearInterval(timerInterval);
+    updateTimerDisplay();
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerInterval = null;
+  timerSeconds = timerTotal;
+  const preset = document.getElementById('timer-preset');
+  if (preset && String(preset.value) !== String(timerTotal)) preset.value = String(timerTotal);
+  document.getElementById('play-btn').textContent = '▶';
+  updateTimerDisplay();
+  maybePush();
+  syncLiveState();
+}
+
+function setTimerPreset(val) {
+  timerTotal = parseInt(val, 10) || 60;
+  const preset = document.getElementById('timer-preset');
+  if (preset) preset.value = String(timerTotal);
+  resetTimer();
+}
+
+// ─── SHARE & LIVE SYNC ────────────────────────────────────────────────────────
+
+let shareVisible = false;
+
+function toggleShare() {
+  shareVisible = !shareVisible;
+  document.getElementById('share-content').classList.toggle('visible', shareVisible);
+  document.getElementById('share-chevron').classList.toggle('open', shareVisible);
+}
+
+// Called by Firebase module once session is live
+window._fb_onSessionStarted = function(id) {
+  document.getElementById('btn-start-session').style.display = 'none';
+  document.getElementById('btn-copy-live').style.display    = 'inline-flex';
+  document.getElementById('btn-stop-session').style.display = 'inline-flex';
+  document.getElementById('live-badge').style.display       = 'inline';
+  const url = `${location.href.split('?')[0]}?session=${id}&viewer=1`;
+  document.getElementById('live-url-display').textContent   = url;
+  drawQR(url);
+};
+
+window._fb_error = function(message) {
+  const msg = message || 'Firebase-Verbindung fehlgeschlagen.';
+  document.getElementById('live-url-display').textContent =
+    `⚠️ ${msg}`;
+  document.getElementById('btn-start-session').style.display = 'inline-flex';
+  document.getElementById('btn-copy-live').style.display    = 'none';
+  document.getElementById('btn-stop-session').style.display = 'none';
+  document.getElementById('live-badge').style.display       = 'none';
+};
+
+async function startSession() {
+  const liveBox = document.getElementById('live-url-display');
+  liveBox.textContent = '⏳ Verbinde …';
+
+  if (typeof window._fb_startSession !== 'function') {
+    liveBox.textContent = '⚠️ Firebase-Modul wurde nicht geladen. Bitte Seite mit Strg+F5 neu laden.';
+    return;
+  }
+
+  try {
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Zeitüberschreitung beim Verbinden mit Firebase.')), 8000)
+    );
+    await Promise.race([window._fb_startSession(), timeout]);
+  } catch (e) {
+    console.error('startSession failed:', e);
+    liveBox.textContent = `⚠️ ${e && e.message ? e.message : 'Live-Sync konnte nicht gestartet werden.'}`;
+  }
+}
+
+function stopSession() {
+  window._fb_stopSession().then(() => {
+    document.getElementById('btn-start-session').style.display = 'inline-flex';
+    document.getElementById('btn-copy-live').style.display    = 'none';
+    document.getElementById('btn-stop-session').style.display = 'none';
+    document.getElementById('live-badge').style.display       = 'none';
+    document.getElementById('live-url-display').textContent   = '— Session beendet';
+    drawQR('');
+  });
+}
+
+function copyLiveLink() {
+  const url = document.getElementById('live-url-display').textContent;
+  if (!url || url.startsWith('—') || url.startsWith('⏳') || url.startsWith('⚠️')) return;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('btn-copy-live');
+    btn.textContent = '✅ Kopiert!';
+    setTimeout(() => { btn.innerHTML = '📋 Link kopieren'; }, 2000);
+  });
+}
+
+// Snapshot share
+function buildShareURL() {
+  const p = new URLSearchParams();
+  p.set('mode', currentMode); p.set('timer', timerTotal);
+  if (currentTopic) {
+    if (currentTopic.type==='talk')     p.set('topic',    currentTopic.idx);
+    if (currentTopic.type==='picture')  p.set('pic',      currentTopic.idx);
+    if (currentTopic.type==='dialogue') p.set('dialogue', currentTopic.idx);
+  }
+  return `${location.href.split('?')[0]}?${p.toString()}`;
+}
+
+function updateShareURL() {
+  // Snapshot-Funktion entfernt.
+}
+
+// Push to Firebase after every state change
+function maybePush() {
+  if (window._sessionRef) window._fb_push().catch(() => {});
+}
+
+// QR helper
+function drawQR(url) {
+  const canvas = document.getElementById('qr-canvas');
+  const ctx = canvas.getContext('2d');
+  const size = canvas.width;
+
+  ctx.clearRect(0, 0, size, size);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+
+  if (!url) return;
+
+  if (typeof qrcode !== 'function') {
+    ctx.fillStyle = '#eee';
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#888';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('QR library', size / 2, size / 2 - 8);
+    ctx.fillText('not loaded', size / 2, size / 2 + 8);
+    return;
+  }
+
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+
+    const count = qr.getModuleCount();
+    const quiet = 4;
+    const cell = size / (count + quiet * 2);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#000000';
+
+    for (let row = 0; row < count; row++) {
+      for (let col = 0; col < count; col++) {
+        if (!qr.isDark(row, col)) continue;
+        const x = Math.round((col + quiet) * cell);
+        const y = Math.round((row + quiet) * cell);
+        const w = Math.ceil(cell);
+        const h = Math.ceil(cell);
+        ctx.fillRect(x, y, w, h);
+      }
+    }
+  } catch (err) {
+    console.error('QR generation failed:', err);
+    ctx.fillStyle = '#eee';
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#888';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('QR error', size / 2, size / 2);
+  }
+}
+
+// ─── INIT FROM URL PARAMS ─────────────────────────────────────────────────────
+
+function initFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('mode')) {
+    const m = params.get('mode');
+    if (['talk', 'picture', 'dialogue'].includes(m)) setMode(m);
+  }
+  if (params.has('timer')) {
+    const t = parseInt(params.get('timer'));
+    if (!isNaN(t)) {
+      timerTotal = t;
+      timerSeconds = t;
+      syncLiveState();
+      // Try to select matching option
+      const sel = document.getElementById('timer-preset');
+      for (let o of sel.options) { if (parseInt(o.value) === t) { sel.value = t; break; } }
+      updateTimerDisplay();
+    }
+  }
+  if (params.has('topic') && currentMode === 'talk') {
+    const idx = parseInt(params.get('topic'));
+    if (!isNaN(idx) && idx >= 0 && idx < TALK_TOPICS.length) {
+      lastTalkIndex = idx;
+      currentTopic = { type: 'talk', idx };
+      syncLiveState();
+      setTalkTopic(idx);
+    }
+  }
+  if (params.has('pic') && currentMode === 'picture') {
+    const picNum = parseInt(params.get('pic'));
+    if (!isNaN(picNum) && picNum >= 1 && picNum <= PICTURE_COUNT) {
+      lastPicIndex = picNum;
+      currentTopic = { type: 'picture', idx: picNum };
+      syncLiveState();
+      const area = document.getElementById('topic-area');
+      applyTopicLayout('picture');
+      area.innerHTML = `
+        <div class="topic-inner picture-topic">
+          
+          <img src="Bilder/Bild${picNum}.jpg" class="picture-display"
+               onerror="this.parentElement.innerHTML='<div class=\\'picture-placeholder\\'><span style=\\'font-size:2.5rem\\'>🖼️</span><span>Bild${picNum}.jpg not found</span></div>'"
+               alt="Bild ${picNum}">
+        </div>
+      `;
+    }
+  }
+  if (params.has('dialogue') && currentMode === 'dialogue') {
+    const idx = parseInt(params.get('dialogue'));
+    if (!isNaN(idx) && idx >= 0 && idx < DIALOGUE_TOPICS.length) {
+      lastDialogueIndex = idx;
+      currentTopic = { type: 'dialogue', idx };
+      syncLiveState();
+      setDialogueTopic(idx);
+    }
+  }
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+
+drawQR('');
+updateTimerDisplay();
+initFromURL();
+updateShareURL();
+
+document.getElementById('selection-overlay')?.addEventListener('click', (event) => {
+  if (event.target.id === 'selection-overlay') hideSelectionOverlay();
+});
+</script>
+</body>
+</html>
