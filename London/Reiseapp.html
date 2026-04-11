@@ -1380,6 +1380,7 @@
     let selectedLocation = 'hostel';
     let travelMode = 'transit';
     let selectedDocument = '';
+    let documentSource = 'local';
 
     function escapeHtml(value){
       return String(value).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -1802,6 +1803,17 @@
       });
     }
 
+    function getPrivateDocumentUrl(file){
+      return `/api/dokumente?file=${encodeURIComponent(file)}`;
+    }
+
+    function getLocalDocumentUrl(file){
+      return `Dokumente/${encodeURI(file)}`;
+    }
+
+    function getDocumentUrl(file){
+      return documentSource === 'github' ? getPrivateDocumentUrl(file) : getLocalDocumentUrl(file);
+    }
 
     function normalizeDocumentEntries(items){
       return items.map(item => {
@@ -1823,6 +1835,21 @@
     }
 
     async function loadDocumentList(){
+      const status = document.getElementById('documentStatus');
+      status.innerHTML = 'Dokumente werden geladen…';
+
+      try{
+        const response = await fetch('/api/dokumente', {cache:'no-store'});
+        if (response.ok){
+          const data = await response.json();
+          const files = normalizeDocumentEntries(Array.isArray(data.files) ? data.files : []);
+          if (files.length){
+            renderDocumentOptions(files, 'github');
+            return;
+          }
+        }
+      }catch(err){}
+
       let files = normalizeDocumentEntries([...fallbackDocumentFiles]);
       for (const manifestPath of ['Dokumente/manifest.json', 'Dokumente/index.json']){
         try{
@@ -1837,22 +1864,27 @@
           }
         }catch(err){}
       }
-      renderDocumentOptions(files);
+      renderDocumentOptions(files, 'local');
     }
 
-    function renderDocumentOptions(files){
+    function renderDocumentOptions(files, source = 'local'){
       const select = document.getElementById('documentSelect');
       const status = document.getElementById('documentStatus');
+      documentSource = source;
       if (!files.length){
         select.innerHTML = '<option value="">Keine PDF-Dateien gefunden</option>';
-        status.innerHTML = 'Keine PDFs gefunden. Lege die Dateien im Ordner <strong>Dokumente</strong> ab und hinterlege optional eine <strong>manifest.json</strong> mit sprechenden Einträgen, z. B. <code>{"files":[{"file":"Reiseprogramm.pdf","title":"Reiseprogramm"},{"file":"Tickets_und_Buchungen.pdf","title":"Tickets und Buchungen"}]}</code>.';
+        status.innerHTML = source === 'github'
+          ? 'Keine PDFs im privaten Bereich <strong>Datenschutz/Dokumente</strong> gefunden. Pruefe den Ordnerinhalt im privaten Repository.'
+          : 'Keine PDFs gefunden. Lege die Dateien im Ordner <strong>Dokumente</strong> ab und hinterlege optional eine <strong>manifest.json</strong> mit sprechenden Eintraegen, z. B. <code>{"files":[{"file":"Reiseprogramm.pdf","title":"Reiseprogramm"},{"file":"Tickets_und_Buchungen.pdf","title":"Tickets und Buchungen"}]}</code>.';
         document.getElementById('documentPreview').removeAttribute('src');
         selectedDocument = '';
         return;
       }
       select.innerHTML = files.map(entry => `<option value="${escapeHtml(entry.file)}">${escapeHtml(entry.title)}</option>`).join('');
       selectedDocument = files[0].file;
-      status.innerHTML = `Gefunden: <strong>${files.length}</strong> PDF-Datei(en) im Bereich <strong>Dokumente</strong>.`;
+      status.innerHTML = source === 'github'
+        ? `Gefunden: <strong>${files.length}</strong> PDF-Datei(en) aus dem privaten Repository <strong>Datenschutz/Dokumente</strong>.`
+        : `Gefunden: <strong>${files.length}</strong> PDF-Datei(en) im Bereich <strong>Dokumente</strong>.`;
       openDocument(selectedDocument);
     }
 
@@ -1860,7 +1892,7 @@
       if (!file) return;
       selectedDocument = file;
       document.getElementById('documentSelect').value = file;
-      document.getElementById('documentPreview').src = `Dokumente/${encodeURI(file)}#view=FitH`;
+      document.getElementById('documentPreview').src = `${getDocumentUrl(file)}#view=FitH`;
     }
 
     function openSelectedDocument(){
@@ -1870,7 +1902,7 @@
     function openSelectedDocumentExternal(){
       const file = document.getElementById('documentSelect').value;
       if (!file) return;
-      window.open(`Dokumente/${encodeURI(file)}`, '_blank', 'noopener');
+      window.open(getDocumentUrl(file), '_blank', 'noopener');
     }
 
     document.addEventListener('keydown', e => {
