@@ -3,7 +3,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.92, viewport-fit=cover" />
   <title>London Schülerfahrt 2026 – Reiseapp</title>
   <style>
     :root{
@@ -250,7 +250,10 @@
       gap:4px;
       scroll-snap-align:start;
     }
-    .day-btn small{color:var(--muted)}
+    .day-btn small{
+      color:var(--muted);
+      line-height:1.35;
+    }
     .summary-card,.route-card,.transport-card,.detail-card,.timeline-card,.info-card{
       padding:16px;
       border-radius:16px;
@@ -676,6 +679,13 @@
     body.light-mode .map-primary-btn,
     body.light-mode .action-btn{
       color:#fff;
+    }
+    body.light-mode .day-btn small{
+      color:#34506f;
+      font-weight:500;
+    }
+    body.light-mode .day-btn.active small{
+      color:rgba(255,255,255,.94);
     }
     body.light-mode .transport-nearby-toolbar .small-btn{
       background:linear-gradient(180deg,#2f6fc8,#255ba7);
