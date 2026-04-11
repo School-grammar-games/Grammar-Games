@@ -1258,8 +1258,8 @@
               <div class="action-grid-2x2">
                 <button class="small-btn" onclick="openLocation('hostel')">Hostel in Maps</button>
                 <button class="small-btn" onclick="openLiveSite('https://www.astorhostels.com/hostels/victoria')">Webseite der Unterkunft</button>
-                <button class="small-btn" onclick="openNearbySearch('subway station near Astor Victoria Hostel London')">Nahe U-Bahn</button>
-                <button class="small-btn" onclick="openNearbySearch('supermarket near Astor Victoria Hostel London')">Supermarkt in der Nähe</button>
+                <button class="small-btn" onclick="openNearbySearchInApp('subway station near Astor Victoria Hostel London', 'Nahe U-Bahn beim Hostel')">Nahe U-Bahn</button>
+                <button class="small-btn" onclick="openNearbySearchInApp('supermarket near Astor Victoria Hostel London', 'Supermärkte in der Nähe des Hostels')">Supermarkt in der Nähe</button>
               </div>
             </div>
           </div>
@@ -2538,6 +2538,10 @@
       return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(point.query)}`;
     }
 
+    function makeMapsSearchEmbedUrl(query){
+      return `https://maps.google.com/maps?hl=de&q=${encodeURIComponent(query)}&output=embed`;
+    }
+
 
     function getTransportFlag(mode){
       return mode === 'walking' ? 'w' : mode === 'driving' ? 'd' : 'r';
@@ -2790,6 +2794,28 @@
     function openLocation(id){
       const loc = locations[id];
       window.open(makeMapsExternalUrl(null, loc, 'transit'), '_blank', 'noopener');
+    }
+
+    function openNearbySearchInApp(query, label){
+      setActiveTab('maps');
+      document.getElementById('mapFrame').src = makeMapsSearchEmbedUrl(query);
+      const box = document.getElementById('routeSummary');
+      box.innerHTML = `
+        <div class="section-head">
+          <strong>Suchergebnisse in Google Maps</strong>
+          <span class="badge">Umgebung Hostel</span>
+        </div>
+        <div class="compact"><strong>${escapeHtml(label)}</strong></div>
+        <div class="route-summary-note">Die eingebettete Karte zeigt passende Ergebnisse rund um das Astor Victoria Hostel. Für eine vollständig interaktive Suche kann der Button „Interaktive Route in Google Maps öffnen“ genutzt werden.</div>
+      `;
+      document.getElementById('startSelect').value = 'hostel';
+      document.getElementById('endSelect').value = 'hostel';
+      selectedLocation = 'hostel';
+      renderAllLocationChips();
+      const day = days.find(d => d.id === selectedDay);
+      if (day){
+        renderDayLocationChips(day);
+      }
     }
 
     function openLiveSite(url){
