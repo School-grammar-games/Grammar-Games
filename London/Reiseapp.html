@@ -1,0 +1,1542 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>London Schülerfahrt 2026 – Reiseapp</title>
+  <style>
+    :root{
+      --bg:#09111f;
+      --bg-2:#0e1728;
+      --panel:#13213a;
+      --panel-2:#172844;
+      --panel-3:#1d3357;
+      --line:#2d446c;
+      --text:#edf3ff;
+      --muted:#aab7d4;
+      --accent:#69b7ff;
+      --accent-2:#88e6c7;
+      --warn:#ffd37a;
+      --ok:#9ee2a8;
+      --shadow:0 14px 32px rgba(0,0,0,.28);
+      --radius:18px;
+      --tap:46px;
+      --maxw:1240px;
+      --bottom-bar:78px;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:linear-gradient(180deg,var(--bg),#0b1324 100%);
+      color:var(--text);
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+    button,input,select{
+      font:inherit;
+    }
+    button{
+      touch-action:manipulation;
+    }
+    a{
+      color:var(--accent);
+      text-decoration:none;
+    }
+    .app{
+      max-width:var(--maxw);
+      margin:0 auto;
+      padding:14px 14px calc(18px + env(safe-area-inset-bottom) + var(--bottom-bar));
+      display:grid;
+      gap:14px;
+    }
+    .card{
+      background:rgba(19,33,58,.96);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+    .hero{
+      padding:18px;
+      display:grid;
+      gap:14px;
+    }
+    .hero-top{
+      display:grid;
+      gap:10px;
+    }
+    h1,h2,h3,h4,p{margin:0}
+    h1{
+      font-size:clamp(1.25rem,3vw,2rem);
+      line-height:1.2;
+    }
+    .subtitle,.compact{
+      color:var(--muted);
+      line-height:1.45;
+    }
+    .pill-row,.toolbar,.stat-grid,.quick-actions,.chip-row,.location-chips,.selector-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+    .pill,.chip{
+      display:inline-flex;
+      align-items:center;
+      min-height:36px;
+      padding:8px 12px;
+      border-radius:999px;
+      border:1px solid #395583;
+      background:var(--panel-3);
+      color:var(--text);
+      white-space:nowrap;
+      font-size:.92rem;
+    }
+    .stat-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+    .stat{
+      padding:12px;
+      border-radius:14px;
+      background:var(--panel-2);
+      border:1px solid var(--line);
+      display:grid;
+      gap:6px;
+    }
+    .stat small{
+      color:var(--muted);
+    }
+    .tabs-wrap{
+      position:sticky;
+      top:0;
+      z-index:30;
+      background:linear-gradient(180deg,rgba(9,17,31,.98),rgba(9,17,31,.92));
+      backdrop-filter:blur(10px);
+      padding:8px 0 2px;
+      margin-top:-6px;
+    }
+    .tabs{
+      display:flex;
+      gap:10px;
+      overflow:auto;
+      padding:6px 2px 8px;
+      scrollbar-width:none;
+    }
+    .tabs::-webkit-scrollbar{display:none}
+    .tab-btn,.day-btn,.action-btn,.small-btn,.seg-btn{
+      min-height:var(--tap);
+      border-radius:14px;
+      border:1px solid #3a598d;
+      background:var(--panel-2);
+      color:var(--text);
+      cursor:pointer;
+      padding:10px 14px;
+      transition:.18s ease;
+    }
+    .tab-btn{
+      flex:1 0 auto;
+      min-width:160px;
+      font-weight:600;
+    }
+    .tab-btn.active,.day-btn.active,.seg-btn.active{
+      background:linear-gradient(180deg,#2f568a,#24466f);
+      border-color:#7bc0ff;
+      box-shadow:0 0 0 1px rgba(123,192,255,.28) inset;
+    }
+    .action-btn{
+      background:linear-gradient(180deg,#4eaaf7,#348dde);
+      border-color:#63b7ff;
+      font-weight:600;
+    }
+    .small-btn{
+      min-height:40px;
+      font-size:.94rem;
+      padding:8px 12px;
+      background:#1b2d4a;
+    }
+    .ghost{
+      background:transparent;
+    }
+    .segment{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .seg-btn{
+      min-width:96px;
+    }
+    .tab-panel{
+      display:none;
+      gap:14px;
+    }
+    .tab-panel.active{
+      display:grid;
+    }
+    .section{
+      padding:16px;
+      display:grid;
+      gap:14px;
+    }
+    .section-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      min-height:34px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#1f3253;
+      border:1px solid #43679e;
+      color:#dce9ff;
+      font-size:.84rem;
+    }
+    .day-scroll{
+      display:flex;
+      gap:10px;
+      overflow:auto;
+      padding-bottom:4px;
+      scrollbar-width:none;
+      scroll-snap-type:x proximity;
+    }
+    .day-scroll::-webkit-scrollbar{display:none}
+    .day-btn{
+      flex:0 0 220px;
+      text-align:left;
+      display:grid;
+      gap:4px;
+      scroll-snap-align:start;
+    }
+    .day-btn small{color:var(--muted)}
+    .summary-card,.route-card,.transport-card,.detail-card,.timeline-card,.info-card{
+      padding:14px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:var(--panel-2);
+      display:grid;
+      gap:10px;
+    }
+    .timeline{
+      display:grid;
+      gap:12px;
+    }
+    .time-tag{
+      display:inline-flex;
+      align-items:center;
+      width:max-content;
+      min-height:32px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#223655;
+      border:1px solid #44699f;
+      font-size:.84rem;
+    }
+    .stop-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+    }
+    .stop-actions,.inline-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .check-row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:var(--muted);
+      font-size:.95rem;
+      min-height:40px;
+    }
+    .check-row input{
+      width:22px;height:22px;
+    }
+    .grid-2{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:14px;
+    }
+    .field{
+      display:grid;
+      gap:6px;
+    }
+    .field label{
+      color:var(--muted);
+      font-size:.92rem;
+    }
+    .field select,.field input{
+      width:100%;
+      min-height:48px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#0f1a2c;
+      color:var(--text);
+      padding:10px 12px;
+    }
+    iframe.map{
+      width:100%;
+      min-height:360px;
+      border:none;
+      border-radius:16px;
+      background:#0e1728;
+    }
+    .location-chips{
+      overflow:auto;
+      flex-wrap:nowrap;
+      padding-bottom:4px;
+      scrollbar-width:none;
+    }
+    .location-chips::-webkit-scrollbar{display:none}
+    .location-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+    .location-grid .chip{
+      white-space:normal;
+      text-align:left;
+      justify-content:flex-start;
+      height:auto;
+      padding:12px;
+      line-height:1.25;
+    }
+    .chip{
+      cursor:pointer;
+      min-height:40px;
+    }
+    .chip.active{
+      background:linear-gradient(180deg,#2f568a,#24466f);
+      border-color:#7bc0ff;
+    }
+    .route-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+    }
+    .quick-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    .transport-links{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .transport-nearby-toolbar{
+      justify-content:center;
+    }
+    .transport-nearby-toolbar .small-btn{
+      background:linear-gradient(180deg,#2f568a,#24466f);
+      border-color:#7bc0ff;
+      box-shadow:0 0 0 1px rgba(123,192,255,.24) inset;
+    }
+    .action-grid-2x2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    .action-grid-2x2 .small-btn{
+      width:100%;
+    }
+    .transport-list{
+      display:grid;
+      gap:12px;
+    }
+    .link-card{
+      display:grid;
+      gap:8px;
+      padding:14px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:var(--panel-2);
+    }
+    .link-card strong{
+      font-size:1rem;
+    }
+    .doc-list{
+      display:grid;
+      gap:10px;
+    }
+    .doc-select{
+      width:100%;
+      min-height:48px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#0f1a2c;
+      color:var(--text);
+      padding:10px 12px;
+    }
+    .doc-preview{
+      width:100%;
+      min-height:60vh;
+      border:none;
+      border-radius:16px;
+      background:#fff;
+    }
+    .doc-status{
+      padding:14px;
+      border-radius:14px;
+      border:1px dashed #44699f;
+      background:#12213a;
+      color:var(--muted);
+      line-height:1.45;
+    }
+    .modal{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(3,8,16,.76);
+      padding:14px;
+      z-index:70;
+    }
+    .modal.open{display:flex}
+    .modal-box{
+      width:min(1100px,100%);
+      height:min(86vh,900px);
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:18px;
+      overflow:hidden;
+      display:grid;
+      grid-template-rows:auto 1fr;
+      box-shadow:var(--shadow);
+    }
+    .modal-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:14px;
+      background:#0f1728;
+      border-bottom:1px solid var(--line);
+    }
+    .modal-body iframe{
+      width:100%;
+      height:100%;
+      border:none;
+      background:#fff;
+    }
+    .bottom-nav{
+      position:fixed;
+      left:0;right:0;bottom:0;
+      z-index:60;
+      padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+      background:linear-gradient(180deg,rgba(9,17,31,.2),rgba(9,17,31,.98) 22%);
+      backdrop-filter:blur(10px);
+    }
+    .bottom-nav-inner{
+      max-width:var(--maxw);
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:8px;
+    }
+    .nav-mini{
+      min-height:56px;
+      border-radius:16px;
+      border:1px solid #395583;
+      background:rgba(23,40,68,.96);
+      color:var(--text);
+      font-size:.82rem;
+      line-height:1.15;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      padding:6px;
+    }
+    .nav-mini.active{
+      background:linear-gradient(180deg,#2f568a,#24466f);
+      border-color:#7bc0ff;
+    }
+    .footer-note{
+      color:var(--muted);
+      font-size:.88rem;
+      line-height:1.45;
+      padding:4px 2px 0;
+    }
+    @media (hover:hover){
+      .tab-btn:hover,.day-btn:hover,.action-btn:hover,.small-btn:hover,.seg-btn:hover,.chip:hover,.nav-mini:hover{
+        filter:brightness(1.07);
+        transform:translateY(-1px);
+      }
+    }
+    @media (min-width:720px){
+      .app{
+        padding-bottom:22px;
+      }
+      .bottom-nav{display:none}
+      .grid-2{
+        grid-template-columns:1fr 1fr;
+      }
+      .route-grid{
+        grid-template-columns:1fr 1fr auto;
+        align-items:end;
+      }
+      .quick-actions{
+        grid-template-columns:repeat(5,1fr);
+      }
+      .hero{
+        grid-template-columns:1.4fr .9fr;
+      }
+      .location-grid{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+      }
+    }
+    @media (min-width:1000px){
+      iframe.map{min-height:460px}
+      .transport-list{
+        grid-template-columns:1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="hero card">
+      <div class="hero-top">
+        <div>
+          <h1>London 2026 – Reiseapp für Begleitlehrkräfte</h1>
+          <p class="subtitle">Schülerfahrt vom <strong>12. April bis 17. April 2026</strong>. Mobile-first aufgebaut, touch-optimiert und klar in Reiter gegliedert.</p>
+        </div>
+        <div class="pill-row">
+          <span class="pill">Astor Victoria Hostel</span>
+          <span class="pill">London</span>
+          <span class="pill">Schülerfahrt</span>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat">
+          <small>Unterkunft</small>
+          <strong>73 Belgrave Road, SW1V 2BG</strong>
+        </div>
+        <div class="stat">
+          <small>Kontakt Hostel</small>
+          <strong>+44 20 7834 3077</strong>
+        </div>
+        <div class="stat">
+          <small>Notruf UK</small>
+          <strong>999 / 112</strong>
+        </div>
+        <div class="stat">
+          <small>Nahe Knotenpunkte</small>
+          <strong>Victoria / Pimlico</strong>
+        </div>
+      </div>
+    </header>
+
+    <div class="tabs-wrap">
+      <nav class="tabs" aria-label="Hauptbereiche">
+        <button class="tab-btn active" data-tab="programm">Tagesprogramm</button>
+        <button class="tab-btn" data-tab="verkehr">Öffentliche Verkehrsmittel</button>
+        <button class="tab-btn" data-tab="maps">Google Maps</button>
+        <button class="tab-btn" data-tab="unterkunft">Unterkunft</button>
+        <button class="tab-btn" data-tab="dokumente">Dokumente</button>
+      </nav>
+    </div>
+
+    <main>
+      <section id="programm" class="tab-panel active">
+        <div class="section card">
+          <div class="section-head">
+            <div>
+              <h2>Tagesprogramm</h2>
+              <p class="compact">Wochentag auswählen und das jeweilige Programm mit Ortsinfos ansehen.</p>
+            </div>
+            <span class="badge" id="themeBadge">Programm</span>
+          </div>
+
+          <div id="dayList" class="day-scroll"></div>
+
+          <div class="summary-card">
+            <div class="section-head">
+              <strong id="currentTitle">Tagesübersicht</strong>
+              <span class="badge" id="dayDateBadge">Datum</span>
+            </div>
+            <div class="compact" id="currentSubtitle">Programm, Zeiten und Hinweise</div>
+          </div>
+
+          <div id="timeline" class="timeline"></div>
+
+          <div class="info-card">
+            <div class="section-head">
+              <strong>Orte dieses Tages</strong>
+              <span class="compact">Touch = Details</span>
+            </div>
+            <div id="dayLocationChips" class="location-chips"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="verkehr" class="tab-panel">
+        <div class="section card">
+          <div class="section-head">
+            <div>
+              <h2>Öffentliche Verkehrsmittel</h2>
+              <p class="compact">Tube, Bus und Wassertaxi (Uber Boat by Thames Clippers).</p>
+            </div>
+            <span class="badge">TfL & River</span>
+          </div>
+
+          <div class="transport-card">
+            <div class="section-head">
+              <strong>Station / Haltestelle in der Nähe</strong>
+              <span class="compact">Standortfunktion</span>
+            </div>
+            <div class="toolbar transport-nearby-toolbar">
+              <button class="small-btn" onclick="showCurrentLocationRoutes()">Standort verwenden</button>
+              <button class="small-btn" onclick="openNearbySearch('subway station near me')">U-Bahn in der Nähe</button>
+              <button class="small-btn" onclick="openNearbySearch('bus stop near me')">Bushaltestelle in der Nähe</button>
+              <button class="small-btn" onclick="openNearbySearch('river bus pier near me')">Wassertaxi-Haltestellen in der Nähe</button>
+            </div>
+            <div id="transportResult" class="detail-card">
+              Noch kein Standort geladen. Nach Freigabe wird ein nächstgelegener großer ÖPNV-Knoten mit Linien und Direktlinks angezeigt.
+            </div>
+          </div>
+
+          <div class="transport-list">
+            <div class="link-card">
+              <strong>Tube / Underground</strong>
+              <div class="compact">Für die Fahrt sind vor allem Victoria, Jubilee, Northern, District, Circle und Piccadilly relevant.</div>
+              <div class="toolbar">
+                <button class="small-btn" onclick="openTubeMap()">Tube-Karte öffnen</button>
+                <button class="small-btn" onclick="openLiveSite('https://tfl.gov.uk/maps/track/tube')">Live-Netz</button>
+              </div>
+            </div>
+            <div class="link-card">
+              <strong>Bus</strong>
+              <div class="compact">Für spontane Umstiege in der Nähe von Unterkunft oder Sehenswürdigkeiten eignet sich die Haltestellensuche in Google Maps besonders gut.</div>
+              <div class="toolbar">
+                <button class="small-btn" onclick="openNearbySearch('bus stop near me')">Bus in der Nähe</button>
+                <button class="small-btn" onclick="openLiveSite('https://tfl.gov.uk/maps_/bus-spider-maps')">TfL Bus-Infos</button>
+              </div>
+            </div>
+            <div class="link-card">
+              <strong>Wassertaxi (Uber Boat by Thames Clippers)</strong>
+              <div class="compact">TfL führt die River-Bus-Dienste als Teil der River Services; betrieben werden diese Linien von Uber Boat by Thames Clippers.</div>
+              <div class="toolbar">
+                <button class="small-btn" onclick="openLiveSite('https://tfl.gov.uk/modes/river/')">TfL River-Infos</button>
+                <button class="small-btn" onclick="openLiveSite('https://www.thamesclippers.com/plan-your-journey/route-map')">Routen ansehen</button>
+                <button class="small-btn" onclick="openLiveSite('https://www.thamesclippers.com/plan-your-journey/timetable')">Fahrplan</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="maps" class="tab-panel">
+        <div class="section card">
+          <div class="section-head">
+            <div>
+              <h2>Google Maps</h2>
+              <p class="compact">Einzelne Orte direkt öffnen oder zwei Orte für eine Route auswählen.</p>
+            </div>
+            <span class="badge" id="mapModeBadge">ÖPNV</span>
+          </div>
+
+          <div class="location-grid" id="allLocationChips"></div>
+
+          <div class="detail-card" id="locationDetails"></div>
+
+          <div class="route-card">
+            <div class="section-head">
+              <strong>Route zwischen zwei Orten</strong>
+              <div class="segment" aria-label="Verkehrsmittel">
+                <button class="seg-btn active" data-mode="transit">ÖPNV</button>
+                <button class="seg-btn" data-mode="walking">Zu Fuß</button>
+                <button class="seg-btn" data-mode="driving">Taxi / Bus</button>
+              </div>
+            </div>
+
+            <div class="route-grid">
+              <div class="field">
+                <label for="startSelect">Start</label>
+                <select id="startSelect"></select>
+              </div>
+              <div class="field">
+                <label for="endSelect">Ziel</label>
+                <select id="endSelect"></select>
+              </div>
+              <button class="action-btn" onclick="applyRoute()">Route</button>
+            </div>
+
+            <div class="inline-actions">
+              <button class="small-btn" onclick="openExternalRoute()">In Google Maps öffnen</button>
+              <button class="small-btn" onclick="resetMapToSelected()">Einzelort zeigen</button>
+            </div>
+          </div>
+
+          <iframe id="mapFrame" class="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=Astor+Victoria+Hostel+London&output=embed"></iframe>
+        </div>
+      </section>
+
+      <section id="unterkunft" class="tab-panel">
+        <div class="section card">
+          <div class="section-head">
+            <div>
+              <h2>Unterkunft</h2>
+              <p class="compact">Wichtige Infos zum Astor Victoria Hostel und zur Umgebung.</p>
+            </div>
+            <span class="badge">Astor Victoria</span>
+          </div>
+
+          <div class="grid-2">
+            <div class="detail-card">
+              <strong>Adresse</strong>
+              <div class="compact">Astor Victoria Hostel<br>73 Belgrave Road<br>London SW1V 2BG</div>
+            </div>
+            <div class="detail-card">
+              <strong>Verkehrsanbindung</strong>
+              <div class="compact">Nahe Stationen: Victoria und Pimlico. Von dort Anschluss an Victoria line, District, Circle und zahlreiche Buslinien.</div>
+            </div>
+            <div class="detail-card">
+              <strong>Wichtige Informationen</strong>
+              <div class="compact">
+                Rezeption: 24 Stunden<br>
+                Check-in: ab 15:00 Uhr<br>
+                Check-out: bis 10:00 Uhr<br>
+                Frühstück: 08:00–11:00 Uhr (gegen Aufpreis)<br>
+                Gepäckabgabe bei Ankunft möglich<br>
+                WLAN vorhanden, Küche vorhanden, Schließfächer gegen Gebühr<br>
+                Gruppenhinweis: Abends bitte auf Zimmerdisziplin und Rücksicht im Haus achten; Speisen und Getränke sind in den Zimmern laut Hausregeln nur eingeschränkt erlaubt.
+              </div>
+            </div>
+            <div class="detail-card">
+              <strong>Nützliche Aktionen</strong>
+              <div class="action-grid-2x2">
+                <button class="small-btn" onclick="openLocation('hostel')">Hostel in Maps</button>
+                <button class="small-btn" onclick="openLiveSite('https://www.astorhostels.com/hostels/victoria')">Webseite der Unterkunft</button>
+                <button class="small-btn" onclick="openNearbySearch('subway station near Astor Victoria Hostel London')">Nahe U-Bahn</button>
+                <button class="small-btn" onclick="openNearbySearch('supermarket near Astor Victoria Hostel London')">Supermarkt in der Nähe</button>
+              </div>
+            </div>
+          </div>
+
+          <iframe class="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=Astor+Victoria+Hostel+London&output=embed"></iframe>
+        </div>
+      </section>
+
+      <section id="dokumente" class="tab-panel">
+        <div class="section card">
+          <div class="section-head">
+            <div>
+              <h2>Dokumente</h2>
+              <p class="compact">PDFs aus dem Ordner <strong>Dokumente</strong> auswählen und direkt in der App ansehen.</p>
+            </div>
+            <span class="badge">PDF-Vorschau</span>
+          </div>
+
+          <div class="detail-card">
+            <div class="field">
+              <label for="documentSelect">Dokument auswählen</label>
+              <select id="documentSelect" class="doc-select"></select>
+            </div>
+            <div class="inline-actions">
+              <button class="small-btn" onclick="openSelectedDocument()">Dokument öffnen</button>
+              <button class="small-btn" onclick="openSelectedDocumentExternal()">In neuem Tab öffnen</button>
+            </div>
+            <div id="documentStatus" class="doc-status">
+              Die App sucht zuerst nach <strong>Dokumente/manifest.json</strong>. Falls keine Manifest-Datei vorhanden ist, wird die eingebaute Dateiliste verwendet.
+            </div>
+          </div>
+
+          <iframe id="documentPreview" class="doc-preview" title="Dokumentenvorschau"></iframe>
+        </div>
+      </section>
+    </main>
+
+    <div class="footer-note">
+      Optimiert für Smartphone-Nutzung: große Touch-Flächen, horizontale Auswahlleisten, klare Reiterstruktur, Sticky-Navigation und reduzierte Informationsdichte pro Bereich.
+    </div>
+  </div>
+
+  <div class="bottom-nav" aria-hidden="false">
+    <div class="bottom-nav-inner">
+      <button class="nav-mini active" data-tab="programm">Programm</button>
+      <button class="nav-mini" data-tab="verkehr">Verkehr</button>
+      <button class="nav-mini" data-tab="maps">Maps</button>
+      <button class="nav-mini" data-tab="unterkunft">Hostel</button>
+      <button class="nav-mini" data-tab="dokumente">Dokumente</button>
+    </div>
+  </div>
+
+  <div class="modal" id="tubeModal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <strong>Tube-Karte (TfL PDF)</strong>
+        <button class="small-btn ghost" onclick="closeModal('tubeModal')">Schließen</button>
+      </div>
+      <div class="modal-body">
+        <iframe src="https://content.tfl.gov.uk/standard-tube-map.pdf" title="Tube Map"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="riverModal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <strong>River Services / Wassertaxi</strong>
+        <button class="small-btn ghost" onclick="closeModal('riverModal')">Schließen</button>
+      </div>
+      <div class="modal-body">
+        <iframe src="https://tfl.gov.uk/cdn/static/cms/documents/riverservices-map.pdf" title="River Services Map"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const locations = {
+      hostel: {
+        id:'hostel',
+        name:'Astor Victoria Hostel',
+        query:'Astor Victoria Hostel, 73 Belgrave Road, London SW1V 2BG',
+        address:'73 Belgrave Road, London SW1V 2BG',
+        area:'Victoria / Pimlico',
+        hours:'Check-in laut Unterkunft; gute Verkehrsanbindung in der Umgebung',
+        info:'Unterkunft der Fahrt. Von hier aus sind Victoria Station und Pimlico schnell erreichbar.',
+        transport:'Victoria (Victoria, District, Circle) / Pimlico (Victoria line), zahlreiche Busverbindungen',
+        official:'https://www.astorhostels.com/hostels/victoria'
+      },
+      greenwich: {
+        id:'greenwich',
+        name:'Greenwich',
+        query:'Greenwich, London',
+        address:'Greenwich, London SE10',
+        area:'South East London',
+        hours:'öffentlicher Stadtteil / frei zugänglich',
+        info:'Programmpunkt am Montag mit guter Anbindung an Greenwich Pier, Cutty Sark und Royal Observatory.',
+        transport:'Cutty Sark DLR / Greenwich Rail / Greenwich Pier',
+        official:'https://www.visitgreenwich.org.uk/'
+      },
+      cuttysark: {
+        id:'cuttysark',
+        name:'Cutty Sark',
+        query:'Cutty Sark, King William Walk, London SE10 9HT',
+        address:'King William Walk, London SE10 9HT',
+        area:'Greenwich',
+        hours:'Täglich 10:00–17:00, letzter Einlass 16:15',
+        info:'Museumsbesuch in Greenwich, gut kombinierbar mit Greenwich Pier und Observatory.',
+        transport:'Cutty Sark DLR / Greenwich Pier',
+        official:'https://www.rmg.co.uk/cutty-sark'
+      },
+      observatory: {
+        id:'observatory',
+        name:'Royal Observatory',
+        query:'Royal Observatory Greenwich, Blackheath Ave, London SE10 8XJ',
+        address:'Blackheath Ave, London SE10 8XJ',
+        area:'Greenwich',
+        hours:'Täglich 10:00–17:00, letzter Einlass 16:15',
+        info:'Liegt oberhalb von Greenwich Park. Von hier aus Blick auf Canary Wharf und O2.',
+        transport:'Greenwich / Cutty Sark DLR, Fußweg bergauf',
+        official:'https://www.rmg.co.uk/royal-observatory'
+      },
+      o2: {
+        id:'o2',
+        name:'O2 Arena / North Greenwich',
+        query:'The O2, Peninsula Square, London SE10 0DX',
+        address:'Peninsula Square, London SE10 0DX',
+        area:'North Greenwich',
+        hours:'Veranstaltungsabhängig',
+        info:'Optionaler Bezugspunkt aus der Planung im Greenwich-Umfeld.',
+        transport:'North Greenwich (Jubilee), Uber Boat',
+        official:'https://www.theo2.co.uk/'
+      },
+      tower: {
+        id:'tower',
+        name:'Tower of London',
+        query:'Tower of London, London EC3N 4AB',
+        address:'London EC3N 4AB',
+        area:'Tower Hill',
+        hours:'Täglich 09:00–17:30; letzte Timeslot-Buchung 15:30; letzte Yeoman-Warder-Tour 15:15',
+        info:'Früher Start lohnt sich. Tourenzeiten am Reisetag kurz prüfen.',
+        transport:'Tower Hill (Circle, District), Tower Gateway (DLR)',
+        official:'https://www.hrp.org.uk/tower-of-london/visit/opening-and-closing-times/'
+      },
+      towerbridge: {
+        id:'towerbridge',
+        name:'Tower Bridge',
+        query:'Tower Bridge, London SE1 2UP',
+        address:'Tower Bridge Rd, London SE1 2UP',
+        area:'South Bank / Tower',
+        hours:'Täglich 09:30–18:00, letzter Einlass 17:00',
+        info:'Gut direkt nach dem Tower of London erreichbar.',
+        transport:'Tower Hill / London Bridge',
+        official:'https://www.towerbridge.org.uk/bridge-lifts'
+      },
+      borough: {
+        id:'borough',
+        name:'Borough Market',
+        query:'Borough Market, 8 Southwark Street, London SE1 1TL',
+        address:'8 Southwark Street, London SE1 1TL',
+        area:'Southwark',
+        hours:'Dienstag–Freitag 10:00–17:00',
+        info:'Mittagessen am Dienstag. Sammelpunkt vorab festlegen.',
+        transport:'London Bridge (Northern, Jubilee, National Rail)',
+        official:'https://boroughmarket.org.uk/visit-us/'
+      },
+      londoneye: {
+        id:'londoneye',
+        name:'London Eye',
+        query:'London Eye, Riverside Building, County Hall, London SE1 7PB',
+        address:'Riverside Building, County Hall, London SE1 7PB',
+        area:'South Bank',
+        hours:'Tageszeiten variieren; offizielle Tagesansicht prüfen',
+        info:'Öffnungszeiten und Einlassfenster am Besuchstag direkt prüfen.',
+        transport:'Waterloo / Westminster',
+        official:'https://www.londoneye.com/plan-your-visit/before-you-visit/opening-hours/'
+      },
+      westminster: {
+        id:'westminster',
+        name:'Houses of Parliament / Big Ben',
+        query:'Houses of Parliament and Big Ben, London SW1A 0AA',
+        address:'Westminster, London SW1A 0AA',
+        area:'Westminster',
+        hours:'Außenansicht frei zugänglich; Innenbesuche abhängig von Buchung',
+        info:'Gut kombinierbar mit London Eye und Westminster Bridge.',
+        transport:'Westminster (Jubilee, Circle, District)',
+        official:'https://www.parliament.uk/visiting/'
+      },
+      soho: {
+        id:'soho',
+        name:'Chinatown / Soho',
+        query:'Chinatown London, Gerrard Street, London W1D 5PT',
+        address:'Gerrard Street / Soho, London W1D',
+        area:'West End',
+        hours:'Stadtviertel / Restaurants individuell',
+        info:'Abendessen im West End. Leicester Square eignet sich als Treffpunkt.',
+        transport:'Leicester Square / Piccadilly Circus',
+        official:'https://visitsoho.co.uk/'
+      },
+      tussauds: {
+        id:'tussauds',
+        name:'Madame Tussauds',
+        query:'Madame Tussauds London, Marylebone Rd, London NW1 5LR',
+        address:'Marylebone Rd, London NW1 5LR',
+        area:'Marylebone',
+        hours:'Tageszeiten variieren; offizielle Tagesansicht prüfen',
+        info:'Öffnungszeiten am Vortag oder Besuchstag prüfen.',
+        transport:'Baker Street',
+        official:'https://www.madametussauds.com/london/plan-your-visit/before-you-visit/opening-hours/'
+      },
+      soas: {
+        id:'soas',
+        name:'SOAS University of London',
+        query:'SOAS University of London, 10 Thornhaugh Street, Russell Square, London WC1H 0XG',
+        address:'10 Thornhaugh Street, Russell Square, London WC1H 0XG',
+        area:'Bloomsbury',
+        hours:'campus-/veranstaltungsabhängig',
+        info:'Besuchspunkt am Mittwoch, gut erreichbar über Russell Square.',
+        transport:'Russell Square / Goodge Street / Euston',
+        official:'https://www.soas.ac.uk/plan-your-visit'
+      },
+      camden: {
+        id:'camden',
+        name:'Camden Town',
+        query:'Camden Town, London NW1',
+        address:'Camden Town, London NW1',
+        area:'North London',
+        hours:'Stadtviertel / Märkte individuell',
+        info:'Abendessen und freiere Erkundung mit klaren Treffzeiten.',
+        transport:'Camden Town (Northern), Camden Road (Overground)',
+        official:'https://www.camdenmarket.com/'
+      },
+      buckingham: {
+        id:'buckingham',
+        name:'Buckingham Palace',
+        query:'Buckingham Palace, London SW1A 1AA',
+        address:'London SW1A 1AA',
+        area:'Westminster',
+        hours:'Außenbereich frei; Zeremonienzeiten offiziell prüfen',
+        info:'Für Donnerstag vor allem Außenstopp und Orientierungspunkt.',
+        transport:'Green Park / St James’s Park / Victoria',
+        official:'https://www.householddivision.org.uk/changing-the-guard-calendar'
+      },
+      nhm: {
+        id:'nhm',
+        name:'Natural History Museum',
+        query:'Natural History Museum, Cromwell Road, London SW7 5BD',
+        address:'Cromwell Road, London SW7 5BD',
+        area:'South Kensington',
+        hours:'Täglich 10:00–17:50, letzter Einlass 17:30',
+        info:'Kostenfreie Dauerausstellungen, Wartezeit möglich.',
+        transport:'South Kensington (Circle, District, Piccadilly)',
+        official:'https://www.nhm.ac.uk/visit.html'
+      },
+      hydepark: {
+        id:'hydepark',
+        name:'Hyde Park',
+        query:'Hyde Park, London',
+        address:'Hyde Park, London',
+        area:'Central London',
+        hours:'öffentlich zugänglich',
+        info:'Mittagsstopp am Donnerstag; Treffpunkt vorher festlegen.',
+        transport:'Hyde Park Corner / Marble Arch / Lancaster Gate / Knightsbridge',
+        official:'https://www.royalparks.org.uk/visit/parks/hyde-park'
+      },
+      calais: {
+        id:'calais',
+        name:'Fähre Calais',
+        query:'Port of Calais, France',
+        address:'Calais, Frankreich',
+        area:'Anreise',
+        hours:'laut Reiseplanung Abfahrt 09:05',
+        info:'Organisationspunkt der Anreise.',
+        transport:'Bus/Fähre',
+        official:'https://www.portboulognecalais.fr/'
+      },
+      school: {
+        id:'school',
+        name:'Lessing-Gymnasium',
+        query:'Lessing-Gymnasium Neu-Ulm',
+        address:'Treffpunkt laut Reiseplanung: Haupteingang Lessing-Gymnasium',
+        area:'Start / Ziel',
+        hours:'Treffen Sonntag 19:30, Abfahrt 20:00; Rückkehr Freitagvormittag',
+        info:'Start- und Endpunkt der Fahrt laut Planung.',
+        transport:'Bus',
+        official:''
+      }
+    };
+
+    const mapLocationIds = [
+      'hostel',
+      'greenwich',
+      'observatory',
+      'o2',
+      'tower',
+      'towerbridge',
+      'borough',
+      'londoneye',
+      'westminster',
+      'soho',
+      'tussauds',
+      'soas',
+      'camden',
+      'buckingham',
+      'nhm'
+    ];
+
+    const days = [
+      {
+        id:'sunmon',
+        label:'Sonntag / Montag',
+        date:'12.–13. April 2026',
+        theme:'Fahrt & Ankunft',
+        summary:'Treffpunkt am Lessing-Gymnasium, Nachtfahrt, Fähre ab Calais, Ankunft in London am Montagmittag und Gepäckabgabe.',
+        stops:[
+          {time:'19:30', title:'Treffpunkt Lessing-Gymnasium', location:'school', note:'Haupteingang; Lehrkraft-Check vor Abfahrt.'},
+          {time:'20:00', title:'Abfahrt', location:'school', note:'Pünktlicher Reisebeginn.'},
+          {time:'09:05', title:'Fährabfahrt in Calais', location:'calais', note:'Reisebaustein laut Plan.'},
+          {time:'Mittag', title:'Ankunft London & Gepäckabgabe', location:'hostel', note:'Check-in / frisch machen vor dem Nachmittagsprogramm.'},
+          {time:'Nachmittag', title:'Wassertaxi auf der Themse', location:'greenwich', note:'Je nach Ankunft und Organisation.', website:'https://tfl.gov.uk/modes/river/'},
+          {time:'später', title:'Greenwich / Schnitzeljagd / Cutty Sark / Observatory / O2-Umfeld', location:'greenwich', note:'Mehrere Punkte im selben Stadtteil – gute Bündelung möglich.'},
+          {time:'Abend', title:'Abendessen in Greenwich', location:'greenwich', note:'Anschließend Rückfahrt zum Hostel.'}
+        ]
+      },
+      {
+        id:'tue',
+        label:'Dienstag',
+        date:'14. April 2026',
+        theme:'Must-Haves',
+        summary:'Tower of London, Tower Bridge, Borough Market, London Eye, Houses of Parliament / Big Ben sowie Chinatown / Soho.',
+        stops:[
+          {time:'Vormittag', title:'Tower of London', location:'tower', note:'Früher Start empfohlen; Tourenzeiten beachten.'},
+          {time:'danach', title:'Tower Bridge', location:'towerbridge', note:'Zu Fuß gut kombinierbar.'},
+          {time:'Mittag', title:'Borough Market', location:'borough', note:'Mittagessen; Treffpunkt festlegen.'},
+          {time:'Nachmittag', title:'London Eye', location:'londoneye', note:'Tageszeiten kurzfristig prüfen.'},
+          {time:'anschließend', title:'Houses of Parliament / Big Ben', location:'westminster', note:'Guter Übergang nach Westminster.'},
+          {time:'Abend', title:'Chinatown / Soho', location:'soho', note:'Abendessen im West End.'}
+        ]
+      },
+      {
+        id:'wed',
+        label:'Mittwoch',
+        date:'15. April 2026',
+        theme:'Fame & Knowledge',
+        summary:'Madame Tussauds, Mittagessen, SOAS University of London und Camden Town.',
+        stops:[
+          {time:'Vormittag', title:'Madame Tussauds', location:'tussauds', note:'Öffnungszeiten vorab prüfen.'},
+          {time:'Mittag', title:'Mittagessen', location:'soas', note:'Zentrale Lage rund um Bloomsbury / Russell Square.'},
+          {time:'Nachmittag', title:'SOAS University of London', location:'soas', note:'Besuch an der Universität.'},
+          {time:'Abend', title:'Camden Town', location:'camden', note:'Abendessen und Erkundung mit klaren Treffzeiten.'}
+        ]
+      },
+      {
+        id:'thu',
+        label:'Donnerstag',
+        date:'16. April 2026',
+        theme:'Visiting the Royals',
+        summary:'Buckingham Palace, Natural History Museum, Hyde Park und Rückfahrt ab Hostel um 15:00.',
+        stops:[
+          {time:'Vormittag', title:'Buckingham Palace', location:'buckingham', note:'Außenstopp; Zeremonienzeiten offiziell prüfen.'},
+          {time:'später Vormittag', title:'Natural History Museum', location:'nhm', note:'Wartezeit möglich.'},
+          {time:'Mittag', title:'Hyde Park', location:'hydepark', note:'Mittagspause / Sammelpunkt.'},
+          {time:'15:00', title:'Rückfahrt ab Hostel', location:'hostel', note:'Späteste Rückkehr und Gepäckorganisation einplanen.'}
+        ]
+      },
+    ];
+
+    const transportHubs = [
+      {name:'Victoria Station', query:'Victoria Station London', lat:51.4964, lon:-0.1439, lines:'Victoria, District, Circle, National Rail, Gatwick Express'},
+      {name:'Pimlico Station', query:'Pimlico Station London', lat:51.4893, lon:-0.1336, lines:'Victoria line'},
+      {name:'Greenwich', query:'Greenwich Station London', lat:51.4783, lon:-0.0146, lines:'National Rail / DLR in der Nähe'},
+      {name:'Cutty Sark DLR', query:'Cutty Sark DLR Station London', lat:51.4812, lon:-0.0103, lines:'DLR'},
+      {name:'North Greenwich', query:'North Greenwich Station London', lat:51.5005, lon:0.0032, lines:'Jubilee line / Uber Boat'},
+      {name:'Tower Hill', query:'Tower Hill Station London', lat:51.5107, lon:-0.0760, lines:'Circle, District'},
+      {name:'London Bridge', query:'London Bridge Station London', lat:51.5055, lon:-0.0865, lines:'Northern, Jubilee, National Rail'},
+      {name:'Westminster', query:'Westminster Station London', lat:51.5010, lon:-0.1254, lines:'Jubilee, Circle, District'},
+      {name:'Waterloo', query:'Waterloo Station London', lat:51.5036, lon:-0.1143, lines:'Bakerloo, Jubilee, Northern, Waterloo & City, National Rail'},
+      {name:'Leicester Square', query:'Leicester Square Station London', lat:51.5113, lon:-0.1281, lines:'Northern, Piccadilly'},
+      {name:'Baker Street', query:'Baker Street Station London', lat:51.5226, lon:-0.1571, lines:'Bakerloo, Circle, Hammersmith & City, Jubilee, Metropolitan'},
+      {name:'Russell Square', query:'Russell Square Station London', lat:51.5231, lon:-0.1243, lines:'Piccadilly'},
+      {name:'Camden Town', query:'Camden Town Station London', lat:51.5392, lon:-0.1426, lines:'Northern'},
+      {name:'South Kensington', query:'South Kensington Station London', lat:51.4941, lon:-0.1742, lines:'Circle, District, Piccadilly'},
+      {name:'Hyde Park Corner', query:'Hyde Park Corner Station London', lat:51.5027, lon:-0.1527, lines:'Piccadilly'},
+      {name:'Green Park', query:'Green Park Station London', lat:51.5067, lon:-0.1428, lines:'Jubilee, Piccadilly, Victoria'}
+    ];
+
+    const riverHubs = [
+      {name:'Westminster Pier', query:'Westminster Pier London', lat:51.5008, lon:-0.1230, lines:'River Services / Uber Boat'},
+      {name:'London Eye Pier', query:'London Eye Pier London', lat:51.5034, lon:-0.1196, lines:'River Services / Uber Boat'},
+      {name:'Embankment Pier', query:'Embankment Pier London', lat:51.5071, lon:-0.1217, lines:'River Services / Uber Boat'},
+      {name:'Tower Pier', query:'Tower Pier London', lat:51.5079, lon:-0.0761, lines:'River Services / Uber Boat'},
+      {name:'Bankside Pier', query:'Bankside Pier London', lat:51.5070, lon:-0.0986, lines:'River Services / Uber Boat'},
+      {name:'Greenwich Pier', query:'Greenwich Pier London', lat:51.4828, lon:-0.0108, lines:'River Services / Uber Boat'},
+      {name:'North Greenwich Pier', query:'North Greenwich Pier London', lat:51.5016, lon:0.0034, lines:'River Services / Uber Boat'},
+      {name:'Battersea Power Station Pier', query:'Battersea Power Station Pier London', lat:51.4796, lon:-0.1450, lines:'River Services / Uber Boat'}
+    ];
+
+    const fallbackDocumentFiles = [
+      // 'Programm.pdf',
+      // 'Tickets.pdf',
+      // 'Notfallkontakte.pdf'
+    ];
+
+    let selectedDay = days[0].id;
+    let selectedLocation = 'hostel';
+    let travelMode = 'transit';
+    let selectedDocument = '';
+
+    function escapeHtml(value){
+      return String(value).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    function setActiveTab(tabId){
+      document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === tabId);
+      });
+      document.querySelectorAll('.tab-btn, .nav-mini').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabId);
+      });
+    }
+
+    function bindTabs(){
+      document.querySelectorAll('.tab-btn, .nav-mini').forEach(btn => {
+        btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
+      });
+    }
+
+    function isMapLocation(id){
+      return mapLocationIds.includes(id);
+    }
+
+    function getPreferredMapLocation(day){
+      const firstMapStop = day.stops.find(stop => isMapLocation(stop.location));
+      return firstMapStop ? firstMapStop.location : 'hostel';
+    }
+
+    function buildDayButtons(){
+      const wrap = document.getElementById('dayList');
+      wrap.innerHTML = days.map(day => `
+        <button class="day-btn ${day.id === selectedDay ? 'active' : ''}" onclick="selectDay('${day.id}')">
+          <strong>${escapeHtml(day.label)}</strong>
+          <small>${escapeHtml(day.date)}</small>
+          <small>${escapeHtml(day.theme)}</small>
+        </button>
+      `).join('');
+    }
+
+    function selectDay(dayId){
+      selectedDay = dayId;
+      const day = days.find(d => d.id === dayId);
+      selectedLocation = getPreferredMapLocation(day);
+      renderDay();
+    }
+
+    function renderDay(){
+      const day = days.find(d => d.id === selectedDay);
+      document.getElementById('themeBadge').textContent = day.theme;
+      document.getElementById('currentTitle').textContent = `${day.label} · ${day.theme}`;
+      document.getElementById('dayDateBadge').textContent = day.date;
+      document.getElementById('currentSubtitle').textContent = day.summary;
+
+      buildDayButtons();
+      if (!isMapLocation(selectedLocation)) selectedLocation = getPreferredMapLocation(day);
+      renderTimeline(day);
+      renderDayLocationChips(day);
+      renderDetails(selectedLocation);
+      populateRouteSelects();
+      renderAllLocationChips();
+    }
+
+    function renderTimeline(day){
+      const wrap = document.getElementById('timeline');
+      wrap.innerHTML = day.stops.map((stop, index) => {
+        const loc = locations[stop.location];
+        const doneKey = `done_${day.id}_${index}`;
+        const checked = localStorage.getItem(doneKey) === '1' ? 'checked' : '';
+        const detailsButton = isMapLocation(loc.id)
+          ? `<button class="small-btn" onclick="focusLocation('${loc.id}'); setActiveTab('maps')">Route</button>`
+          : '';
+        const mapsButton = isMapLocation(loc.id)
+          ? `<button class="small-btn" onclick="openLocation('${loc.id}')">Google Maps</button>`
+          : '';
+        const websiteUrl = stop.website || loc.official;
+        const websiteButton = websiteUrl
+          ? `<button class="small-btn" onclick="openLiveSite('${websiteUrl}')">Webseite</button>`
+          : '';
+        return `
+          <div class="timeline-card">
+            <div class="stop-head">
+              <div>
+                <div class="time-tag">${escapeHtml(stop.time)}</div>
+                <h3 style="margin-top:8px">${escapeHtml(stop.title)}</h3>
+              </div>
+              ${detailsButton}
+            </div>
+            <div>${escapeHtml(stop.note)}</div>
+            <div class="stop-actions">
+              ${mapsButton}
+              ${websiteButton}
+            </div>
+            <label class="check-row">
+              <input type="checkbox" ${checked} onchange="toggleDone('${day.id}', ${index}, this.checked)">
+              <span>Erledigt</span>
+            </label>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderDayLocationChips(day){
+      const ids = [...new Set(day.stops.map(s => s.location).filter(id => isMapLocation(id)))];
+      const wrap = document.getElementById('dayLocationChips');
+      wrap.innerHTML = ids.map(id => `
+        <button class="chip ${id === selectedLocation ? 'active' : ''}" onclick="focusLocation('${id}'); setActiveTab('maps')">${escapeHtml(locations[id].name)}</button>
+      `).join('');
+    }
+
+    function renderAllLocationChips(){
+      const wrap = document.getElementById('allLocationChips');
+      const ids = mapLocationIds;
+      wrap.innerHTML = ids.map(id => `
+        <button class="chip ${id === selectedLocation ? 'active' : ''}" onclick="focusLocation('${id}'); setActiveTab('maps')">${escapeHtml(locations[id].name)}</button>
+      `).join('');
+    }
+
+    function renderDetails(id){
+      selectedLocation = id;
+      const loc = locations[id];
+      document.getElementById('locationDetails').innerHTML = `
+        <div class="section-head">
+          <div>
+            <strong>${escapeHtml(loc.name)}</strong>
+            <div class="compact">${escapeHtml(loc.address)}</div>
+          </div>
+          <span class="badge">${escapeHtml(loc.area)}</span>
+        </div>
+        <div class="compact"><strong>Öffnungszeiten / Zeitfenster:</strong> ${escapeHtml(loc.hours)}</div>
+        <div class="compact"><strong>Hinweis:</strong> ${escapeHtml(loc.info)}</div>
+        <div class="compact"><strong>ÖPNV:</strong> ${escapeHtml(loc.transport)}</div>
+        <div class="inline-actions">
+          <button class="small-btn" onclick="openLocation('${loc.id}')">Ort in Maps</button>
+          <button class="small-btn" onclick="openRouteFromHostelTo('${loc.id}')">Ab Hostel routen</button>
+          ${loc.official ? `<button class="small-btn" onclick="openLiveSite('${loc.official}')">Offizielle Seite</button>` : ''}
+        </div>
+      `;
+      updateMapSingle(loc);
+      renderAllLocationChips();
+      const day = days.find(d => d.id === selectedDay);
+      renderDayLocationChips(day);
+    }
+
+    function focusLocation(id){
+      renderDetails(id);
+    }
+
+    function populateRouteSelects(){
+      const startSel = document.getElementById('startSelect');
+      const endSel = document.getElementById('endSelect');
+      const ids = mapLocationIds;
+      startSel.innerHTML = [`<option value="current">Aktueller Standpunkt</option>`, ...ids.map(id => `<option value="${id}">${escapeHtml(locations[id].name)}</option>`)].join('');
+      endSel.innerHTML = ids.map(id => `<option value="${id}">${escapeHtml(locations[id].name)}</option>`).join('');
+      if (!startSel.dataset.ready){
+        startSel.value = 'current';
+        startSel.dataset.ready = '1';
+      }
+      endSel.value = isMapLocation(selectedLocation) ? selectedLocation : 'hostel';
+    }
+
+    function setStart(id){
+      document.getElementById('startSelect').value = id;
+      setActiveTab('maps');
+      applyRoute();
+    }
+
+    function setEnd(id){
+      document.getElementById('endSelect').value = id;
+      setActiveTab('maps');
+      applyRoute();
+    }
+
+    function bindModeButtons(){
+      document.querySelectorAll('.seg-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          travelMode = btn.dataset.mode;
+          document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+          document.getElementById('mapModeBadge').textContent = btn.textContent.trim();
+          applyRoute();
+        });
+      });
+    }
+
+    function makeMapsEmbedUrl(origin, destination, mode){
+      const flag = mode === 'walking' ? 'w' : mode === 'driving' ? 'd' : 'r';
+      if (origin && destination){
+        const originQuery = origin === 'current' ? 'Current Location' : origin.query;
+        return `https://maps.google.com/maps?saddr=${encodeURIComponent(originQuery)}&daddr=${encodeURIComponent(destination.query)}&dirflg=${flag}&output=embed`;
+      }
+      const point = destination || (origin && origin !== 'current' ? origin : null) || locations[selectedLocation] || locations.hostel;
+      return `https://maps.google.com/maps?q=${encodeURIComponent(point.query)}&output=embed`;
+    }
+
+    function makeMapsExternalUrl(origin, destination, mode){
+      if (destination && origin === 'current'){
+        return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination.query)}&travelmode=${encodeURIComponent(mode)}`;
+      }
+      if (origin && destination){
+        return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin.query)}&destination=${encodeURIComponent(destination.query)}&travelmode=${encodeURIComponent(mode)}`;
+      }
+      const point = destination || (origin && origin !== 'current' ? origin : null) || locations[selectedLocation] || locations.hostel;
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(point.query)}`;
+    }
+
+    function updateMapSingle(loc){
+      document.getElementById('mapFrame').src = makeMapsEmbedUrl(null, loc, travelMode);
+    }
+
+    function applyRoute(){
+      const startId = document.getElementById('startSelect').value;
+      const endId = document.getElementById('endSelect').value;
+      if (!endId){
+        updateMapSingle(locations[selectedLocation]);
+        return;
+      }
+      if (startId === endId){
+        updateMapSingle(locations[endId]);
+        return;
+      }
+      const origin = startId === 'current' ? 'current' : locations[startId];
+      document.getElementById('mapFrame').src = makeMapsEmbedUrl(origin, locations[endId], travelMode);
+    }
+
+    function openExternalRoute(){
+      const startId = document.getElementById('startSelect').value;
+      const endId = document.getElementById('endSelect').value;
+      const origin = startId === 'current' ? 'current' : locations[startId];
+      window.open(makeMapsExternalUrl(origin, locations[endId], travelMode), '_blank', 'noopener');
+    }
+
+    function resetMapToSelected(){
+      const safeId = isMapLocation(selectedLocation) ? selectedLocation : 'hostel';
+      document.getElementById('endSelect').value = safeId;
+      updateMapSingle(locations[safeId]);
+    }
+
+    function openRouteFromHostelTo(id){
+      window.open(makeMapsExternalUrl(locations.hostel, locations[id], 'transit'), '_blank', 'noopener');
+    }
+
+    function openLocation(id){
+      const loc = locations[id];
+      window.open(makeMapsExternalUrl(null, loc, 'transit'), '_blank', 'noopener');
+    }
+
+    function openLiveSite(url){
+      window.open(url, '_blank', 'noopener');
+    }
+
+    function toggleDone(dayId, index, value){
+      localStorage.setItem(`done_${dayId}_${index}`, value ? '1' : '0');
+    }
+
+    function openTubeMap(){
+      document.getElementById('tubeModal').classList.add('open');
+    }
+
+    function openRiverMap(){
+      document.getElementById('riverModal').classList.add('open');
+    }
+
+    function closeModal(id){
+      document.getElementById(id).classList.remove('open');
+    }
+
+    function deg2rad(v){ return v * (Math.PI / 180); }
+
+    function distanceKm(lat1, lon1, lat2, lon2){
+      const R = 6371;
+      const dLat = deg2rad(lat2 - lat1);
+      const dLon = deg2rad(lon2 - lon1);
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function showCurrentLocationRoutes(){
+      const box = document.getElementById('transportResult');
+      if (!navigator.geolocation){
+        box.innerHTML = 'Geolocation wird von diesem Browser nicht unterstützt.';
+        return;
+      }
+      box.innerHTML = 'Standort wird geladen ...';
+      navigator.geolocation.getCurrentPosition(position => {
+        const { latitude, longitude } = position.coords;
+        const sorted = [...transportHubs].sort((a,b) =>
+          distanceKm(latitude, longitude, a.lat, a.lon) - distanceKm(latitude, longitude, b.lat, b.lon)
+        );
+        const riverSorted = [...riverHubs].sort((a,b) =>
+          distanceKm(latitude, longitude, a.lat, a.lon) - distanceKm(latitude, longitude, b.lat, b.lon)
+        );
+        const nearest = sorted[0];
+        const second = sorted[1];
+        const nearestRiver = riverSorted[0];
+        const nearestDist = distanceKm(latitude, longitude, nearest.lat, nearest.lon).toFixed(2);
+        const secondDist = second ? distanceKm(latitude, longitude, second.lat, second.lon).toFixed(2) : null;
+        const riverDist = distanceKm(latitude, longitude, nearestRiver.lat, nearestRiver.lon).toFixed(2);
+        box.innerHTML = `
+          <strong>Nächstgelegener großer ÖPNV-Knoten</strong>
+          <div>${escapeHtml(nearest.name)} · ca. ${nearestDist} km</div>
+          <div class="compact">${escapeHtml(nearest.lines)}</div>
+          ${second ? `<div class="compact">Alternative: ${escapeHtml(second.name)} · ca. ${secondDist} km</div>` : ''}
+          <div class="compact" style="margin-top:8px"><strong>Nächste Wassertaxi-Haltestelle:</strong> ${escapeHtml(nearestRiver.name)} · ca. ${riverDist} km</div>
+          <div class="compact">${escapeHtml(nearestRiver.lines)}</div>
+          <div class="transport-links">
+            <button class="small-btn" onclick="openLiveSite('https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(nearest.query)}&travelmode=walking')">Zu Fuß zur Station</button>
+            <button class="small-btn" onclick="openLiveSite('https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(nearestRiver.query)}&travelmode=walking')">Zu Fuß zum Pier</button>
+            <button class="small-btn" onclick="openLiveSite('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nearest.query)}')">Station in Maps</button>
+            <button class="small-btn" onclick="openLiveSite('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nearestRiver.query)}')">Pier in Maps</button>
+          </div>
+          <div class="transport-links">
+            <button class="small-btn" onclick="openNearbySearch('subway station near me')">U-Bahn in der Nähe</button>
+            <button class="small-btn" onclick="openNearbySearch('bus stop near me')">Bus in der Nähe</button>
+            <button class="small-btn" onclick="openNearbySearch('river bus pier near me')">Wassertaxi in der Nähe</button>
+          </div>
+          <div class="compact">Für minutengenaue Live-Abfahrten anschließend direkt in Google Maps, TfL oder Uber Boat wechseln.</div>
+        `;
+      }, error => {
+        box.innerHTML = `Standort konnte nicht geladen werden: ${escapeHtml(error.message || 'unbekannter Fehler')}`;
+      }, { enableHighAccuracy:true, timeout:10000, maximumAge:300000 });
+    }
+
+    function openNearbySearch(query){
+      if (!navigator.geolocation){
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank', 'noopener');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(position => {
+        const { latitude, longitude } = position.coords;
+        const url = `https://www.google.com/maps/search/${encodeURIComponent(query)}/@${latitude},${longitude},15z`;
+        window.open(url, '_blank', 'noopener');
+      }, () => {
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank', 'noopener');
+      });
+    }
+
+
+    async function loadDocumentList(){
+      let files = [...fallbackDocumentFiles];
+      for (const manifestPath of ['Dokumente/manifest.json', 'Dokumente/index.json']){
+        try{
+          const response = await fetch(manifestPath, {cache:'no-store'});
+          if (!response.ok) continue;
+          const data = await response.json();
+          const manifestFiles = Array.isArray(data) ? data : Array.isArray(data.files) ? data.files : [];
+          if (manifestFiles.length){
+            files = manifestFiles;
+            break;
+          }
+        }catch(err){}
+      }
+      files = files
+        .map(file => typeof file === 'string' ? file.trim() : '')
+        .filter(file => file && file.toLowerCase().endsWith('.pdf'));
+      renderDocumentOptions(files);
+    }
+
+    function renderDocumentOptions(files){
+      const select = document.getElementById('documentSelect');
+      const status = document.getElementById('documentStatus');
+      if (!files.length){
+        select.innerHTML = '<option value="">Keine PDF-Dateien gefunden</option>';
+        status.innerHTML = 'Keine PDFs gefunden. Lege die Dateien im Ordner <strong>Dokumente</strong> ab und hinterlege optional eine <strong>manifest.json</strong> mit <code>{"files":["Datei1.pdf","Datei2.pdf"]}</code>. Alternativ kann die eingebaute Liste im HTML ergänzt werden.';
+        document.getElementById('documentPreview').removeAttribute('src');
+        selectedDocument = '';
+        return;
+      }
+      select.innerHTML = files.map(file => `<option value="${escapeHtml(file)}">${escapeHtml(file)}</option>`).join('');
+      selectedDocument = files[0];
+      status.innerHTML = `Gefunden: <strong>${files.length}</strong> PDF-Datei(en) im Bereich <strong>Dokumente</strong>.`;
+      openDocument(selectedDocument);
+    }
+
+    function openDocument(file){
+      if (!file) return;
+      selectedDocument = file;
+      document.getElementById('documentSelect').value = file;
+      document.getElementById('documentPreview').src = `Dokumente/${encodeURI(file)}#view=FitH`;
+    }
+
+    function openSelectedDocument(){
+      openDocument(document.getElementById('documentSelect').value);
+    }
+
+    function openSelectedDocumentExternal(){
+      const file = document.getElementById('documentSelect').value;
+      if (!file) return;
+      window.open(`Dokumente/${encodeURI(file)}`, '_blank', 'noopener');
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape'){
+        closeModal('tubeModal');
+        closeModal('riverModal');
+      }
+    });
+
+    function init(){
+      bindTabs();
+      bindModeButtons();
+      buildDayButtons();
+      renderDay();
+      loadDocumentList();
+      document.getElementById('startSelect').addEventListener('change', applyRoute);
+      document.getElementById('endSelect').addEventListener('change', applyRoute);
+      document.getElementById('documentSelect').addEventListener('change', openSelectedDocument);
+    }
+
+    init();
+  </script>
+</body>
+</html>
