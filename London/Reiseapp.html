@@ -421,6 +421,37 @@
     .action-grid-2x2 .small-btn{
       width:100%;
     }
+    .hostel-actions-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .hostel-actions-toggle{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      font-size:.92rem;
+      color:var(--muted);
+    }
+    .hostel-actions-toggle input{
+      width:18px;
+      height:18px;
+      accent-color:var(--accent);
+    }
+    .hostel-actions-grid{
+      grid-template-columns:1fr 1fr;
+    }
+    .hostel-actions-grid .small-btn{
+      min-height:44px;
+      padding:10px 10px;
+      white-space:normal;
+      line-height:1.25;
+    }
+    .hostel-map-status{
+      min-height:2.8em;
+    }
     .transport-list{
       display:grid;
       gap:12px;
@@ -1022,6 +1053,7 @@
       .pill,.chip,.badge{font-size:.98rem}
       iframe.map{min-height:320px}
       .action-grid-2x2{grid-template-columns:1fr}
+      .hostel-actions-grid{grid-template-columns:1fr 1fr}
       .doc-preview{
         min-height:46vh;
       }
@@ -1264,7 +1296,7 @@
             </div>
           </div>
 
-          <iframe class="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=Astor+Victoria+Hostel+London&output=embed"></iframe>
+          <iframe id="hostelMapFrame" class="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=Astor+Victoria+Hostel+London&output=embed"></iframe>
         </div>
       </section>
 
@@ -2234,6 +2266,7 @@
     let weatherDataCache = null;
     let selectedWeatherDayIndex = 0;
     let lastStandardTab = 'programm';
+    let hostelNearbyUseHostel = localStorage.getItem('hostelNearbyUseHostel') !== '0';
     const teacherViewPaths = new Set(['/ldn-26-k7m4', '/ldn-26-k7m4/']);
     const isTeacherView = teacherViewPaths.has(window.location.pathname.toLowerCase());
     const appViewportContent = 'width=device-width, initial-scale=0.86, minimum-scale=0.86, viewport-fit=cover';
@@ -2816,6 +2849,74 @@
       if (day){
         renderDayLocationChips(day);
       }
+    }
+
+    function updateHostelMapStatus(message){
+      const status = document.getElementById('hostelMapStatus');
+      if (!status) return;
+      status.textContent = message || (hostelNearbyUseHostel
+        ? 'Standpunkt: Astor Victoria Hostel.'
+        : 'Standpunkt: aktueller Standort per GPS.');
+    }
+
+    function updateHostelNearbyMode(checked){
+      hostelNearbyUseHostel = checked;
+      localStorage.setItem('hostelNearbyUseHostel', checked ? '1' : '0');
+      updateHostelMapStatus();
+    }
+
+    function bindUnterkunftActions(){
+      const card = document.querySelectorAll('#unterkunft .detail-card')[3];
+      if (!card) return;
+      card.innerHTML = `
+        <div class="hostel-actions-head">
+          <strong>Nützliche Aktionen</strong>
+          <label class="hostel-actions-toggle">
+            <input id="hostelNearbyToggle" type="checkbox" ${hostelNearbyUseHostel ? 'checked' : ''}>
+            <span>Hostel als Standpunkt</span>
+          </label>
+        </div>
+        <div id="hostelMapStatus" class="compact hostel-map-status"></div>
+        <div class="action-grid-2x2 hostel-actions-grid">
+          <button class="small-btn" onclick="openLocation('hostel')">Hostel in Maps</button>
+          <button class="small-btn" onclick="openLiveSite('https://www.astorhostels.com/hostels/victoria')">Webseite der Unterkunft</button>
+          <button class="small-btn" onclick="searchNearbyFromUnterkunft('subway station', 'U-Bahn in der Nähe')">U-Bahn in der Nähe</button>
+          <button class="small-btn" onclick="searchNearbyFromUnterkunft('supermarket', 'Supermarkt in der Nähe')">Supermarkt in der Nähe</button>
+          <button class="small-btn" onclick="searchNearbyFromUnterkunft('restaurant', 'Restaurant in der Nähe')">Restaurant in der Nähe</button>
+          <button class="small-btn" onclick="searchNearbyFromUnterkunft('public toilet', 'Öffentliche Toiletten in der Nähe')">Öffentliche Toiletten in der Nähe</button>
+        </div>
+      `;
+      const toggle = document.getElementById('hostelNearbyToggle');
+      if (toggle){
+        toggle.addEventListener('change', event => updateHostelNearbyMode(event.target.checked));
+      }
+      updateHostelMapStatus();
+    }
+
+    function setUnterkunftMapSearch(query, label, sourceLabel){
+      const frame = document.getElementById('hostelMapFrame');
+      if (frame){
+        frame.src = makeMapsSearchEmbedUrl(query);
+      }
+      updateHostelMapStatus(`${label}: ${sourceLabel}`);
+    }
+
+    function searchNearbyFromUnterkunft(searchTerm, label){
+      if (hostelNearbyUseHostel){
+        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standpunkt ist das Hostel.');
+        return;
+      }
+      updateHostelMapStatus(`${label}: aktueller Standort wird ermittelt ...`);
+      if (!navigator.geolocation){
+        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standortfreigabe nicht verfügbar; Hostel wird als Ersatz verwendet.');
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(position => {
+        const { latitude, longitude } = position.coords;
+        setUnterkunftMapSearch(`${searchTerm} near ${latitude},${longitude}`, label, 'Standpunkt ist der aktuelle Standort per GPS.');
+      }, () => {
+        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standort konnte nicht ermittelt werden; Hostel wird als Ersatz verwendet.');
+      }, { enableHighAccuracy:true, timeout:10000, maximumAge:300000 });
     }
 
     function openLiveSite(url){
@@ -3529,6 +3630,7 @@
     function init(){
       applyViewportMode('programm');
       applyViewMode();
+      bindUnterkunftActions();
       bindHeroToggle();
       bindThemeToggle();
       bindTabs();
