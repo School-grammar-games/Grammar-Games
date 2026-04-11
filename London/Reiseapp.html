@@ -54,6 +54,9 @@
     button,input,select{
       font:inherit;
     }
+    select,option{
+      color:var(--text);
+    }
     button{
       touch-action:manipulation;
     }
@@ -177,6 +180,7 @@
       background:linear-gradient(180deg,#2f568a,#24466f);
       border-color:#7bc0ff;
       box-shadow:0 0 0 1px rgba(123,192,255,.28) inset;
+      color:#fff;
     }
     .action-btn{
       background:linear-gradient(180deg,#4eaaf7,#348dde);
@@ -339,7 +343,7 @@
       min-height:48px;
       border-radius:12px;
       border:1px solid var(--line);
-      background:#0f1a2c;
+      background:var(--panel);
       color:var(--text);
       padding:10px 12px;
     }
@@ -379,6 +383,7 @@
     .chip.active{
       background:linear-gradient(180deg,#2f568a,#24466f);
       border-color:#7bc0ff;
+      color:#fff;
     }
     .route-grid{
       display:grid;
@@ -522,13 +527,16 @@
       padding:14px;
       border-radius:16px;
       border:1px solid var(--line);
-      background:var(--panel-2);
+      background:linear-gradient(180deg, rgba(44,88,145,.22), rgba(21,39,66,.92));
       display:grid;
       gap:8px;
       text-align:left;
       color:var(--text);
       font:inherit;
       cursor:pointer;
+    }
+    .weather-day:nth-child(even){
+      background:linear-gradient(180deg, rgba(46,123,112,.2), rgba(19,33,58,.94));
     }
     .weather-day.is-active{
       border-color:var(--accent);
@@ -538,7 +546,7 @@
       padding:16px;
       border-radius:16px;
       border:1px solid var(--line);
-      background:var(--panel-2);
+      background:linear-gradient(180deg, rgba(255,211,122,.12), var(--panel-2));
       display:grid;
       gap:12px;
     }
@@ -559,9 +567,41 @@
       padding:12px;
       border-radius:14px;
       border:1px solid var(--line);
-      background:var(--panel);
+      background:linear-gradient(180deg,var(--panel),var(--panel-2));
       display:grid;
       gap:6px;
+    }
+    .photos-panel{
+      padding:0;
+      gap:0;
+      background:transparent;
+      border:none;
+      box-shadow:none;
+    }
+    .photos-shell{
+      position:relative;
+      min-height:78vh;
+      border-radius:18px;
+      overflow:hidden;
+      background:#fff;
+      border:1px solid var(--line);
+    }
+    .photos-frame{
+      width:100%;
+      min-height:78vh;
+      height:78vh;
+      border:0;
+      display:block;
+      background:#fff;
+    }
+    .photos-overlay-btn{
+      position:absolute;
+      top:16px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:2;
+      min-width:220px;
+      box-shadow:0 12px 28px rgba(0,0,0,.18);
     }
     .doc-status{
       padding:14px;
@@ -588,6 +628,18 @@
     body.light-mode .tabs-wrap{
       background:linear-gradient(180deg,var(--bg),rgba(221,232,246,.92));
     }
+    body.light-mode .pill,
+    body.light-mode .chip,
+    body.light-mode .badge,
+    body.light-mode .time-tag,
+    body.light-mode .small-btn,
+    body.light-mode .field select,
+    body.light-mode .field input,
+    body.light-mode .doc-select{
+      background:#fff;
+      border-color:#9fb8d5;
+      color:var(--text);
+    }
     body.light-mode .tab-btn.active,
     body.light-mode .day-btn.active,
     body.light-mode .seg-btn.active{
@@ -595,6 +647,80 @@
       border-color:#2f6fc8;
       color:#fff;
       box-shadow:none;
+    }
+    body.light-mode .chip.active,
+    body.light-mode .transport-nearby-toolbar .small-btn,
+    body.light-mode .map-primary-btn,
+    body.light-mode .action-btn{
+      color:#fff;
+    }
+    body.light-mode .weather-current{
+      background:linear-gradient(180deg,#ddecff,#f2f7ff);
+    }
+    body.light-mode .weather-day{
+      background:linear-gradient(180deg,#ffffff,#eef5ff);
+    }
+    body.light-mode .weather-day:nth-child(even){
+      background:linear-gradient(180deg,#f8fffd,#e9f6f4);
+    }
+    body.light-mode .weather-detail{
+      background:linear-gradient(180deg,#fff8ea,#ffffff);
+    }
+    body.light-mode .weather-hour-card,
+    body.light-mode .route-step,
+    body.light-mode .map-hint,
+    body.light-mode .doc-status,
+    body.light-mode .doc-preview-hint{
+      background:#fff;
+      color:var(--text);
+    }
+    body.light-mode .route-step-title,
+    body.light-mode .pdf-page-label{
+      color:#17304d;
+    }
+    body.light-mode .link-card,
+    body.light-mode .stat,
+    body.light-mode .summary-card,
+    body.light-mode .route-card,
+    body.light-mode .transport-card,
+    body.light-mode .detail-card,
+    body.light-mode .timeline-card,
+    body.light-mode .info-card,
+    body.light-mode .route-summary-card{
+      background:var(--panel-2);
+    }
+    body.photos-mode{
+      background:#fff;
+    }
+    body.photos-mode .app{
+      max-width:none;
+      margin:0;
+      padding:0;
+      gap:0;
+    }
+    body.photos-mode .hero,
+    body.photos-mode .tabs-wrap{
+      display:none;
+    }
+    body.photos-mode .tab-panel{
+      display:none !important;
+    }
+    body.photos-mode #photos{
+      display:block !important;
+      position:fixed;
+      inset:0;
+      z-index:200;
+      background:#fff;
+    }
+    body.photos-mode #photos .photos-shell{
+      min-height:100vh;
+      height:100vh;
+      border:none;
+      border-radius:0;
+    }
+    body.photos-mode #photos .photos-frame{
+      min-height:100vh;
+      height:100vh;
     }
     .route-summary-card{
       padding:16px;
@@ -859,8 +985,9 @@
         <button class="tab-btn" data-tab="verkehr">Öffentliche Verkehrsmittel</button>
         <button class="tab-btn" data-tab="maps">Google Maps</button>
         <button class="tab-btn" data-tab="unterkunft">Unterkunft</button>
-        <button class="tab-btn" data-tab="dokumente">Dokumente</button>
         <button class="tab-btn" data-tab="wetter">Wetter</button>
+        <button class="tab-btn" data-tab="dokumente">Dokumente</button>
+        <button class="tab-btn" data-tab="photos">Photos</button>
       </nav>
     </div>
 
@@ -1077,7 +1204,7 @@
             </div>
             <div id="documentStatus" class="doc-status">
               Die App sucht zuerst nach <strong>Dokumente/manifest.json</strong>. Falls keine Manifest-Datei vorhanden ist, wird die eingebaute Dateiliste verwendet.
-            </button>
+            </div>
           </div>
 
           <div id="documentPreviewHint" class="doc-preview-hint">
@@ -1101,6 +1228,20 @@
 
           <div id="weatherPanel" class="weather-grid">
             <div class="doc-status">Wetterdaten werden geladen ...</div>
+          </div>
+        </div>
+      </section>
+      <section id="photos" class="tab-panel">
+        <div class="section photos-panel">
+          <div class="photos-shell">
+            <button class="small-btn photos-overlay-btn" type="button" onclick="backToReiseapp()">zurück zur Reiseapp</button>
+            <iframe
+              class="photos-frame"
+              title="Taskcards Photos"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+              allowfullscreen
+              src="https://kmz-neu-ulm.taskcards.app/#/board/52f48b75-d0ab-4644-9d6a-b9f9697f6553/view?token=aa40939b-572d-496a-b07a-393b91be24f0"></iframe>
           </div>
         </div>
       </section>
@@ -1378,7 +1519,7 @@
           {time:'19:30', title:'Treffpunkt Lessing-Gymnasium', location:'school', note:'Haupteingang; Lehrkraft-Check vor Abfahrt.'},
           {time:'20:00', title:'Abfahrt', location:'school', note:'Pünktlicher Reisebeginn.'},
           {time:'09:05', title:'Fährabfahrt in Calais', location:'calais', note:'Reisebaustein laut Plan.'},
-          {time:'Mittag', title:'Ankunft London & Gepäckabgabe', location:'hostel', note:'Check-in / frisch machen vor dem Nachmittagsprogramm.'},
+          {time:'ca. 13:00 Uhr', title:'Ankunft London & Gepäckabgabe', location:'hostel', note:'Voraussichtliche Ankunftszeit ca. 13:00 Uhr; Gepäckabgabe, Check-in und kurz frisch machen vor dem Nachmittagsprogramm.'},
           {time:'Nachmittag', title:'Wassertaxi auf der Themse', location:'greenwich', note:'Je nach Ankunft und Organisation.', website:'https://tfl.gov.uk/modes/river/'},
           {time:'später', title:'Greenwich / Schnitzeljagd / Cutty Sark / Observatory / O2-Umfeld', location:'greenwich', note:'Mehrere Punkte im selben Stadtteil – gute Bündelung möglich.'},
           {time:'Abend', title:'Abendessen in Greenwich', location:'greenwich', note:'Anschließend Rückfahrt zum Hostel.'}
@@ -1419,7 +1560,7 @@
         theme:'Visiting the Royals',
         summary:'Buckingham Palace, Natural History Museum, Hyde Park und Rückfahrt ab Hostel um 15:00.',
         stops:[
-          {time:'Vormittag', title:'Buckingham Palace', location:'buckingham', note:'Außenstopp; Zeremonienzeiten offiziell prüfen.'},
+          {time:'Vormittag', title:'Buckingham Palace', location:'buckingham', note:'Changing the Guard in der Regel Mo/Mi/Fr um 11:00 Uhr; am Donnerstag, 16. April 2026, findet dort stattdessen um 15:00 Uhr eine Captain\'s Inspection statt.'},
           {time:'später Vormittag', title:'Natural History Museum', location:'nhm', note:'Wartezeit möglich.'},
           {time:'Mittag', title:'Hyde Park', location:'hydepark', note:'Mittagspause / Sammelpunkt.'},
           {time:'15:00', title:'Rückfahrt ab Hostel', location:'hostel', note:'Späteste Rückkehr und Gepäckorganisation einplanen.'}
@@ -1454,7 +1595,8 @@
       hours:'Camden Market in der Regel täglich 10:00–18:30; das Viertel selbst ist frei zugänglich'
     });
     Object.assign(locations.buckingham, {
-      hours:'Außenbereich täglich frei; Changing the Guard in der Regel Mo/Mi/Fr um 11:00 Uhr'
+      hours:'Aussenbereich frei; Changing the Guard meist Mo/Mi/Fr um 11:00 Uhr; Do, 16.04.2026 Captain\'s Inspection um 15:00 Uhr',
+      info:'Am Donnerstag, 16. April 2026, ist laut Household Division am Buckingham Palace keine regulaere Guard Change, sondern um 15:00 Uhr eine Captain\'s Inspection mit Band of the Grenadier Guards angesetzt.'
     });
     Object.assign(locations.hydepark, {
       hours:'Fußgänger-Tore täglich 05:00–24:00'
@@ -1948,6 +2090,7 @@
     let activeDocumentRenderToken = 0;
     let weatherDataCache = null;
     let selectedWeatherDayIndex = 0;
+    let lastStandardTab = 'programm';
 
     function escapeHtml(value){
       return String(value).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -1985,7 +2128,7 @@
       const themeToggle = document.getElementById('themeToggle');
       if (!themeToggle) return;
       const storedTheme = localStorage.getItem('themeMode');
-      const preferredTheme = storedTheme || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      const preferredTheme = storedTheme || 'light';
       applyThemeState(preferredTheme);
       themeToggle.addEventListener('click', () => {
         const nextTheme = document.body.classList.contains('light-mode') ? 'dark' : 'light';
@@ -1995,12 +2138,20 @@
     }
 
     function setActiveTab(tabId){
+      if (tabId !== 'photos'){
+        lastStandardTab = tabId;
+      }
+      document.body.classList.toggle('photos-mode', tabId === 'photos');
       document.querySelectorAll('.tab-panel').forEach(panel => {
         panel.classList.toggle('active', panel.id === tabId);
       });
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tabId);
       });
+    }
+
+    function backToReiseapp(){
+      setActiveTab(lastStandardTab || 'programm');
     }
 
     function bindTabs(){
@@ -2039,7 +2190,7 @@
     function renderDay(){
       const day = days.find(d => d.id === selectedDay);
       document.getElementById('themeBadge').textContent = day.theme;
-      document.getElementById('currentTitle').textContent = `${day.label} · ${day.theme}`;
+      document.getElementById('currentTitle').textContent = `${day.label} - ${day.theme}`;
       document.getElementById('dayDateBadge').textContent = day.date;
       document.getElementById('currentSubtitle').textContent = day.summary;
 
@@ -2084,7 +2235,7 @@
             <div>${escapeHtml(stop.note)}</div>
             ${stop.noteField ? `
               <div class="note-field">
-                <div class="note-label">Lehrkraft-Notiz</div>
+                <div class="note-label">Notizen</div>
                 <textarea class="note-textarea" placeholder="${escapeHtml(stop.notePlaceholder || 'Treffpunkt, Uhrzeit oder Hinweise eintragen ...')}" oninput="updateStopNote('${day.id}', ${index}, this.value)">${escapeHtml(savedNote)}</textarea>
               </div>
             ` : ''}
@@ -2664,7 +2815,12 @@
     };
 
     function weatherLabel(code){
-      return weatherCodeMap[code] || 'Wetterdaten';
+      const normalizedLabels = {
+        1:'Ueberwiegend klar',
+        2:'Teilweise bewoelkt',
+        3:'Bewoelkt'
+      };
+      return normalizedLabels[code] || weatherCodeMap[code] || 'Wetterdaten';
     }
 
     function formatWeatherDayLabel(day, options){
@@ -2674,6 +2830,10 @@
     function formatWeatherClock(isoString){
       if (!isoString || !isoString.includes('T')) return '--:--';
       return isoString.split('T')[1].slice(0, 5);
+    }
+
+    function formatTemp(value){
+      return `${Math.round(value ?? 0)}&deg;C`;
     }
 
     function selectWeatherDay(index){
@@ -2839,6 +2999,96 @@
                   <strong>${escapeHtml(entry.time)} Uhr</strong>
                   <div>${escapeHtml(weatherLabel(entry.code))}</div>
                   <div class="compact">${Math.round(entry.temp ?? 0)}Â°C</div>
+                  <div class="compact">Regen ${Math.round(entry.precipitation ?? 0)}%</div>
+                </div>
+              `).join('') || '<div class="doc-status">Keine Stundenwerte fuer diesen Tag verfuegbar.</div>'}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderWeatherPanel(data){
+      weatherDataCache = data;
+      const panel = document.getElementById('weatherPanel');
+      const current = data.current || {};
+      const daily = data.daily || {};
+      const hourly = data.hourly || {};
+      const dailyRows = (daily.time || []).slice(0, 5).map((day, index) => ({
+        day,
+        max: daily.temperature_2m_max?.[index],
+        min: daily.temperature_2m_min?.[index],
+        precipitation: daily.precipitation_probability_max?.[index],
+        wind: daily.wind_speed_10m_max?.[index],
+        uv: daily.uv_index_max?.[index],
+        sunrise: daily.sunrise?.[index],
+        sunset: daily.sunset?.[index],
+        code: daily.weather_code?.[index]
+      }));
+      if (!dailyRows.length){
+        panel.innerHTML = '<div class="doc-status">Keine Wetterdaten verfuegbar.</div>';
+        return;
+      }
+      selectedWeatherDayIndex = Math.min(selectedWeatherDayIndex, dailyRows.length - 1);
+      const selectedDay = dailyRows[selectedWeatherDayIndex] || dailyRows[0];
+      const hourlyRows = (hourly.time || []).map((time, index) => ({
+        day: time.split('T')[0],
+        time: time.split('T')[1],
+        temp: hourly.temperature_2m?.[index],
+        precipitation: hourly.precipitation_probability?.[index],
+        code: hourly.weather_code?.[index]
+      })).filter(entry =>
+        entry.day === selectedDay.day &&
+        ['09:00', '12:00', '15:00', '18:00', '21:00'].includes(entry.time)
+      );
+      panel.innerHTML = `
+        <div class="weather-current">
+          <div class="weather-current-top">
+            <div>
+              <div class="weather-temp">${formatTemp(current.temperature_2m)}</div>
+              <div><strong>London</strong> &middot; ${escapeHtml(weatherLabel(current.weather_code))}</div>
+            </div>
+            <button class="small-btn" type="button" onclick="loadWeather()">Aktualisieren</button>
+          </div>
+          <div class="weather-meta">
+            <div class="detail-card"><strong>Wind</strong><div class="compact">${Math.round(current.wind_speed_10m ?? 0)} km/h</div></div>
+            <div class="detail-card"><strong>Gefuehlt</strong><div class="compact">${formatTemp(current.apparent_temperature ?? current.temperature_2m)}</div></div>
+          </div>
+        </div>
+        <div class="weather-forecast">
+          ${dailyRows.map((entry, index) => `
+            <button class="weather-day ${entry.day === selectedDay.day ? 'is-active' : ''}" type="button" onclick="selectWeatherDay(${index})">
+              <strong>${formatWeatherDayLabel(entry.day, { weekday:'short', day:'2-digit', month:'2-digit' })}</strong>
+              <div>${escapeHtml(weatherLabel(entry.code))}</div>
+              <div class="compact">Max ${formatTemp(entry.max)} &middot; Min ${formatTemp(entry.min)}</div>
+              <div class="compact">Regenrisiko ${Math.round(entry.precipitation ?? 0)}%</div>
+            </button>
+          `).join('')}
+        </div>
+        <div class="weather-detail">
+          <div class="weather-detail-head">
+            <div>
+              <strong>${escapeHtml(formatWeatherDayLabel(selectedDay.day, { weekday:'long', day:'2-digit', month:'2-digit' }))}</strong>
+              <div class="compact">${escapeHtml(weatherLabel(selectedDay.code))}</div>
+            </div>
+            <span class="badge">Tagesdetails</span>
+          </div>
+          <div class="weather-detail-grid">
+            <div class="detail-card"><strong>Temperatur</strong><div class="compact">Max ${formatTemp(selectedDay.max)} &middot; Min ${formatTemp(selectedDay.min)}</div></div>
+            <div class="detail-card"><strong>Regenrisiko</strong><div class="compact">${Math.round(selectedDay.precipitation ?? 0)}%</div></div>
+            <div class="detail-card"><strong>Wind max.</strong><div class="compact">${Math.round(selectedDay.wind ?? 0)} km/h</div></div>
+            <div class="detail-card"><strong>UV max.</strong><div class="compact">${Math.round(selectedDay.uv ?? 0)}</div></div>
+            <div class="detail-card"><strong>Sonnenaufgang</strong><div class="compact">${escapeHtml(formatWeatherClock(selectedDay.sunrise))} Uhr</div></div>
+            <div class="detail-card"><strong>Sonnenuntergang</strong><div class="compact">${escapeHtml(formatWeatherClock(selectedDay.sunset))} Uhr</div></div>
+          </div>
+          <div>
+            <strong>Stundenblick</strong>
+            <div class="weather-hourly">
+              ${hourlyRows.map(entry => `
+                <div class="weather-hour-card">
+                  <strong>${escapeHtml(entry.time)} Uhr</strong>
+                  <div>${escapeHtml(weatherLabel(entry.code))}</div>
+                  <div class="compact">${formatTemp(entry.temp)}</div>
                   <div class="compact">Regen ${Math.round(entry.precipitation ?? 0)}%</div>
                 </div>
               `).join('') || '<div class="doc-status">Keine Stundenwerte fuer diesen Tag verfuegbar.</div>'}
