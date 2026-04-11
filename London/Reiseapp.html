@@ -1556,6 +1556,21 @@
         note:'20:00 Uhr Abfahrt in Dover und 23:00 Uhr Ankunft in Dunkerque laut Reiseablauf (Herole).'
       });
     }
+    if (thursdayPlan && thursdayPlan.stops.length >= 7){
+      thursdayPlan.stops = [
+        thursdayPlan.stops[0],
+        thursdayPlan.stops[1],
+        thursdayPlan.stops[2],
+        thursdayPlan.stops[3],
+        thursdayPlan.stops[4],
+        {
+          time:'20:00 - 23:00 Uhr',
+          title:'Faehrfahrt Dover -> Dunkerque',
+          location:'calais',
+          note:'20:00 Uhr Abfahrt in Dover und 23:00 Uhr Ankunft in Dunkerque laut Reiseablauf (Herole).'
+        }
+      ];
+    }
 
     const mainRoutes = {
       greenwich: {
