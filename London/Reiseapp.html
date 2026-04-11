@@ -1400,6 +1400,8 @@
         id:'hostel',
         name:'Astor Victoria Hostel',
         query:'Astor Victoria Hostel, 73 Belgrave Road, London SW1V 2BG',
+        lat:51.4897,
+        lon:-0.1401,
         address:'73 Belgrave Road, London SW1V 2BG',
         area:'Victoria / Pimlico',
         hours:'Check-in laut Unterkunft; gute Verkehrsanbindung in der Umgebung',
@@ -2571,8 +2573,11 @@
       return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(point.query)}`;
     }
 
-    function makeMapsSearchEmbedUrl(query){
-      return `https://maps.google.com/maps?hl=de&q=${encodeURIComponent(query)}&output=embed`;
+    function makeMapsSearchEmbedUrl(query, center = null){
+      const centerParams = center && Number.isFinite(center.lat) && Number.isFinite(center.lon)
+        ? `&ll=${center.lat},${center.lon}&z=15`
+        : '';
+      return `https://maps.google.com/maps?hl=de&q=${encodeURIComponent(query)}${centerParams}&output=embed`;
     }
 
 
@@ -2893,29 +2898,29 @@
       updateHostelMapStatus();
     }
 
-    function setUnterkunftMapSearch(query, label, sourceLabel){
+    function setUnterkunftMapSearch(query, label, sourceLabel, center = null){
       const frame = document.getElementById('hostelMapFrame');
       if (frame){
-        frame.src = makeMapsSearchEmbedUrl(query);
+        frame.src = makeMapsSearchEmbedUrl(query, center);
       }
       updateHostelMapStatus(`${label}: ${sourceLabel}`);
     }
 
     function searchNearbyFromUnterkunft(searchTerm, label){
       if (hostelNearbyUseHostel){
-        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standpunkt ist das Hostel.');
+        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standpunkt ist das Hostel. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', locations.hostel);
         return;
       }
       updateHostelMapStatus(`${label}: aktueller Standort wird ermittelt ...`);
       if (!navigator.geolocation){
-        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standortfreigabe nicht verfügbar; Hostel wird als Ersatz verwendet.');
+        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standortfreigabe nicht verfügbar; Hostel wird als Ersatz verwendet. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', locations.hostel);
         return;
       }
       navigator.geolocation.getCurrentPosition(position => {
         const { latitude, longitude } = position.coords;
-        setUnterkunftMapSearch(`${searchTerm} near ${latitude},${longitude}`, label, 'Standpunkt ist der aktuelle Standort per GPS.');
+        setUnterkunftMapSearch(`${searchTerm} near ${latitude},${longitude}`, label, 'Standpunkt ist der aktuelle Standort per GPS. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', { lat: latitude, lon: longitude });
       }, () => {
-        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standort konnte nicht ermittelt werden; Hostel wird als Ersatz verwendet.');
+        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standort konnte nicht ermittelt werden; Hostel wird als Ersatz verwendet. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', locations.hostel);
       }, { enableHighAccuracy:true, timeout:10000, maximumAge:300000 });
     }
 
