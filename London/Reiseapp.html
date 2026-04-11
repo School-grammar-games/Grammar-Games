@@ -501,6 +501,29 @@
       display:grid;
       gap:10px;
     }
+    .weather-title{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .weather-icon{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:32px;
+      height:32px;
+      border-radius:999px;
+      font-size:1.05rem;
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.22);
+      flex:0 0 auto;
+    }
+    .weather-icon.sun{background:rgba(255,211,122,.22);border-color:rgba(255,211,122,.38)}
+    .weather-icon.cloud{background:rgba(214,227,244,.22);border-color:rgba(214,227,244,.34)}
+    .weather-icon.rain{background:rgba(105,183,255,.22);border-color:rgba(105,183,255,.34)}
+    .weather-icon.storm{background:rgba(255,164,122,.24);border-color:rgba(255,164,122,.36)}
+    .weather-icon.fog{background:rgba(189,199,214,.24);border-color:rgba(189,199,214,.34)}
     .weather-current-top{
       display:flex;
       justify-content:space-between;
@@ -654,6 +677,21 @@
     body.light-mode .action-btn{
       color:#fff;
     }
+    body.light-mode .transport-nearby-toolbar .small-btn{
+      background:linear-gradient(180deg,#2f6fc8,#255ba7);
+      border-color:#255ba7;
+      box-shadow:none;
+    }
+    body.light-mode .location-grid .chip{
+      background:#fff;
+      border-color:#9fb8d5;
+      color:var(--text);
+    }
+    body.light-mode .location-grid .chip.active{
+      background:linear-gradient(180deg,#2f6fc8,#255ba7);
+      border-color:#255ba7;
+      color:#fff;
+    }
     body.light-mode .weather-current{
       background:linear-gradient(180deg,#ddecff,#f2f7ff);
     }
@@ -665,6 +703,10 @@
     }
     body.light-mode .weather-detail{
       background:linear-gradient(180deg,#fff8ea,#ffffff);
+    }
+    body.light-mode .weather-icon{
+      background:#fff;
+      border-color:#b8cbe2;
     }
     body.light-mode .weather-hour-card,
     body.light-mode .route-step,
@@ -982,12 +1024,12 @@
     <div class="tabs-wrap">
       <nav class="tabs" aria-label="Hauptbereiche">
         <button class="tab-btn active" data-tab="programm">Tagesprogramm</button>
-        <button class="tab-btn" data-tab="verkehr">Öffentliche Verkehrsmittel</button>
-        <button class="tab-btn" data-tab="maps">Google Maps</button>
-        <button class="tab-btn" data-tab="unterkunft">Unterkunft</button>
         <button class="tab-btn" data-tab="wetter">Wetter</button>
-        <button class="tab-btn" data-tab="dokumente">Dokumente</button>
         <button class="tab-btn" data-tab="photos">Photos</button>
+        <button class="tab-btn" data-tab="maps">Google Maps</button>
+        <button class="tab-btn" data-tab="verkehr">Öffentliche Verkehrsmittel</button>
+        <button class="tab-btn" data-tab="unterkunft">Unterkunft</button>
+        <button class="tab-btn" data-tab="dokumente">Dokumente</button>
       </nav>
     </div>
 
@@ -2836,6 +2878,15 @@
       return `${Math.round(value ?? 0)}&deg;C`;
     }
 
+    function weatherIcon(code){
+      if ([0,1].includes(code)) return '<span class="weather-icon sun" aria-hidden="true">☀</span>';
+      if ([2,3].includes(code)) return '<span class="weather-icon cloud" aria-hidden="true">☁</span>';
+      if ([45,48].includes(code)) return '<span class="weather-icon fog" aria-hidden="true">≋</span>';
+      if ([51,53,55,61,63,65,80,81,82].includes(code)) return '<span class="weather-icon rain" aria-hidden="true">☂</span>';
+      if ([95].includes(code)) return '<span class="weather-icon storm" aria-hidden="true">⚡</span>';
+      return '<span class="weather-icon cloud" aria-hidden="true">⛅</span>';
+    }
+
     function selectWeatherDay(index){
       selectedWeatherDayIndex = index;
       if (weatherDataCache){
@@ -3044,9 +3095,12 @@
       panel.innerHTML = `
         <div class="weather-current">
           <div class="weather-current-top">
-            <div>
+            <div class="weather-title">
+              ${weatherIcon(current.weather_code)}
+              <div>
               <div class="weather-temp">${formatTemp(current.temperature_2m)}</div>
               <div><strong>London</strong> &middot; ${escapeHtml(weatherLabel(current.weather_code))}</div>
+              </div>
             </div>
             <button class="small-btn" type="button" onclick="loadWeather()">Aktualisieren</button>
           </div>
@@ -3058,7 +3112,10 @@
         <div class="weather-forecast">
           ${dailyRows.map((entry, index) => `
             <button class="weather-day ${entry.day === selectedDay.day ? 'is-active' : ''}" type="button" onclick="selectWeatherDay(${index})">
-              <strong>${formatWeatherDayLabel(entry.day, { weekday:'short', day:'2-digit', month:'2-digit' })}</strong>
+              <div class="weather-title">
+                ${weatherIcon(entry.code)}
+                <strong>${formatWeatherDayLabel(entry.day, { weekday:'short', day:'2-digit', month:'2-digit' })}</strong>
+              </div>
               <div>${escapeHtml(weatherLabel(entry.code))}</div>
               <div class="compact">Max ${formatTemp(entry.max)} &middot; Min ${formatTemp(entry.min)}</div>
               <div class="compact">Regenrisiko ${Math.round(entry.precipitation ?? 0)}%</div>
@@ -3067,9 +3124,12 @@
         </div>
         <div class="weather-detail">
           <div class="weather-detail-head">
-            <div>
+            <div class="weather-title">
+              ${weatherIcon(selectedDay.code)}
+              <div>
               <strong>${escapeHtml(formatWeatherDayLabel(selectedDay.day, { weekday:'long', day:'2-digit', month:'2-digit' }))}</strong>
               <div class="compact">${escapeHtml(weatherLabel(selectedDay.code))}</div>
+              </div>
             </div>
             <span class="badge">Tagesdetails</span>
           </div>
@@ -3086,7 +3146,10 @@
             <div class="weather-hourly">
               ${hourlyRows.map(entry => `
                 <div class="weather-hour-card">
-                  <strong>${escapeHtml(entry.time)} Uhr</strong>
+                  <div class="weather-title">
+                    ${weatherIcon(entry.code)}
+                    <strong>${escapeHtml(entry.time)} Uhr</strong>
+                  </div>
                   <div>${escapeHtml(weatherLabel(entry.code))}</div>
                   <div class="compact">${formatTemp(entry.temp)}</div>
                   <div class="compact">Regen ${Math.round(entry.precipitation ?? 0)}%</div>
