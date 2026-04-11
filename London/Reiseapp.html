@@ -1778,6 +1778,64 @@
       ];
     }
 
+    if (mondayPlan){
+      mondayPlan.summary = 'Treffpunkt am Lessing-Gymnasium, Nachtfahrt, Fähre ab Calais, Ankunft in London am Montagmittag und Gepäckabgabe.';
+      mondayPlan.stops[0].note = 'Um 19:30 Uhr ist der Treffpunkt am Haupteingang mit Lehrkraft-Check. Um 20:00 Uhr startet die Fahrt pünktlich.';
+      mondayPlan.stops[1].title = 'Fährabfahrt in Calais';
+      mondayPlan.stops[1].note = 'Es muss aus dem Bus ausgestiegen werden. Es wird gemeinsam der Bus verlassen, gesammelt und ein Treffpunkt vereinbart, um vor Ankunft wieder gemeinsam zum Bus zu gehen.';
+      mondayPlan.stops[2].title = 'Ankunft London & Gepäckabgabe';
+      mondayPlan.stops[2].note = 'Die voraussichtliche Ankunftszeit ist ca. 13:00 Uhr. Danach folgen Gepäckabgabe, Check-in und ein kurzes Frischmachen vor dem Nachmittagsprogramm.';
+      mondayPlan.stops[3].note = 'Empfohlene Anlegestelle in Hostelnähe ist der Millbank Pier. Vom Hostel sind es etwa 18 bis 20 Minuten zu Fuß über Belgrave Road und Lupus Street Richtung Themse; dort kann der RB1/RB6 ostwärts bis Greenwich Pier genommen werden.';
+      mondayPlan.stops[4].title = 'Greenwich / Schnitzeljagd / Cutty Sark / Observatory / O2-Umfeld';
+      mondayPlan.stops[4].note = 'Viele Highlights in einem Viertel – perfekt zum Entdecken.';
+      mondayPlan.stops[4].notePlaceholder = 'Treffpunkt, Uhrzeit, Gruppenaufteilung oder Hinweise zur Schnitzeljagd eintragen ...';
+      mondayPlan.stops[5].note = 'Für die Rückfahrt nach dem Abendessen geht es ab Greenwich Pier westwärts bis Millbank Pier; von dort sind es etwa 18 bis 20 Minuten zu Fuß zurück zum Hostel.';
+    }
+
+    if (tuesdayPlan){
+      tuesdayPlan.stops[0].note = 'Dies ist das gebuchte Einlassfenster; die Tickets sollten am Eingang bereitliegen.';
+      tuesdayPlan.stops[1].note = 'Die Tower Bridge lässt sich direkt im Anschluss gut zu Fuß erreichen.';
+      tuesdayPlan.stops[2].note = 'Hier bietet sich eine gemeinsame Mittagspause mit festem Treffpunkt an.';
+      tuesdayPlan.stops[3].note = 'Dies ist das gebuchte Zeitfenster am Nachmittag; kurz vorher sollte sich die Gruppe sammeln.';
+      tuesdayPlan.stops[4].title = 'Houses of Parliament / Big Ben';
+      tuesdayPlan.stops[4].time = 'anschließend';
+      tuesdayPlan.stops[4].note = 'Der Programmpunkt lässt sich gut mit Westminster verbinden.';
+      tuesdayPlan.stops[5].title = 'Chinatown / Soho';
+      tuesdayPlan.stops[5].note = 'Zum Abendessen bietet sich das West End mit Chinatown und Soho an.';
+      tuesdayPlan.stops[2].notePlaceholder = 'Treffpunkt, Lunch-Zeit oder Sammelpunkt für Borough Market eintragen ...';
+      tuesdayPlan.stops[5].notePlaceholder = 'Restaurant, Treffpunkt oder Rückkehrzeit für Chinatown / Soho eintragen ...';
+    }
+
+    const naturalHistoryLocation = locations.nhm;
+    if (naturalHistoryLocation){
+      naturalHistoryLocation.info = 'Das Museum ist groß, kostenlos und ideal für einen gemeinsamen Schwerpunkt oder freie Erkundungszeit.';
+    }
+
+    if (wednesdayPlan){
+      wednesdayPlan.stops[0].note = 'Der Einlass ist am Vormittag; Tickets und Treffpunkt sollten vorher feststehen.';
+      wednesdayPlan.stops[1].note = 'Bloomsbury und Russell Square sind dafür ein praktischer Bereich.';
+      wednesdayPlan.stops[1].notePlaceholder = 'Ort, Uhrzeit oder Sammelpunkt fürs Mittagessen eintragen ...';
+      wednesdayPlan.stops[2].note = 'Am Nachmittag ist der Besuch an der Universität vorgesehen.';
+      wednesdayPlan.stops[3].note = 'Für den Abend passen Erkundung und Abendessen mit klaren Treffzeiten gut zusammen.';
+      wednesdayPlan.stops[3].notePlaceholder = 'Treffpunkt oder Uhrzeit für Camden Town eintragen ...';
+    }
+
+    if (thursdayPlan){
+      thursdayPlan.summary = 'Buckingham Palace, Natural History Museum, Hyde Park, Rückfahrt ab Hostel um 15:00 Uhr sowie Check-In und Nachtfähre.';
+      thursdayPlan.stops[0].note = 'Changing the Guard findet in der Regel montags, mittwochs und freitags um 11:00 Uhr statt. Am Donnerstag, 16. April 2026, gibt es dort stattdessen um 15:00 Uhr eine Captain’s Inspection.';
+      thursdayPlan.stops[1].title = 'Natural History Museum';
+      thursdayPlan.stops[1].time = 'später Vormittag';
+      thursdayPlan.stops[1].note = 'Das Museum bietet viel zu sehen und eignet sich gut für einen gemeinsamen Schwerpunkt oder freie Erkundungszeit.';
+      thursdayPlan.stops[2].note = 'Der Park eignet sich gut für eine Mittagspause und einen klaren Sammelpunkt.';
+      thursdayPlan.stops[2].notePlaceholder = 'Picknickpunkt, Treffzeit oder Sammelort im Hyde Park eintragen ...';
+      thursdayPlan.stops[3].title = 'Rückfahrt ab Hostel';
+      thursdayPlan.stops[3].note = 'Die späteste Rückkehr zum Hostel sollte für Gepäck und Abfahrt sicher eingeplant werden.';
+      thursdayPlan.stops[4].title = 'Check-In Fährhafen Dover';
+      thursdayPlan.stops[4].note = 'Der Check-In erfolgt an den Eastern Docks in Dover.';
+      thursdayPlan.stops[5].title = 'Fährfahrt Dover -> Dunkerque';
+      thursdayPlan.stops[5].note = 'Die Fähre fährt um 20:00 Uhr in Dover ab und erreicht Dunkerque um 23:00 Uhr.';
+    }
+
     const mainRoutes = {
       greenwich: {
         mode:'ÖPNV',
