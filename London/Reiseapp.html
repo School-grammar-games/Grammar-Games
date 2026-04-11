@@ -277,6 +277,27 @@
     .check-row input{
       width:22px;height:22px;
     }
+    .note-field{
+      display:grid;
+      gap:8px;
+      margin-top:4px;
+    }
+    .note-label{
+      color:var(--muted);
+      font-size:.92rem;
+    }
+    .note-textarea{
+      width:100%;
+      min-height:88px;
+      resize:vertical;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#0f1a2c;
+      color:var(--text);
+      padding:12px;
+      font:inherit;
+      line-height:1.45;
+    }
     .grid-2{
       display:grid;
       grid-template-columns:1fr;
@@ -439,6 +460,48 @@
       height:auto;
       border-radius:10px;
       background:#fff;
+    }
+    .weather-grid{
+      display:grid;
+      gap:12px;
+    }
+    .weather-current{
+      padding:16px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:linear-gradient(180deg,#173256,#11233e);
+      display:grid;
+      gap:10px;
+    }
+    .weather-current-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .weather-temp{
+      font-size:clamp(2rem,8vw,3.4rem);
+      font-weight:800;
+      line-height:1;
+    }
+    .weather-meta{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+    .weather-forecast{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(132px,1fr));
+      gap:10px;
+    }
+    .weather-day{
+      padding:14px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:var(--panel-2);
+      display:grid;
+      gap:8px;
     }
     .doc-status{
       padding:14px;
@@ -728,6 +791,7 @@
         <button class="tab-btn" data-tab="maps">Google Maps</button>
         <button class="tab-btn" data-tab="unterkunft">Unterkunft</button>
         <button class="tab-btn" data-tab="dokumente">Dokumente</button>
+        <button class="tab-btn" data-tab="wetter">Wetter</button>
       </nav>
     </div>
 
@@ -952,6 +1016,22 @@
           </div>
           <div id="documentPreview" class="doc-preview" hidden>
             <div id="documentPages" class="pdf-pages"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="wetter" class="tab-panel">
+        <div class="section card">
+          <div class="section-head">
+            <div>
+              <h2>Wetter</h2>
+              <p class="compact">Aktuelles Wetter und kompakte Vorschau fuer London.</p>
+            </div>
+            <span class="badge">London</span>
+          </div>
+
+          <div id="weatherPanel" class="weather-grid">
+            <div class="doc-status">Wetterdaten werden geladen ...</div>
           </div>
         </div>
       </section>
@@ -1325,6 +1405,74 @@
     if (wednesdayPlan){
       wednesdayPlan.stops[0].time = '10:00 Uhr';
       wednesdayPlan.stops[0].note = 'Einlass am Vormittag; Tickets und Treffpunkt vorab festlegen.';
+    }
+
+    const mondayPlan = days.find(day => day.id === 'sunmon');
+    if (mondayPlan){
+      mondayPlan.stops = [
+        {
+          time:'19:30 / 20:00 Uhr',
+          title:'Treffpunkt Lessing-Gymnasium & Abfahrt',
+          location:'school',
+          note:'19:30 Treffpunkt am Haupteingang mit Lehrkraft-Check; 20:00 pünktliche Abfahrt.'
+        },
+        mondayPlan.stops[2],
+        mondayPlan.stops[3],
+        {
+          ...mondayPlan.stops[4],
+          note:'Empfohlene Anlegestelle in Hostelnähe: Millbank Pier. Vom Hostel ca. 18–20 Minuten zu Fuß über Belgrave Road und Lupus Street Richtung Themse; dort RB1/RB6 ostwärts bis Greenwich Pier nehmen.'
+        },
+        {
+          ...mondayPlan.stops[5],
+          noteField:true,
+          notePlaceholder:'Treffpunkt, Uhrzeit, Gruppenaufteilung oder Hinweise zur Schnitzeljagd eintragen ...'
+        },
+        {
+          ...mondayPlan.stops[6],
+          note:'Für die Rückfahrt nach dem Abendessen ab Greenwich Pier westwärts bis Millbank Pier fahren; von dort ca. 18–20 Minuten zu Fuß zurück zum Hostel.'
+        }
+      ];
+    }
+
+    if (tuesdayPlan){
+      tuesdayPlan.stops[2].noteField = true;
+      tuesdayPlan.stops[2].notePlaceholder = 'Treffpunkt, Lunch-Zeit oder Sammelpunkt für Borough Market eintragen ...';
+      tuesdayPlan.stops[5].noteField = true;
+      tuesdayPlan.stops[5].notePlaceholder = 'Restaurant, Treffpunkt oder Rückkehrzeit für Chinatown / Soho eintragen ...';
+    }
+
+    if (wednesdayPlan){
+      wednesdayPlan.stops[1].noteField = true;
+      wednesdayPlan.stops[1].notePlaceholder = 'Ort, Uhrzeit oder Sammelpunkt fürs Mittagessen eintragen ...';
+      wednesdayPlan.stops[3].noteField = true;
+      wednesdayPlan.stops[3].notePlaceholder = 'Treffpunkt oder Uhrzeit für Camden Town eintragen ...';
+    }
+
+    const thursdayPlan = days.find(day => day.id === 'thu');
+    if (thursdayPlan){
+      thursdayPlan.stops[2].noteField = true;
+      thursdayPlan.stops[2].notePlaceholder = 'Picknickpunkt, Treffzeit oder Sammelort im Hyde Park eintragen ...';
+      thursdayPlan.stops.push(
+        {
+          time:'18:00 - 19:00 Uhr',
+          title:'Check-In Fährhafen Dover',
+          location:'calais',
+          note:'Check-In laut Reiseablauf (Herole) am Eastern Docks, Dover.'
+        },
+        {
+          time:'20:00 Uhr',
+          title:'Fährabfahrt Dover',
+          location:'calais',
+          note:'Abfahrt der Fähre Richtung Dunkerque laut Reiseablauf (Herole).'
+        },
+        {
+          time:'23:00 Uhr',
+          title:'Fährankunft Dunkerque',
+          location:'calais',
+          note:'Ankunft am Dunkerque Terminal laut Reiseablauf (Herole).'
+        }
+      );
+      thursdayPlan.summary = 'Buckingham Palace, Natural History Museum, Hyde Park, Rückfahrt ab Hostel um 15:00 Uhr sowie Check-In und Nachtfähre laut Reiseablauf.';
     }
 
     const mainRoutes = {
@@ -1788,7 +1936,9 @@
       wrap.innerHTML = day.stops.map((stop, index) => {
         const loc = locations[stop.location];
         const doneKey = `done_${day.id}_${index}`;
+        const noteKey = `note_${day.id}_${index}`;
         const checked = localStorage.getItem(doneKey) === '1' ? 'checked' : '';
+        const savedNote = localStorage.getItem(noteKey) || '';
         const detailsButton = isMapLocation(loc.id)
           ? `<button class="small-btn" onclick="routeToLocation('${loc.id}')">Route</button>`
           : '';
@@ -1809,6 +1959,12 @@
               ${detailsButton}
             </div>
             <div>${escapeHtml(stop.note)}</div>
+            ${stop.noteField ? `
+              <div class="note-field">
+                <div class="note-label">Lehrkraft-Notiz</div>
+                <textarea class="note-textarea" placeholder="${escapeHtml(stop.notePlaceholder || 'Treffpunkt, Uhrzeit oder Hinweise eintragen ...')}" oninput="updateStopNote('${day.id}', ${index}, this.value)">${escapeHtml(savedNote)}</textarea>
+              </div>
+            ` : ''}
             <div class="stop-actions">
               ${mapsButton}
               ${websiteButton}
@@ -2130,6 +2286,10 @@
       localStorage.setItem(`done_${dayId}_${index}`, value ? '1' : '0');
     }
 
+    function updateStopNote(dayId, index, value){
+      localStorage.setItem(`note_${dayId}_${index}`, value);
+    }
+
     function isPhoneLayout(){
       return window.matchMedia('(max-width: 720px)').matches;
     }
@@ -2260,6 +2420,85 @@
       }
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
       return window.pdfjsLib;
+    }
+
+    const weatherCodeMap = {
+      0:'Klar',
+      1:'Überwiegend klar',
+      2:'Teilweise bewölkt',
+      3:'Bewölkt',
+      45:'Nebel',
+      48:'Reifnebel',
+      51:'Leichter Nieselregen',
+      53:'Nieselregen',
+      55:'Starker Nieselregen',
+      61:'Leichter Regen',
+      63:'Regen',
+      65:'Starker Regen',
+      71:'Leichter Schneefall',
+      73:'Schneefall',
+      75:'Starker Schneefall',
+      80:'Regenschauer',
+      81:'Starke Regenschauer',
+      82:'Sehr starke Regenschauer',
+      95:'Gewitter'
+    };
+
+    function weatherLabel(code){
+      return weatherCodeMap[code] || 'Wetterdaten';
+    }
+
+    function renderWeatherPanel(data){
+      const panel = document.getElementById('weatherPanel');
+      const current = data.current || {};
+      const daily = data.daily || {};
+      const dailyRows = (daily.time || []).slice(0, 5).map((day, index) => ({
+        day,
+        max: daily.temperature_2m_max?.[index],
+        min: daily.temperature_2m_min?.[index],
+        precipitation: daily.precipitation_probability_max?.[index],
+        code: daily.weather_code?.[index]
+      }));
+      panel.innerHTML = `
+        <div class="weather-current">
+          <div class="weather-current-top">
+            <div>
+              <div class="weather-temp">${Math.round(current.temperature_2m ?? 0)}°C</div>
+              <div><strong>London</strong> · ${escapeHtml(weatherLabel(current.weather_code))}</div>
+            </div>
+            <button class="small-btn" type="button" onclick="loadWeather()">Aktualisieren</button>
+          </div>
+          <div class="weather-meta">
+            <div class="detail-card"><strong>Wind</strong><div class="compact">${Math.round(current.wind_speed_10m ?? 0)} km/h</div></div>
+            <div class="detail-card"><strong>Gefühlt</strong><div class="compact">${Math.round(current.apparent_temperature ?? current.temperature_2m ?? 0)}°C</div></div>
+          </div>
+        </div>
+        <div class="weather-forecast">
+          ${dailyRows.map(entry => `
+            <div class="weather-day">
+              <strong>${new Date(entry.day).toLocaleDateString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit' })}</strong>
+              <div>${escapeHtml(weatherLabel(entry.code))}</div>
+              <div class="compact">Max ${Math.round(entry.max ?? 0)}°C · Min ${Math.round(entry.min ?? 0)}°C</div>
+              <div class="compact">Regenrisiko ${Math.round(entry.precipitation ?? 0)}%</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    async function loadWeather(){
+      const panel = document.getElementById('weatherPanel');
+      panel.innerHTML = '<div class="doc-status">Wetterdaten werden geladen ...</div>';
+      try{
+        const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=51.5072&longitude=-0.1276&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=Europe%2FLondon', {cache:'no-store'});
+        if (!response.ok){
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        renderWeatherPanel(data);
+      }catch(error){
+        panel.innerHTML = '<div class="doc-status">Wetterdaten konnten gerade nicht geladen werden. Bitte spaeter noch einmal versuchen.</div>';
+      }
     }
 
     function revokeDocumentPreviewUrl(){
@@ -2461,6 +2700,7 @@
       buildDayButtons();
       renderDay();
       loadDocumentList();
+      loadWeather();
       document.getElementById('startSelect').addEventListener('change', applyRoute);
       document.getElementById('endSelect').addEventListener('change', applyRoute);
       document.getElementById('documentSelect').addEventListener('change', event => {
