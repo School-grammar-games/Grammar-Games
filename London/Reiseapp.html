@@ -65,8 +65,23 @@
       gap:14px;
     }
     .hero-top{
-      display:grid;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      flex-wrap:wrap;
       gap:10px;
+    }
+    .hero-heading{
+      display:grid;
+      gap:8px;
+      flex:1 1 320px;
+    }
+    .hero-toggle{
+      min-width:188px;
+      justify-content:center;
+    }
+    .hero.collapsed .hero-meta{
+      display:none;
     }
     h1,h2,h3,h4,p{margin:0}
     h1{
@@ -385,7 +400,8 @@
       min-height:60vh;
       border:none;
       border-radius:16px;
-      background:#fff;
+      background:#eef4ff;
+      overflow:auto;
     }
     .doc-preview[hidden]{
       display:none;
@@ -397,6 +413,32 @@
       background:#12213a;
       color:var(--muted);
       line-height:1.5;
+    }
+    .pdf-pages{
+      display:grid;
+      gap:18px;
+      padding:18px;
+    }
+    .pdf-page{
+      display:grid;
+      gap:10px;
+      justify-items:center;
+      padding:14px;
+      border-radius:16px;
+      background:#fff;
+      box-shadow:0 10px 24px rgba(16,26,45,.12);
+    }
+    .pdf-page-label{
+      color:#27436c;
+      font-size:.92rem;
+      font-weight:600;
+    }
+    .pdf-page canvas{
+      width:100%;
+      max-width:100%;
+      height:auto;
+      border-radius:10px;
+      background:#fff;
     }
     .doc-status{
       padding:14px;
@@ -437,6 +479,56 @@
     .bullet-list li{
       margin:0 0 8px 0;
     }
+    .route-summary-note{
+      color:var(--muted);
+      line-height:1.45;
+    }
+    .route-steps{
+      display:grid;
+      gap:10px;
+    }
+    .route-step{
+      display:grid;
+      gap:6px;
+      padding:12px 14px;
+      border-radius:14px;
+      background:#152742;
+      border:1px solid var(--line);
+    }
+    .route-step-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .route-step-title{
+      font-weight:700;
+    }
+    .route-line-badges{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .route-line{
+      display:inline-flex;
+      align-items:center;
+      min-height:32px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:.84rem;
+      font-weight:700;
+      border:1px solid transparent;
+    }
+    .line-victoria{background:#0098d8;color:#fff;border-color:#4bc5ff;}
+    .line-jubilee{background:#7b868c;color:#fff;border-color:#b8c0c5;}
+    .line-district{background:#007a4d;color:#fff;border-color:#39b382;}
+    .line-circle{background:#ffd329;color:#24334f;border-color:#ffe57d;}
+    .line-piccadilly{background:#0019a8;color:#fff;border-color:#5470ff;}
+    .line-dlr{background:#00a4a7;color:#fff;border-color:#59dcdf;}
+    .line-northern{background:#151515;color:#fff;border-color:#6c6c6c;}
+    .line-walking{background:#dde7fb;color:#24334f;border-color:#b5caef;}
+    .line-river{background:#26a17b;color:#fff;border-color:#7ce3c3;}
     .map-actions{
       display:grid;
       grid-template-columns:1fr;
@@ -536,6 +628,12 @@
       .hero{
         padding:16px;
       }
+      .hero-top{
+        align-items:stretch;
+      }
+      .hero-toggle{
+        width:100%;
+      }
       .stat-grid{
         grid-template-columns:1fr;
       }
@@ -564,6 +662,10 @@
       .doc-preview{
         min-height:52vh;
       }
+      .pdf-pages{
+        padding:12px;
+        gap:12px;
+      }
       .footer-note{
         font-size:.83rem;
       }
@@ -586,19 +688,20 @@
 </head>
 <body>
   <div class="app">
-    <header class="hero card">
+    <header class="hero card" id="heroCard">
       <div class="hero-top">
-        <div>
+        <div class="hero-heading">
           <h1>London 2026 – Reiseapp für Begleitlehrkräfte</h1>
           <p class="subtitle">Schülerfahrt vom <strong>12. April bis 17. April 2026</strong>. Mobile-first aufgebaut, touch-optimiert und klar in Reiter gegliedert.</p>
         </div>
-        <div class="pill-row">
+        <button class="small-btn hero-toggle" id="heroToggle" type="button" aria-expanded="true">Infos einklappen</button>
+        <div class="pill-row hero-meta">
           <span class="pill">Astor Victoria Hostel</span>
           <span class="pill">London</span>
           <span class="pill">Schülerfahrt</span>
         </div>
       </div>
-      <div class="stat-grid">
+      <div class="stat-grid hero-meta">
         <div class="stat">
           <small>Unterkunft</small>
           <strong>73 Belgrave Road, SW1V 2BG</strong>
@@ -845,9 +948,11 @@
           </div>
 
           <div id="documentPreviewHint" class="doc-preview-hint">
-            Dokument waehlen und die Vorschau gezielt laden. Auf Smartphones wird nichts mehr automatisch im Hintergrund geladen.
+            Dokument wird geladen ...
           </div>
-          <iframe id="documentPreview" class="doc-preview" title="Dokumentenvorschau" hidden></iframe>
+          <div id="documentPreview" class="doc-preview" hidden>
+            <div id="documentPages" class="pdf-pages"></div>
+          </div>
         </div>
       </section>
     </main>
@@ -881,6 +986,7 @@
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     const locations = {
       hostel: {
@@ -1172,6 +1278,202 @@
       },
     ];
 
+    Object.assign(locations.o2, {
+      hours:'Täglich 10:00–22:00; einzelne Restaurants, Bars und Events können abweichen',
+      official:'https://www.theo2.co.uk/visit-us/visit-us/opening-times'
+    });
+    Object.assign(locations.borough, {
+      hours:'Montag geschlossen; Dienstag–Freitag 10:00–17:00, Samstag 09:00–17:00, Sonntag 10:00–16:00'
+    });
+    Object.assign(locations.londoneye, {
+      hours:'Täglich geöffnet; Uhrzeiten und letzter Einlass variieren je nach Datum und Saison',
+      info:'Am Besuchstag das gebuchte Zeitfenster und die Warteschlange kurz prüfen.'
+    });
+    Object.assign(locations.soho, {
+      hours:'Stadtviertel frei zugänglich; Restaurants, Bars und Shops meist ab spätem Vormittag bis in den Abend',
+      official:'https://chinatown.co.uk/en/find-a-place/'
+    });
+    Object.assign(locations.tussauds, {
+      hours:'Täglich; Zeiten variieren nach Datum, meist ab 10:00 Uhr. Offizielle Tagesansicht prüfen.',
+      info:'Mit Zeitfenster buchen und morgens möglichst pünktlich ankommen.',
+      official:'https://www.madametussauds.com/london/en/plan-your-visit/opening/'
+    });
+    Object.assign(locations.soas, {
+      hours:'Campus tagsüber zugänglich; einzelne Gebäude, Services und Veranstaltungen sind bereichsabhängig'
+    });
+    Object.assign(locations.camden, {
+      hours:'Camden Market in der Regel täglich 10:00–18:30; das Viertel selbst ist frei zugänglich'
+    });
+    Object.assign(locations.buckingham, {
+      hours:'Außenbereich täglich frei; Changing the Guard in der Regel Mo/Mi/Fr um 11:00 Uhr'
+    });
+    Object.assign(locations.hydepark, {
+      hours:'Fußgänger-Tore täglich 05:00–24:00'
+    });
+
+    const tuesdayPlan = days.find(day => day.id === 'tue');
+    if (tuesdayPlan){
+      tuesdayPlan.stops[0].time = '10:30 - 11:00 Uhr';
+      tuesdayPlan.stops[0].note = 'Gebuchtes Einlassfenster; Tickets vor dem Eingang bereithalten.';
+      tuesdayPlan.stops[3].time = '16:00 Uhr';
+      tuesdayPlan.stops[3].note = 'Gebuchtes Zeitfenster am Nachmittag; kurz vorher sammeln.';
+      tuesdayPlan.stops[5].note = 'Abendessen im West End; Restaurants in Chinatown und Soho vorab auswählen.';
+      tuesdayPlan.stops[5].website = 'https://chinatown.co.uk/en/find-a-place/';
+    }
+
+    const wednesdayPlan = days.find(day => day.id === 'wed');
+    if (wednesdayPlan){
+      wednesdayPlan.stops[0].time = '10:00 Uhr';
+      wednesdayPlan.stops[0].note = 'Einlass am Vormittag; Tickets und Treffpunkt vorab festlegen.';
+    }
+
+    const mainRoutes = {
+      greenwich: {
+        mode:'ÖPNV',
+        note:'Empfohlene Hauptroute ab dem Hostel in Richtung Greenwich / Cutty Sark.',
+        steps:[
+          { title:'1. Zum Startpunkt', detail:'Vom Hostel 7–10 Minuten zu Fuß zur Victoria Station oder 5–7 Minuten zur Pimlico Station.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Erste Linie', detail:'Mit der Victoria line nordwärts Richtung Walthamstow Central bis Green Park fahren.', lines:[{ id:'victoria', label:'Victoria line' }] },
+          { title:'3. Hauptumstieg', detail:'In Green Park in die Jubilee line ostwärts Richtung Stratford wechseln und bis Canary Wharf bleiben.', lines:[{ id:'jubilee', label:'Jubilee line' }] },
+          { title:'4. Letzter Bahnabschnitt', detail:'In Canary Wharf in die DLR Richtung Lewisham umsteigen und bis Cutty Sark fahren.', lines:[{ id:'dlr', label:'DLR' }] },
+          { title:'5. Zu Fuß ans Ziel', detail:'Von Cutty Sark in wenigen Minuten nach Greenwich; fürs Observatory zusätzlich bergauf durch den Park.', lines:[{ id:'walking', label:'Zu Fuß' }] }
+        ]
+      },
+      observatory: {
+        mode:'ÖPNV',
+        note:'Gleiche Hauptroute wie nach Greenwich, danach der längere Fußweg bergauf.',
+        steps:[
+          { title:'1. Zum Startpunkt', detail:'Vom Hostel zu Victoria oder Pimlico gehen.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Victoria line', detail:'Nordwärts Richtung Walthamstow Central bis Green Park.', lines:[{ id:'victoria', label:'Victoria line' }] },
+          { title:'3. Jubilee line', detail:'Ostwärts Richtung Stratford bis Canary Wharf.', lines:[{ id:'jubilee', label:'Jubilee line' }] },
+          { title:'4. DLR', detail:'Richtung Lewisham bis Cutty Sark fahren.', lines:[{ id:'dlr', label:'DLR' }] },
+          { title:'5. Schlussweg', detail:'Durch Greenwich und dann bergauf durch Greenwich Park zum Royal Observatory.', lines:[{ id:'walking', label:'Zu Fuß' }] }
+        ]
+      },
+      o2: {
+        mode:'ÖPNV',
+        note:'Für North Greenwich bleibt ihr nach Green Park auf der Jubilee line.',
+        steps:[
+          { title:'1. Zum Startpunkt', detail:'Vom Hostel zur Victoria Station oder nach Pimlico gehen.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Victoria line', detail:'Nordwärts Richtung Walthamstow Central bis Green Park.', lines:[{ id:'victoria', label:'Victoria line' }] },
+          { title:'3. Jubilee line', detail:'In Green Park in die Jubilee line ostwärts Richtung Stratford umsteigen und bis North Greenwich fahren.', lines:[{ id:'jubilee', label:'Jubilee line' }] },
+          { title:'4. Letzte Meter', detail:'Von North Greenwich wenige Minuten zu Fuß direkt zur O2.', lines:[{ id:'walking', label:'Zu Fuß' }] }
+        ]
+      },
+      tower: {
+        mode:'ÖPNV',
+        note:'Die einfachste Hauptroute führt ohne weiteren Umstieg direkt ab Victoria.',
+        steps:[
+          { title:'1. Zum Startpunkt', detail:'Vom Hostel 7–10 Minuten zur Victoria Station laufen.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Direktfahrt', detail:'Mit District line Richtung Upminster oder Circle line Richtung Aldgate bis Tower Hill fahren.', lines:[{ id:'district', label:'District line' }, { id:'circle', label:'Circle line' }] },
+          { title:'3. Schlussweg', detail:'Ab Tower Hill nur wenige Minuten zu Fuß bis zum Tower of London.', lines:[{ id:'walking', label:'Zu Fuß' }] }
+        ]
+      },
+      towerbridge: {
+        mode:'ÖPNV',
+        note:'Erst wie zum Tower fahren, dann den letzten Abschnitt direkt am Wasser laufen.',
+        steps:[
+          { title:'1. Zum Startpunkt', detail:'Vom Hostel zur Victoria Station gehen.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Direktfahrt', detail:'Mit District line Richtung Upminster oder Circle line Richtung Aldgate bis Tower Hill.', lines:[{ id:'district', label:'District line' }, { id:'circle', label:'Circle line' }] },
+          { title:'3. Schlussweg', detail:'Vom Tower-Hill-/Tower-Bereich 8–10 Minuten zu Fuß bis auf die Tower Bridge.', lines:[{ id:'walking', label:'Zu Fuß' }] }
+        ]
+      },
+      borough: {
+        mode:'ÖPNV',
+        note:'Schnelle Hauptroute mit einem klaren Umstieg in Green Park.',
+        steps:[
+          { title:'1. Zum Startpunkt', detail:'Vom Hostel zur Victoria Station oder nach Pimlico gehen.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Victoria line', detail:'Nordwärts Richtung Walthamstow Central bis Green Park.', lines:[{ id:'victoria', label:'Victoria line' }] },
+          { title:'3. Jubilee line', detail:'In Green Park in die Jubilee line ostwärts Richtung Stratford wechseln und bis London Bridge fahren.', lines:[{ id:'jubilee', label:'Jubilee line' }] },
+          { title:'4. Schlussweg', detail:'Von London Bridge wenige Minuten zu Fuß zum Borough Market.', lines:[{ id:'walking', label:'Zu Fuß' }] }
+        ]
+      },
+      londoneye: {
+        mode:'ÖPNV',
+        note:'Die Hauptroute führt am einfachsten bis Westminster und dann über die Brücke.',
+        steps:[
+          { title:'1. Zum Startpunkt', detail:'Vom Hostel 7–10 Minuten zur Victoria Station laufen.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Direktfahrt', detail:'Mit District line Richtung Upminster oder Circle line Richtung Aldgate bis Westminster fahren.', lines:[{ id:'district', label:'District line' }, { id:'circle', label:'Circle line' }] },
+          { title:'3. Schlussweg', detail:'Zu Fuß über die Westminster Bridge und weiter zum London Eye.', lines:[{ id:'walking', label:'Zu Fuß' }] }
+        ]
+      },
+      westminster: {
+        mode:'ÖPNV',
+        note:'Kurze, direkte Hauptroute ohne Umstieg.',
+        steps:[
+          { title:'1. Zum Startpunkt', detail:'Vom Hostel zur Victoria Station gehen.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Direktfahrt', detail:'Mit District line Richtung Upminster oder Circle line Richtung Aldgate bis Westminster.', lines:[{ id:'district', label:'District line' }, { id:'circle', label:'Circle line' }] },
+          { title:'3. Ankunft', detail:'Big Ben und Houses of Parliament liegen direkt an der Station.', lines:[{ id:'walking', label:'Ankunft' }] }
+        ]
+      },
+      soho: {
+        mode:'ÖPNV',
+        note:'Für Chinatown / Soho ist Leicester Square oder Piccadilly Circus der sinnvollste Zielbereich.',
+        steps:[
+          { title:'1. Zum Startpunkt', detail:'Vom Hostel zur Victoria Station oder nach Pimlico gehen.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Victoria line', detail:'Nordwärts Richtung Walthamstow Central bis Green Park.', lines:[{ id:'victoria', label:'Victoria line' }] },
+          { title:'3. Piccadilly line', detail:'In Green Park in die Piccadilly line ostwärts Richtung Cockfosters umsteigen und bis Piccadilly Circus oder Leicester Square fahren.', lines:[{ id:'piccadilly', label:'Piccadilly line' }] },
+          { title:'4. Schlussweg', detail:'Von dort wenige Minuten zu Fuß nach Chinatown und weiter nach Soho.', lines:[{ id:'walking', label:'Zu Fuß' }] }
+        ]
+      },
+      tussauds: {
+        mode:'ÖPNV',
+        note:'Baker Street ist von Green Park sehr unkompliziert erreichbar.',
+        steps:[
+          { title:'1. Zum Startpunkt', detail:'Vom Hostel zur Victoria Station oder nach Pimlico gehen.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Victoria line', detail:'Nordwärts Richtung Walthamstow Central bis Green Park.', lines:[{ id:'victoria', label:'Victoria line' }] },
+          { title:'3. Jubilee line', detail:'In Green Park in die Jubilee line nordwärts Richtung Stanmore umsteigen und bis Baker Street fahren.', lines:[{ id:'jubilee', label:'Jubilee line' }] },
+          { title:'4. Schlussweg', detail:'Madame Tussauds liegt direkt an der Marylebone Road beim Bahnhof Baker Street.', lines:[{ id:'walking', label:'Zu Fuß' }] }
+        ]
+      },
+      soas: {
+        mode:'ÖPNV',
+        note:'Russell Square ist der klarste Zielpunkt für SOAS.',
+        steps:[
+          { title:'1. Zum Startpunkt', detail:'Vom Hostel zur Victoria Station oder nach Pimlico gehen.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Victoria line', detail:'Nordwärts Richtung Walthamstow Central bis Green Park.', lines:[{ id:'victoria', label:'Victoria line' }] },
+          { title:'3. Piccadilly line', detail:'In Green Park in die Piccadilly line nordwärts Richtung Cockfosters umsteigen und bis Russell Square fahren.', lines:[{ id:'piccadilly', label:'Piccadilly line' }] },
+          { title:'4. Schlussweg', detail:'Von Russell Square wenige Minuten zu Fuß zur SOAS.', lines:[{ id:'walking', label:'Zu Fuß' }] }
+        ]
+      },
+      camden: {
+        mode:'ÖPNV',
+        note:'Für Camden Town ist der Umstieg in Euston am geradlinigsten.',
+        steps:[
+          { title:'1. Zum Startpunkt', detail:'Vom Hostel zur Victoria Station oder nach Pimlico gehen.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Victoria line', detail:'Nordwärts Richtung Walthamstow Central bis Euston.', lines:[{ id:'victoria', label:'Victoria line' }] },
+          { title:'3. Northern line', detail:'In Euston in die Northern line nordwärts Richtung Edgware oder High Barnet wechseln und bis Camden Town fahren.', lines:[{ id:'northern', label:'Northern line' }] },
+          { title:'4. Schlussweg', detail:'Von Camden Town kurz in den Markt- und Restaurantbereich laufen.', lines:[{ id:'walking', label:'Zu Fuß' }] }
+        ]
+      },
+      buckingham: {
+        mode:'Zu Fuß',
+        note:'Für Buckingham Palace ist der direkte Fußweg meist am einfachsten und gruppentauglich.',
+        steps:[
+          { title:'1. Start am Hostel', detail:'Vom Astor Victoria Hostel über Belgrave Road und Buckingham Palace Road Richtung St. James’s Park gehen.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Schlussweg', detail:'Über die Vorplätze und Parkwege weiter bis zum Buckingham Palace. Je nach Tempo etwa 15–20 Minuten.', lines:[{ id:'walking', label:'Zu Fuß' }] }
+        ]
+      },
+      nhm: {
+        mode:'ÖPNV',
+        note:'Schnelle Hauptroute mit einem Umstieg in Green Park.',
+        steps:[
+          { title:'1. Zum Startpunkt', detail:'Vom Hostel zur Victoria Station oder nach Pimlico gehen.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Victoria line', detail:'Nordwärts Richtung Walthamstow Central bis Green Park.', lines:[{ id:'victoria', label:'Victoria line' }] },
+          { title:'3. Piccadilly line', detail:'In Green Park in die Piccadilly line westwärts Richtung Heathrow / Uxbridge umsteigen und bis South Kensington fahren.', lines:[{ id:'piccadilly', label:'Piccadilly line' }] },
+          { title:'4. Schlussweg', detail:'Von South Kensington durch die Unterführung oder oberirdisch in wenigen Minuten zum Museum.', lines:[{ id:'walking', label:'Zu Fuß' }] }
+        ]
+      },
+      hydepark: {
+        mode:'Zu Fuß',
+        note:'Für Hyde Park ist der Fußweg oft unkomplizierter als ein weiterer Umstieg.',
+        steps:[
+          { title:'1. Start am Hostel', detail:'Vom Hostel Richtung Buckingham Palace Road und Wellington Arch gehen.', lines:[{ id:'walking', label:'Zu Fuß' }] },
+          { title:'2. Parkzugang', detail:'Über Hyde Park Corner oder den Südrand in den Park hinein; je nach Treffpunkt etwa 20–25 Minuten.', lines:[{ id:'walking', label:'Zu Fuß' }] }
+        ]
+      }
+    };
+
     const transportHubs = [
       {name:'Victoria Station', query:'Victoria Station London', lat:51.4964, lon:-0.1439, lines:'Victoria, District, Circle, National Rail, Gatwick Express'},
       {name:'Pimlico Station', query:'Pimlico Station London', lat:51.4893, lon:-0.1336, lines:'Victoria line'},
@@ -1396,9 +1698,31 @@
     let selectedDocument = '';
     let documentSource = 'local';
     let activeDocumentPreviewUrl = '';
+    let activeDocumentBlob = null;
+    let activeDocumentBlobFile = '';
+    let activeDocumentRenderToken = 0;
 
     function escapeHtml(value){
       return String(value).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    function applyHeroState(collapsed){
+      const heroCard = document.getElementById('heroCard');
+      const heroToggle = document.getElementById('heroToggle');
+      heroCard.classList.toggle('collapsed', collapsed);
+      heroToggle.setAttribute('aria-expanded', String(!collapsed));
+      heroToggle.textContent = collapsed ? 'Infos aufklappen' : 'Infos einklappen';
+      localStorage.setItem('heroCollapsed', collapsed ? '1' : '0');
+    }
+
+    function bindHeroToggle(){
+      const heroToggle = document.getElementById('heroToggle');
+      if (!heroToggle) return;
+      applyHeroState(localStorage.getItem('heroCollapsed') === '1');
+      heroToggle.addEventListener('click', () => {
+        const collapsed = !document.getElementById('heroCard').classList.contains('collapsed');
+        applyHeroState(collapsed);
+      });
     }
 
     function setActiveTab(tabId){
@@ -1680,9 +2004,45 @@
     }
 
 
+    function renderRouteLineBadges(lines = []){
+      return lines.map(line => `<span class="route-line line-${escapeHtml(line.id)}">${escapeHtml(line.label)}</span>`).join('');
+    }
+
+    function renderRecommendedRouteSummary(destinationId, customStartId = 'hostel'){
+      const box = document.getElementById('routeSummary');
+      const route = mainRoutes[destinationId];
+      if (!destinationId || !route){
+        box.innerHTML = '<strong>Hauptroute ab Hostel</strong><div class="route-summary-note">Die Zusammenfassung unten zeigt nur die empfohlene Hauptroute ab dem Hostel.</div>';
+        return;
+      }
+      const customRouteHint = customStartId && !['hostel', 'current'].includes(customStartId)
+        ? '<div class="route-summary-note">Die Karte oben zeigt deine frei gewÃ¤hlte Route. Die Zusammenfassung unten bleibt bewusst die empfohlene Hauptroute ab dem Hostel.</div>'
+        : '';
+      box.innerHTML = `
+        <div class="section-head">
+          <strong>Hauptroute ab Hostel</strong>
+          <span class="badge">${escapeHtml(route.mode || 'Ã–PNV')}</span>
+        </div>
+        <div class="compact"><strong>Astor Victoria Hostel</strong> â†’ <strong>${escapeHtml(locations[destinationId].name)}</strong></div>
+        <div class="route-summary-note">${escapeHtml(route.note || '')}</div>
+        ${customRouteHint}
+        <div class="route-steps">
+          ${route.steps.map(step => `
+            <div class="route-step">
+              <div class="route-step-top">
+                <div class="route-step-title">${escapeHtml(step.title)}</div>
+                <div class="route-line-badges">${renderRouteLineBadges(step.lines || [])}</div>
+              </div>
+              <div class="compact">${escapeHtml(step.detail)}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
     function updateMapSingle(loc){
       document.getElementById('mapFrame').src = makeMapsEmbedUrl(null, loc, travelMode);
-      renderRouteSummary('hostel', loc.id, 'transit');
+      renderRecommendedRouteSummary(loc.id, 'hostel');
     }
 
     function applyRoute(){
@@ -1694,12 +2054,12 @@
       }
       if (startId === endId){
         updateMapSingle(locations[endId]);
-        renderRouteSummary(startId, endId, travelMode);
+        renderRecommendedRouteSummary(endId, startId);
         return;
       }
       const origin = startId === 'current' ? 'current' : locations[startId];
       document.getElementById('mapFrame').src = makeMapsEmbedUrl(origin, locations[endId], travelMode);
-      renderRouteSummary(startId, endId, travelMode);
+      renderRecommendedRouteSummary(endId, startId);
     }
 
     function openExternalRoute(){
@@ -1714,7 +2074,7 @@
       document.getElementById('endSelect').value = safeId;
       updateMapSingle(locations[safeId]);
       document.getElementById('startSelect').value = 'current';
-      renderRouteSummary('hostel', safeId, 'transit');
+      renderRecommendedRouteSummary(safeId, 'hostel');
     }
 
     function openRouteFromHostelTo(id){
@@ -1728,6 +2088,42 @@
 
     function openLiveSite(url){
       window.open(url, '_blank', 'noopener');
+    }
+
+    function renderRouteLineBadges(lines = []){
+      return lines.map(line => `<span class="route-line line-${escapeHtml(line.id)}">${escapeHtml(line.label)}</span>`).join('');
+    }
+
+    function renderRecommendedRouteSummary(destinationId, customStartId = 'hostel'){
+      const box = document.getElementById('routeSummary');
+      const route = mainRoutes[destinationId];
+      if (!destinationId || !route){
+        box.innerHTML = '<strong>Hauptroute ab Hostel</strong><div class="route-summary-note">Die Zusammenfassung unten zeigt nur die empfohlene Hauptroute ab dem Hostel.</div>';
+        return;
+      }
+      const customRouteHint = customStartId && !['hostel', 'current'].includes(customStartId)
+        ? '<div class="route-summary-note">Die Karte oben zeigt deine frei gewaehlte Route. Die Zusammenfassung unten bleibt bewusst die empfohlene Hauptroute ab dem Hostel.</div>'
+        : '';
+      box.innerHTML = `
+        <div class="section-head">
+          <strong>Hauptroute ab Hostel</strong>
+          <span class="badge">${escapeHtml(route.mode || 'OePNV')}</span>
+        </div>
+        <div class="compact"><strong>Astor Victoria Hostel</strong> -> <strong>${escapeHtml(locations[destinationId].name)}</strong></div>
+        <div class="route-summary-note">${escapeHtml(route.note || '')}</div>
+        ${customRouteHint}
+        <div class="route-steps">
+          ${route.steps.map(step => `
+            <div class="route-step">
+              <div class="route-step-top">
+                <div class="route-step-title">${escapeHtml(step.title)}</div>
+                <div class="route-line-badges">${renderRouteLineBadges(step.lines || [])}</div>
+              </div>
+              <div class="compact">${escapeHtml(step.detail)}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
     }
 
     function toggleDone(dayId, index, value){
@@ -1858,6 +2254,14 @@
       hint.hidden = false;
     }
 
+    function getPdfJs(){
+      if (!window.pdfjsLib){
+        throw new Error('pdf.js konnte nicht geladen werden.');
+      }
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      return window.pdfjsLib;
+    }
+
     function revokeDocumentPreviewUrl(){
       if (activeDocumentPreviewUrl){
         URL.revokeObjectURL(activeDocumentPreviewUrl);
@@ -1867,9 +2271,14 @@
 
     function resetDocumentPreview(message){
       const preview = document.getElementById('documentPreview');
+      const pages = document.getElementById('documentPages');
       revokeDocumentPreviewUrl();
+      if (pages){
+        pages.innerHTML = '';
+      }
       preview.hidden = true;
-      preview.removeAttribute('src');
+      activeDocumentBlob = null;
+      activeDocumentBlobFile = '';
       if (message){
         setDocumentHint(message);
       }
@@ -1945,9 +2354,7 @@
       status.innerHTML = source === 'github'
         ? `Gefunden: <strong>${files.length}</strong> PDF-Datei(en) aus dem privaten Repository <strong>Datenschutz/Dokumente</strong>.`
         : `Gefunden: <strong>${files.length}</strong> PDF-Datei(en) im Bereich <strong>Dokumente</strong>.`;
-      resetDocumentPreview(isPhoneLayout()
-        ? 'Auf dem Smartphone werden PDFs nicht mehr automatisch geladen. Tippe auf <strong>Vorschau laden</strong> oder <strong>In neuem Tab oeffnen</strong>.'
-        : 'Waehle ein Dokument aus und lade die Vorschau gezielt. So startet die Seite ohne automatische PDF-Downloads.');
+      openDocument(selectedDocument);
     }
 
     async function openDocument(file){
@@ -1956,10 +2363,12 @@
       document.getElementById('documentSelect').value = file;
       const status = document.getElementById('documentStatus');
       const preview = document.getElementById('documentPreview');
+      const pages = document.getElementById('documentPages');
+      const renderToken = ++activeDocumentRenderToken;
       status.innerHTML = `Lade Vorschau fuer <strong>${escapeHtml(file)}</strong> ...`;
       setDocumentHint(`Lade Vorschau fuer <strong>${escapeHtml(file)}</strong> ...`);
-      preview.hidden = true;
-      preview.removeAttribute('src');
+      preview.hidden = false;
+      pages.innerHTML = '';
       revokeDocumentPreviewUrl();
 
       try{
@@ -1967,23 +2376,69 @@
         if (!response.ok){
           throw new Error(`HTTP ${response.status}`);
         }
-        const blob = await response.blob();
-        const pdfBlob = blob.type === 'application/pdf' ? blob : new Blob([blob], {type:'application/pdf'});
-        activeDocumentPreviewUrl = URL.createObjectURL(pdfBlob);
-        preview.src = `${activeDocumentPreviewUrl}#view=FitH`;
-        preview.hidden = false;
+        const arrayBuffer = await response.arrayBuffer();
+        const pdfBlob = new Blob([arrayBuffer], {type:'application/pdf'});
+        activeDocumentBlob = pdfBlob;
+        activeDocumentBlobFile = file;
+        const pdfjs = getPdfJs();
+        const pdf = await pdfjs.getDocument({data: arrayBuffer}).promise;
+        const targetWidth = Math.max(280, Math.min(preview.clientWidth - 40, 900));
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1){
+          if (renderToken !== activeDocumentRenderToken) return;
+          const page = await pdf.getPage(pageNumber);
+          const baseViewport = page.getViewport({scale:1});
+          const scale = Math.max(0.85, targetWidth / baseViewport.width);
+          const viewport = page.getViewport({scale});
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          await page.render({canvasContext: context, viewport}).promise;
+          if (renderToken !== activeDocumentRenderToken) return;
+          const pageWrap = document.createElement('div');
+          pageWrap.className = 'pdf-page';
+          const pageLabel = document.createElement('div');
+          pageLabel.className = 'pdf-page-label';
+          pageLabel.textContent = `Seite ${pageNumber} von ${pdf.numPages}`;
+          pageWrap.appendChild(pageLabel);
+          pageWrap.appendChild(canvas);
+          pages.appendChild(pageWrap);
+        }
         document.getElementById('documentPreviewHint').hidden = true;
-        status.innerHTML = isPhoneLayout()
-          ? `Vorschau fuer <strong>${escapeHtml(file)}</strong> geladen. Falls dein Smartphone trotzdem keine Einbettung zeigt, nutze <strong>In neuem Tab oeffnen</strong>.`
-          : `Vorschau fuer <strong>${escapeHtml(file)}</strong> geladen.`;
+        status.innerHTML = `Vorschau fuer <strong>${escapeHtml(file)}</strong> geladen.`;
       }catch(error){
-        resetDocumentPreview('Die Vorschau konnte nicht geladen werden. Nutze bitte <strong>In neuem Tab oeffnen</strong>.');
+        resetDocumentPreview('Die Vorschau konnte nicht geladen werden. Nutze bitte <strong>In neuem Tab oeffnen</strong> oder <strong>Dokument herunterladen</strong>.');
         status.innerHTML = `Die Vorschau fuer <strong>${escapeHtml(file)}</strong> konnte nicht geladen werden.`;
       }
     }
 
+    async function downloadSelectedDocument(){
+      const file = document.getElementById('documentSelect').value;
+      if (!file) return;
+      try{
+        revokeDocumentPreviewUrl();
+        let blob = activeDocumentBlob;
+        if (!blob || activeDocumentBlobFile !== file){
+          const response = await fetch(getDocumentUrl(file), {cache:'no-store'});
+          if (!response.ok){
+            throw new Error(`HTTP ${response.status}`);
+          }
+          blob = await response.blob();
+        }
+        activeDocumentPreviewUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = activeDocumentPreviewUrl;
+        link.download = file.split('/').pop() || 'dokument.pdf';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      } catch (error){
+        window.open(getDocumentUrl(file), '_blank', 'noopener');
+      }
+    }
+
     function openSelectedDocument(){
-      openDocument(document.getElementById('documentSelect').value);
+      downloadSelectedDocument();
     }
 
     function openSelectedDocumentExternal(){
@@ -2000,6 +2455,7 @@
     });
 
     function init(){
+      bindHeroToggle();
       bindTabs();
       bindModeButtons();
       buildDayButtons();
@@ -2010,22 +2466,23 @@
       document.getElementById('documentSelect').addEventListener('change', event => {
         selectedDocument = event.target.value;
         if (!selectedDocument){
-          resetDocumentPreview('Dokument waehlen und die Vorschau gezielt laden.');
-          return;
-        }
-        if (isPhoneLayout()){
-          resetDocumentPreview(`Ausgewaehlt: <strong>${escapeHtml(selectedDocument)}</strong>. Tippe jetzt auf <strong>Vorschau laden</strong> oder <strong>In neuem Tab oeffnen</strong>.`);
+          resetDocumentPreview('Dokument waehlen, um die Vorschau automatisch anzuzeigen.');
           return;
         }
         openDocument(selectedDocument);
       });
+      const heroSubtitle = document.querySelector('.subtitle');
+      if (heroSubtitle){
+        heroSubtitle.innerHTML = 'Sch\u00fclerfahrt vom <strong>12. April bis 17. April 2026</strong>.';
+      }
       const docIntro = document.querySelector('#dokumente .section-head .compact');
       if (docIntro){
-        docIntro.textContent = 'PDFs aus dem Ordner Dokumente auswaehlen und bei Bedarf gezielt laden.';
+        docIntro.textContent = 'PDFs aus dem Ordner Dokumente werden automatisch in der App angezeigt.';
       }
       const previewButton = document.querySelector('#dokumente .inline-actions .small-btn');
       if (previewButton){
-        previewButton.textContent = 'Vorschau laden';
+        previewButton.textContent = 'Dokument herunterladen';
+        previewButton.onclick = downloadSelectedDocument;
       }
       const footerNote = document.querySelector('.footer-note');
       if (footerNote){
