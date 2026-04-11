@@ -39,6 +39,13 @@ function jsonResponse(body, status = 200) {
   });
 }
 
+function getMimeType(path) {
+  if (path.toLowerCase().endsWith('.pdf')) {
+    return 'application/pdf';
+  }
+  return 'application/octet-stream';
+}
+
 async function fetchGitHubContents(repoPath, accept) {
   const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeRepoPath(repoPath)}?ref=${encodeURIComponent(BRANCH)}`;
   return fetch(url, {
@@ -67,7 +74,8 @@ export async function GET(request) {
         headers: {
           'cache-control': 'private, max-age=60',
           'content-disposition': `inline; filename="${filename.replace(/"/g, '')}"`,
-          'content-type': response.headers.get('content-type') || 'application/pdf'
+          'content-type': getMimeType(file),
+          'x-content-type-options': 'nosniff'
         }
       });
     }
@@ -86,5 +94,38 @@ export async function GET(request) {
     return jsonResponse({ files });
   } catch (error) {
     return jsonResponse({ error: error.message || 'Unbekannter Fehler.' }, 400);
+  }
+}
+
+export async function HEAD(request) {
+  if (!process.env.GITHUB_TOKEN) {
+    return new Response(null, { status: 500 });
+  }
+
+  try {
+    const url = new URL(request.url);
+    const file = normalizePath(url.searchParams.get('file') || '');
+
+    if (!file) {
+      return new Response(null, { status: 400 });
+    }
+
+    const response = await fetchGitHubContents(buildRepoPath(file), 'application/vnd.github.raw');
+    if (!response.ok) {
+      return new Response(null, { status: response.status === 404 ? 404 : 502 });
+    }
+
+    const filename = file.split('/').pop() || 'dokument.pdf';
+    return new Response(null, {
+      status: 200,
+      headers: {
+        'cache-control': 'private, max-age=60',
+        'content-disposition': `inline; filename="${filename.replace(/"/g, '')}"`,
+        'content-type': getMimeType(file),
+        'x-content-type-options': 'nosniff'
+      }
+    });
+  } catch {
+    return new Response(null, { status: 400 });
   }
 }
