@@ -3,7 +3,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=0.92, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.86, minimum-scale=0.86, viewport-fit=cover" />
   <title>Reiseapp für London 2026</title>
   <style>
     :root{
@@ -2222,7 +2222,7 @@
     let lastStandardTab = 'programm';
     const teacherViewPaths = new Set(['/ldn-26-k7m4', '/ldn-26-k7m4/']);
     const isTeacherView = teacherViewPaths.has(window.location.pathname.toLowerCase());
-    const appViewportContent = 'width=device-width, initial-scale=0.92, viewport-fit=cover';
+    const appViewportContent = 'width=device-width, initial-scale=0.86, minimum-scale=0.86, viewport-fit=cover';
     const photosViewportContent = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
 
     function escapeHtml(value){
@@ -2270,14 +2270,20 @@
       });
     }
 
-    function applyViewportMode(tabId){
+    function forceViewportContent(content){
       const viewportMeta = document.querySelector('meta[name="viewport"]');
       if (!viewportMeta) return;
+      viewportMeta.setAttribute('content', content);
+      window.setTimeout(() => viewportMeta.setAttribute('content', content), 60);
+      window.setTimeout(() => viewportMeta.setAttribute('content', content), 240);
+    }
+
+    function applyViewportMode(tabId){
       const targetContent = tabId === 'photos' ? photosViewportContent : appViewportContent;
-      viewportMeta.setAttribute('content', targetContent);
+      forceViewportContent(targetContent);
       if (tabId !== 'photos'){
         requestAnimationFrame(() => {
-          viewportMeta.setAttribute('content', appViewportContent);
+          forceViewportContent(appViewportContent);
         });
       }
     }
@@ -3473,6 +3479,11 @@
         closeModal('tubeModal');
         closeModal('riverModal');
       }
+    });
+
+    window.addEventListener('pageshow', () => {
+      const activeTab = document.body.classList.contains('photos-mode') ? 'photos' : (lastStandardTab || 'programm');
+      applyViewportMode(activeTab);
     });
 
     function init(){
