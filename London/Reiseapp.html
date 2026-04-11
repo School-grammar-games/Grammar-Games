@@ -675,6 +675,44 @@
       display:grid;
       gap:12px;
     }
+    .hostel-map-shell{
+      position:relative;
+    }
+    .hostel-map-marker{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-100%);
+      z-index:3;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(20,37,60,.92);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.22);
+      box-shadow:0 10px 24px rgba(0,0,0,.22);
+      font-size:.85rem;
+      font-weight:700;
+      pointer-events:none;
+    }
+    .hostel-map-marker::before{
+      content:'';
+      position:absolute;
+      left:50%;
+      bottom:-8px;
+      width:14px;
+      height:14px;
+      background:#d84d4d;
+      border:2px solid #fff;
+      border-radius:50% 50% 50% 0;
+      transform:translateX(-50%) rotate(-45deg);
+      box-shadow:0 6px 14px rgba(0,0,0,.2);
+    }
+    .hostel-map-marker[hidden]{
+      display:none;
+    }
     .map-hint{
       padding:14px 16px;
       border-radius:14px;
@@ -1296,7 +1334,10 @@
             </div>
           </div>
 
-          <iframe id="hostelMapFrame" class="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=Astor+Victoria+Hostel+London&output=embed"></iframe>
+          <div class="hostel-map-shell">
+            <iframe id="hostelMapFrame" class="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=Astor+Victoria+Hostel+London&output=embed"></iframe>
+            <div id="hostelMapMarker" class="hostel-map-marker" hidden>Hostel</div>
+          </div>
         </div>
       </section>
 
@@ -2864,10 +2905,17 @@
         : 'Standpunkt: aktueller Standort per GPS.');
     }
 
+    function updateHostelMarkerVisibility(visible){
+      const marker = document.getElementById('hostelMapMarker');
+      if (!marker) return;
+      marker.hidden = !visible;
+    }
+
     function updateHostelNearbyMode(checked){
       hostelNearbyUseHostel = checked;
       localStorage.setItem('hostelNearbyUseHostel', checked ? '1' : '0');
       updateHostelMapStatus();
+      updateHostelMarkerVisibility(checked);
     }
 
     function bindUnterkunftActions(){
@@ -2896,31 +2944,34 @@
         toggle.addEventListener('change', event => updateHostelNearbyMode(event.target.checked));
       }
       updateHostelMapStatus();
+      updateHostelMarkerVisibility(hostelNearbyUseHostel);
     }
 
-    function setUnterkunftMapSearch(query, label, sourceLabel, center = null){
+    function setUnterkunftMapSearch(query, label, sourceLabel, center = null, showHostelMarker = false){
       const frame = document.getElementById('hostelMapFrame');
       if (frame){
         frame.src = makeMapsSearchEmbedUrl(query, center);
       }
       updateHostelMapStatus(`${label}: ${sourceLabel}`);
+      updateHostelMarkerVisibility(showHostelMarker);
     }
 
     function searchNearbyFromUnterkunft(searchTerm, label){
       if (hostelNearbyUseHostel){
-        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standpunkt ist das Hostel. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', locations.hostel);
+        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standpunkt ist das Hostel. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', locations.hostel, true);
         return;
       }
       updateHostelMapStatus(`${label}: aktueller Standort wird ermittelt ...`);
+      updateHostelMarkerVisibility(false);
       if (!navigator.geolocation){
-        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standortfreigabe nicht verfügbar; Hostel wird als Ersatz verwendet. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', locations.hostel);
+        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standortfreigabe nicht verfügbar; Hostel wird als Ersatz verwendet. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', locations.hostel, true);
         return;
       }
       navigator.geolocation.getCurrentPosition(position => {
         const { latitude, longitude } = position.coords;
         setUnterkunftMapSearch(`${searchTerm} near ${latitude},${longitude}`, label, 'Standpunkt ist der aktuelle Standort per GPS. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', { lat: latitude, lon: longitude });
       }, () => {
-        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standort konnte nicht ermittelt werden; Hostel wird als Ersatz verwendet. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', locations.hostel);
+        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standort konnte nicht ermittelt werden; Hostel wird als Ersatz verwendet. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', locations.hostel, true);
       }, { enableHighAccuracy:true, timeout:10000, maximumAge:300000 });
     }
 
