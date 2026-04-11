@@ -25,13 +25,28 @@
       --maxw:1240px;
       --bottom-bar:0px;
     }
+    body.light-mode{
+      --bg:#eef4fb;
+      --bg-2:#dde8f6;
+      --panel:#ffffff;
+      --panel-2:#f5f8fd;
+      --panel-3:#e6eef9;
+      --line:#c1d1e6;
+      --text:#14253c;
+      --muted:#52657e;
+      --accent:#2468c9;
+      --accent-2:#1f9278;
+      --warn:#bb7f00;
+      --ok:#257a2d;
+      --shadow:0 12px 28px rgba(26,46,78,.12);
+    }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html{scroll-behavior:smooth}
     body{
       margin:0;
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       font-size:16.5px;
-      background:linear-gradient(180deg,var(--bg),#0b1324 100%);
+      background:linear-gradient(180deg,var(--bg),var(--bg-2) 100%);
       color:var(--text);
       min-height:100vh;
       overflow-x:hidden;
@@ -54,7 +69,7 @@
       gap:14px;
     }
     .card{
-      background:rgba(19,33,58,.96);
+      background:var(--panel);
       border:1px solid var(--line);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
@@ -129,7 +144,7 @@
       position:sticky;
       top:0;
       z-index:30;
-      background:linear-gradient(180deg,rgba(9,17,31,.98),rgba(9,17,31,.92));
+      background:linear-gradient(180deg,var(--bg),rgba(9,17,31,.92));
       backdrop-filter:blur(10px);
       padding:8px 0 2px;
       margin-top:-6px;
@@ -172,7 +187,7 @@
       min-height:46px;
       font-size:1rem;
       padding:10px 14px;
-      background:#1b2d4a;
+      background:var(--panel-3);
     }
     .ghost{
       background:transparent;
@@ -210,9 +225,9 @@
       min-height:34px;
       padding:6px 10px;
       border-radius:999px;
-      background:#1f3253;
-      border:1px solid #43679e;
-      color:#dce9ff;
+      background:var(--panel-3);
+      border:1px solid var(--line);
+      color:var(--text);
       font-size:.84rem;
     }
     .day-scroll{
@@ -244,6 +259,14 @@
       display:grid;
       gap:12px;
     }
+    .timeline-card.done{
+      opacity:.62;
+      filter:saturate(.72);
+      background:linear-gradient(180deg, rgba(128,144,171,.18), rgba(92,108,133,.12));
+    }
+    body.light-mode .timeline-card.done{
+      background:linear-gradient(180deg, rgba(198,211,228,.72), rgba(225,233,244,.84));
+    }
     .time-tag{
       display:inline-flex;
       align-items:center;
@@ -251,8 +274,8 @@
       min-height:32px;
       padding:6px 10px;
       border-radius:999px;
-      background:#223655;
-      border:1px solid #44699f;
+      background:var(--panel-3);
+      border:1px solid var(--line);
       font-size:.84rem;
     }
     .stop-head{
@@ -292,7 +315,7 @@
       resize:vertical;
       border-radius:12px;
       border:1px solid var(--line);
-      background:#0f1a2c;
+      background:var(--bg-2);
       color:var(--text);
       padding:12px;
       font:inherit;
@@ -412,7 +435,7 @@
       min-height:48px;
       border-radius:12px;
       border:1px solid var(--line);
-      background:#0f1a2c;
+      background:var(--bg-2);
       color:var(--text);
       padding:10px 12px;
     }
@@ -430,8 +453,8 @@
     .doc-preview-hint{
       padding:18px;
       border-radius:16px;
-      border:1px dashed #44699f;
-      background:#12213a;
+      border:1px dashed var(--line);
+      background:var(--panel-2);
       color:var(--muted);
       line-height:1.5;
     }
@@ -469,7 +492,7 @@
       padding:16px;
       border-radius:16px;
       border:1px solid var(--line);
-      background:linear-gradient(180deg,#173256,#11233e);
+      background:linear-gradient(180deg,var(--panel-3),var(--panel-2));
       display:grid;
       gap:10px;
     }
@@ -502,12 +525,49 @@
       background:var(--panel-2);
       display:grid;
       gap:8px;
+      text-align:left;
+      color:var(--text);
+      font:inherit;
+      cursor:pointer;
+    }
+    .weather-day.is-active{
+      border-color:var(--accent);
+      box-shadow:0 0 0 1px rgba(105,183,255,.28) inset;
+    }
+    .weather-detail{
+      padding:16px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:var(--panel-2);
+      display:grid;
+      gap:12px;
+    }
+    .weather-detail-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .weather-detail-grid,
+    .weather-hourly{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(132px,1fr));
+      gap:10px;
+    }
+    .weather-hour-card{
+      padding:12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:var(--panel);
+      display:grid;
+      gap:6px;
     }
     .doc-status{
       padding:14px;
       border-radius:14px;
-      border:1px dashed #44699f;
-      background:#12213a;
+      border:1px dashed var(--line);
+      background:var(--panel-2);
       color:var(--muted);
       line-height:1.45;
     }
@@ -519,11 +579,22 @@
     .map-hint{
       padding:14px 16px;
       border-radius:14px;
-      border:1px dashed #44699f;
-      background:#12213a;
+      border:1px dashed var(--line);
+      background:var(--panel-2);
       color:var(--muted);
       line-height:1.45;
       font-size:.96rem;
+    }
+    body.light-mode .tabs-wrap{
+      background:linear-gradient(180deg,var(--bg),rgba(221,232,246,.92));
+    }
+    body.light-mode .tab-btn.active,
+    body.light-mode .day-btn.active,
+    body.light-mode .seg-btn.active{
+      background:linear-gradient(180deg,#4f8ee6,#2f6fc8);
+      border-color:#2f6fc8;
+      color:#fff;
+      box-shadow:none;
     }
     .route-summary-card{
       padding:16px;
@@ -642,10 +713,7 @@
       background:#fff;
     }
     .footer-note{
-      color:var(--muted);
-      font-size:.88rem;
-      line-height:1.45;
-      padding:4px 2px 0;
+      display:none;
     }
     @media (hover:hover){
       .tab-btn:hover,.day-btn:hover,.action-btn:hover,.small-btn:hover,.seg-btn:hover,.chip:hover{
@@ -758,6 +826,7 @@
           <p class="subtitle">Schülerfahrt vom <strong>12. April bis 17. April 2026</strong>. Mobile-first aufgebaut, touch-optimiert und klar in Reiter gegliedert.</p>
         </div>
         <button class="small-btn hero-toggle" id="heroToggle" type="button" aria-expanded="true">Infos einklappen</button>
+        <button class="small-btn hero-toggle" id="themeToggle" type="button" aria-pressed="false">Light-Modus</button>
         <div class="pill-row hero-meta">
           <span class="pill">Astor Victoria Hostel</span>
           <span class="pill">London</span>
@@ -1008,7 +1077,7 @@
             </div>
             <div id="documentStatus" class="doc-status">
               Die App sucht zuerst nach <strong>Dokumente/manifest.json</strong>. Falls keine Manifest-Datei vorhanden ist, wird die eingebaute Dateiliste verwendet.
-            </div>
+            </button>
           </div>
 
           <div id="documentPreviewHint" class="doc-preview-hint">
@@ -1025,7 +1094,7 @@
           <div class="section-head">
             <div>
               <h2>Wetter</h2>
-              <p class="compact">Aktuelles Wetter und kompakte Vorschau fuer London.</p>
+              <p class="compact">Aktuelles Wetter, kompakte Vorschau und Tagesdetails fuer London.</p>
             </div>
             <span class="badge">London</span>
           </div>
@@ -1475,6 +1544,19 @@
       thursdayPlan.summary = 'Buckingham Palace, Natural History Museum, Hyde Park, Rückfahrt ab Hostel um 15:00 Uhr sowie Check-In und Nachtfähre laut Reiseablauf.';
     }
 
+    if (thursdayPlan){
+      thursdayPlan.stops = thursdayPlan.stops.filter(stop => ![
+        'FÃ¤hrabfahrt Dover',
+        'FÃ¤hrankunft Dunkerque'
+      ].includes(stop.title));
+      thursdayPlan.stops.push({
+        time:'20:00 - 23:00 Uhr',
+        title:'Faehrfahrt Dover -> Dunkerque',
+        location:'calais',
+        note:'20:00 Uhr Abfahrt in Dover und 23:00 Uhr Ankunft in Dunkerque laut Reiseablauf (Herole).'
+      });
+    }
+
     const mainRoutes = {
       greenwich: {
         mode:'ÖPNV',
@@ -1849,6 +1931,8 @@
     let activeDocumentBlob = null;
     let activeDocumentBlobFile = '';
     let activeDocumentRenderToken = 0;
+    let weatherDataCache = null;
+    let selectedWeatherDayIndex = 0;
 
     function escapeHtml(value){
       return String(value).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -1870,6 +1954,28 @@
       heroToggle.addEventListener('click', () => {
         const collapsed = !document.getElementById('heroCard').classList.contains('collapsed');
         applyHeroState(collapsed);
+      });
+    }
+
+    function applyThemeState(mode){
+      const isLight = mode === 'light';
+      document.body.classList.toggle('light-mode', isLight);
+      const themeToggle = document.getElementById('themeToggle');
+      if (!themeToggle) return;
+      themeToggle.setAttribute('aria-pressed', String(isLight));
+      themeToggle.textContent = isLight ? 'Dark-Modus' : 'Light-Modus';
+    }
+
+    function bindThemeToggle(){
+      const themeToggle = document.getElementById('themeToggle');
+      if (!themeToggle) return;
+      const storedTheme = localStorage.getItem('themeMode');
+      const preferredTheme = storedTheme || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      applyThemeState(preferredTheme);
+      themeToggle.addEventListener('click', () => {
+        const nextTheme = document.body.classList.contains('light-mode') ? 'dark' : 'light';
+        localStorage.setItem('themeMode', nextTheme);
+        applyThemeState(nextTheme);
       });
     }
 
@@ -1937,7 +2043,9 @@
         const loc = locations[stop.location];
         const doneKey = `done_${day.id}_${index}`;
         const noteKey = `note_${day.id}_${index}`;
-        const checked = localStorage.getItem(doneKey) === '1' ? 'checked' : '';
+        const isDone = localStorage.getItem(doneKey) === '1';
+        const checked = isDone ? 'checked' : '';
+        const doneClass = isDone ? 'done' : '';
         const savedNote = localStorage.getItem(noteKey) || '';
         const detailsButton = isMapLocation(loc.id)
           ? `<button class="small-btn" onclick="routeToLocation('${loc.id}')">Route</button>`
@@ -1950,7 +2058,7 @@
           ? `<button class="small-btn" onclick="openLiveSite('${websiteUrl}')">Webseite</button>`
           : '';
         return `
-          <div class="timeline-card">
+          <div class="timeline-card ${doneClass}">
             <div class="stop-head">
               <div>
                 <div class="time-tag">${escapeHtml(stop.time)}</div>
@@ -2190,8 +2298,68 @@
                 <div class="route-line-badges">${renderRouteLineBadges(step.lines || [])}</div>
               </div>
               <div class="compact">${escapeHtml(step.detail)}</div>
-            </div>
+            </button>
           `).join('')}
+        </div>
+        <div class="weather-detail">
+          <div class="weather-detail-head">
+            <div>
+              <strong>${escapeHtml(formatWeatherDayLabel(selectedDay.day, { weekday:'long', day:'2-digit', month:'2-digit' }))}</strong>
+              <div class="compact">${escapeHtml(weatherLabel(selectedDay.code))}</div>
+            </div>
+            <span class="badge">Tagesdetails</span>
+          </div>
+          <div class="weather-detail-grid">
+            <div class="detail-card"><strong>Temperatur</strong><div class="compact">Max ${Math.round(selectedDay.max ?? 0)}Â°C · Min ${Math.round(selectedDay.min ?? 0)}Â°C</div></div>
+            <div class="detail-card"><strong>Regenrisiko</strong><div class="compact">${Math.round(selectedDay.precipitation ?? 0)}%</div></div>
+            <div class="detail-card"><strong>Wind max.</strong><div class="compact">${Math.round(selectedDay.wind ?? 0)} km/h</div></div>
+            <div class="detail-card"><strong>UV max.</strong><div class="compact">${Math.round(selectedDay.uv ?? 0)}</div></div>
+            <div class="detail-card"><strong>Sonnenaufgang</strong><div class="compact">${escapeHtml(formatWeatherClock(selectedDay.sunrise))} Uhr</div></div>
+            <div class="detail-card"><strong>Sonnenuntergang</strong><div class="compact">${escapeHtml(formatWeatherClock(selectedDay.sunset))} Uhr</div></div>
+          </div>
+          <div>
+            <strong>Stundenblick</strong>
+            <div class="weather-hourly">
+              ${hourlyRows.map(entry => `
+                <div class="weather-hour-card">
+                  <strong>${escapeHtml(entry.time)} Uhr</strong>
+                  <div>${escapeHtml(weatherLabel(entry.code))}</div>
+                  <div class="compact">${Math.round(entry.temp ?? 0)}Â°C</div>
+                  <div class="compact">Regen ${Math.round(entry.precipitation ?? 0)}%</div>
+                </div>
+              `).join('') || '<div class="doc-status">Keine Stundenwerte fuer diesen Tag verfuegbar.</div>'}
+            </div>
+          </div>
+        </div>
+        <div class="weather-detail">
+          <div class="weather-detail-head">
+            <div>
+              <strong>${escapeHtml(formatWeatherDayLabel(selectedDay.day, { weekday:'long', day:'2-digit', month:'2-digit' }))}</strong>
+              <div class="compact">${escapeHtml(weatherLabel(selectedDay.code))}</div>
+            </div>
+            <span class="badge">Tagesdetails</span>
+          </div>
+          <div class="weather-detail-grid">
+            <div class="detail-card"><strong>Temperatur</strong><div class="compact">Max ${Math.round(selectedDay.max ?? 0)}Â°C · Min ${Math.round(selectedDay.min ?? 0)}Â°C</div></div>
+            <div class="detail-card"><strong>Regenrisiko</strong><div class="compact">${Math.round(selectedDay.precipitation ?? 0)}%</div></div>
+            <div class="detail-card"><strong>Wind max.</strong><div class="compact">${Math.round(selectedDay.wind ?? 0)} km/h</div></div>
+            <div class="detail-card"><strong>UV max.</strong><div class="compact">${Math.round(selectedDay.uv ?? 0)}</div></div>
+            <div class="detail-card"><strong>Sonnenaufgang</strong><div class="compact">${escapeHtml(formatWeatherClock(selectedDay.sunrise))} Uhr</div></div>
+            <div class="detail-card"><strong>Sonnenuntergang</strong><div class="compact">${escapeHtml(formatWeatherClock(selectedDay.sunset))} Uhr</div></div>
+          </div>
+          <div>
+            <strong>Stundenblick</strong>
+            <div class="weather-hourly">
+              ${hourlyRows.map(entry => `
+                <div class="weather-hour-card">
+                  <strong>${escapeHtml(entry.time)} Uhr</strong>
+                  <div>${escapeHtml(weatherLabel(entry.code))}</div>
+                  <div class="compact">${Math.round(entry.temp ?? 0)}Â°C</div>
+                  <div class="compact">Regen ${Math.round(entry.precipitation ?? 0)}%</div>
+                </div>
+              `).join('') || '<div class="doc-status">Keine Stundenwerte fuer diesen Tag verfuegbar.</div>'}
+            </div>
+          </div>
         </div>
       `;
     }
@@ -2199,6 +2367,38 @@
     function updateMapSingle(loc){
       document.getElementById('mapFrame').src = makeMapsEmbedUrl(null, loc, travelMode);
       renderRecommendedRouteSummary(loc.id, 'hostel');
+    }
+
+    function renderRecommendedRouteSummary(destinationId, customStartId = 'hostel'){
+      const box = document.getElementById('routeSummary');
+      const route = mainRoutes[destinationId];
+      if (!destinationId || !route){
+        box.innerHTML = '<strong>Hauptroute ab Hostel</strong><div class="route-summary-note">Die Zusammenfassung unten zeigt nur die empfohlene Hauptroute ab dem Hostel.</div>';
+        return;
+      }
+      const customRouteHint = customStartId && !['hostel', 'current'].includes(customStartId)
+        ? '<div class="route-summary-note">Die Karte oben zeigt deine frei gewaehlte Route. Die Zusammenfassung unten bleibt bewusst die empfohlene Hauptroute ab dem Hostel.</div>'
+        : '';
+      box.innerHTML = `
+        <div class="section-head">
+          <strong>Hauptroute ab Hostel</strong>
+          <span class="badge">${escapeHtml(route.mode || 'OePNV')}</span>
+        </div>
+        <div class="compact"><strong>Astor Victoria Hostel</strong> -> <strong>${escapeHtml(locations[destinationId].name)}</strong></div>
+        <div class="route-summary-note">${escapeHtml(route.note || '')}</div>
+        ${customRouteHint}
+        <div class="route-steps">
+          ${route.steps.map(step => `
+            <div class="route-step">
+              <div class="route-step-top">
+                <div class="route-step-title">${escapeHtml(step.title)}</div>
+                <div class="route-line-badges">${renderRouteLineBadges(step.lines || [])}</div>
+              </div>
+              <div class="compact">${escapeHtml(step.detail)}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
     }
 
     function applyRoute(){
@@ -2284,6 +2484,10 @@
 
     function toggleDone(dayId, index, value){
       localStorage.setItem(`done_${dayId}_${index}`, value ? '1' : '0');
+      const day = days.find(entry => entry.id === dayId);
+      if (day){
+        renderTimeline(day);
+      }
     }
 
     function updateStopNote(dayId, index, value){
@@ -2448,17 +2652,55 @@
       return weatherCodeMap[code] || 'Wetterdaten';
     }
 
+    function formatWeatherDayLabel(day, options){
+      return new Date(`${day}T12:00:00`).toLocaleDateString('de-DE', options);
+    }
+
+    function formatWeatherClock(isoString){
+      if (!isoString || !isoString.includes('T')) return '--:--';
+      return isoString.split('T')[1].slice(0, 5);
+    }
+
+    function selectWeatherDay(index){
+      selectedWeatherDayIndex = index;
+      if (weatherDataCache){
+        renderWeatherPanel(weatherDataCache);
+      }
+    }
+
     function renderWeatherPanel(data){
+      weatherDataCache = data;
       const panel = document.getElementById('weatherPanel');
       const current = data.current || {};
       const daily = data.daily || {};
+      const hourly = data.hourly || {};
       const dailyRows = (daily.time || []).slice(0, 5).map((day, index) => ({
         day,
         max: daily.temperature_2m_max?.[index],
         min: daily.temperature_2m_min?.[index],
         precipitation: daily.precipitation_probability_max?.[index],
+        wind: daily.wind_speed_10m_max?.[index],
+        uv: daily.uv_index_max?.[index],
+        sunrise: daily.sunrise?.[index],
+        sunset: daily.sunset?.[index],
         code: daily.weather_code?.[index]
       }));
+      if (!dailyRows.length){
+        panel.innerHTML = '<div class="doc-status">Keine Wetterdaten verfuegbar.</div>';
+        return;
+      }
+      selectedWeatherDayIndex = Math.min(selectedWeatherDayIndex, dailyRows.length - 1);
+      const selectedDay = dailyRows[selectedWeatherDayIndex] || dailyRows[0];
+      const hourlyRows = (hourly.time || []).map((time, index) => ({
+        day: time.split('T')[0],
+        time: time.split('T')[1],
+        temp: hourly.temperature_2m?.[index],
+        precipitation: hourly.precipitation_probability?.[index],
+        code: hourly.weather_code?.[index]
+      })).filter(entry =>
+        entry.day === selectedDay.day &&
+        ['09:00', '12:00', '15:00', '18:00', '21:00'].includes(entry.time)
+      );
       panel.innerHTML = `
         <div class="weather-current">
           <div class="weather-current-top">
@@ -2474,13 +2716,13 @@
           </div>
         </div>
         <div class="weather-forecast">
-          ${dailyRows.map(entry => `
-            <div class="weather-day">
-              <strong>${new Date(entry.day).toLocaleDateString('de-DE', { weekday:'short', day:'2-digit', month:'2-digit' })}</strong>
+          ${dailyRows.map((entry, index) => `
+            <button class="weather-day ${entry.day === selectedDay.day ? 'is-active' : ''}" type="button" onclick="selectWeatherDay(${index})">
+              <strong>${formatWeatherDayLabel(entry.day, { weekday:'short', day:'2-digit', month:'2-digit' })}</strong>
               <div>${escapeHtml(weatherLabel(entry.code))}</div>
               <div class="compact">Max ${Math.round(entry.max ?? 0)}°C · Min ${Math.round(entry.min ?? 0)}°C</div>
               <div class="compact">Regenrisiko ${Math.round(entry.precipitation ?? 0)}%</div>
-            </div>
+            </button>
           `).join('')}
         </div>
       `;
@@ -2490,7 +2732,7 @@
       const panel = document.getElementById('weatherPanel');
       panel.innerHTML = '<div class="doc-status">Wetterdaten werden geladen ...</div>';
       try{
-        const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=51.5072&longitude=-0.1276&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=5&timezone=Europe%2FLondon', {cache:'no-store'});
+        const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=51.5072&longitude=-0.1276&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m&hourly=temperature_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,uv_index_max,sunrise,sunset&forecast_days=5&timezone=Europe%2FLondon', {cache:'no-store'});
         if (!response.ok){
           throw new Error(`HTTP ${response.status}`);
         }
@@ -2499,6 +2741,96 @@
       }catch(error){
         panel.innerHTML = '<div class="doc-status">Wetterdaten konnten gerade nicht geladen werden. Bitte spaeter noch einmal versuchen.</div>';
       }
+    }
+
+    function renderWeatherPanel(data){
+      weatherDataCache = data;
+      const panel = document.getElementById('weatherPanel');
+      const current = data.current || {};
+      const daily = data.daily || {};
+      const hourly = data.hourly || {};
+      const dailyRows = (daily.time || []).slice(0, 5).map((day, index) => ({
+        day,
+        max: daily.temperature_2m_max?.[index],
+        min: daily.temperature_2m_min?.[index],
+        precipitation: daily.precipitation_probability_max?.[index],
+        wind: daily.wind_speed_10m_max?.[index],
+        uv: daily.uv_index_max?.[index],
+        sunrise: daily.sunrise?.[index],
+        sunset: daily.sunset?.[index],
+        code: daily.weather_code?.[index]
+      }));
+      if (!dailyRows.length){
+        panel.innerHTML = '<div class="doc-status">Keine Wetterdaten verfuegbar.</div>';
+        return;
+      }
+      selectedWeatherDayIndex = Math.min(selectedWeatherDayIndex, dailyRows.length - 1);
+      const selectedDay = dailyRows[selectedWeatherDayIndex] || dailyRows[0];
+      const hourlyRows = (hourly.time || []).map((time, index) => ({
+        day: time.split('T')[0],
+        time: time.split('T')[1],
+        temp: hourly.temperature_2m?.[index],
+        precipitation: hourly.precipitation_probability?.[index],
+        code: hourly.weather_code?.[index]
+      })).filter(entry =>
+        entry.day === selectedDay.day &&
+        ['09:00', '12:00', '15:00', '18:00', '21:00'].includes(entry.time)
+      );
+      panel.innerHTML = `
+        <div class="weather-current">
+          <div class="weather-current-top">
+            <div>
+              <div class="weather-temp">${Math.round(current.temperature_2m ?? 0)}Â°C</div>
+              <div><strong>London</strong> Â· ${escapeHtml(weatherLabel(current.weather_code))}</div>
+            </div>
+            <button class="small-btn" type="button" onclick="loadWeather()">Aktualisieren</button>
+          </div>
+          <div class="weather-meta">
+            <div class="detail-card"><strong>Wind</strong><div class="compact">${Math.round(current.wind_speed_10m ?? 0)} km/h</div></div>
+            <div class="detail-card"><strong>Gefuehlt</strong><div class="compact">${Math.round(current.apparent_temperature ?? current.temperature_2m ?? 0)}Â°C</div></div>
+          </div>
+        </div>
+        <div class="weather-forecast">
+          ${dailyRows.map((entry, index) => `
+            <button class="weather-day ${entry.day === selectedDay.day ? 'is-active' : ''}" type="button" onclick="selectWeatherDay(${index})">
+              <strong>${formatWeatherDayLabel(entry.day, { weekday:'short', day:'2-digit', month:'2-digit' })}</strong>
+              <div>${escapeHtml(weatherLabel(entry.code))}</div>
+              <div class="compact">Max ${Math.round(entry.max ?? 0)}Â°C · Min ${Math.round(entry.min ?? 0)}Â°C</div>
+              <div class="compact">Regenrisiko ${Math.round(entry.precipitation ?? 0)}%</div>
+            </button>
+          `).join('')}
+        </div>
+        <div class="weather-detail">
+          <div class="weather-detail-head">
+            <div>
+              <strong>${escapeHtml(formatWeatherDayLabel(selectedDay.day, { weekday:'long', day:'2-digit', month:'2-digit' }))}</strong>
+              <div class="compact">${escapeHtml(weatherLabel(selectedDay.code))}</div>
+            </div>
+            <span class="badge">Tagesdetails</span>
+          </div>
+          <div class="weather-detail-grid">
+            <div class="detail-card"><strong>Temperatur</strong><div class="compact">Max ${Math.round(selectedDay.max ?? 0)}Â°C · Min ${Math.round(selectedDay.min ?? 0)}Â°C</div></div>
+            <div class="detail-card"><strong>Regenrisiko</strong><div class="compact">${Math.round(selectedDay.precipitation ?? 0)}%</div></div>
+            <div class="detail-card"><strong>Wind max.</strong><div class="compact">${Math.round(selectedDay.wind ?? 0)} km/h</div></div>
+            <div class="detail-card"><strong>UV max.</strong><div class="compact">${Math.round(selectedDay.uv ?? 0)}</div></div>
+            <div class="detail-card"><strong>Sonnenaufgang</strong><div class="compact">${escapeHtml(formatWeatherClock(selectedDay.sunrise))} Uhr</div></div>
+            <div class="detail-card"><strong>Sonnenuntergang</strong><div class="compact">${escapeHtml(formatWeatherClock(selectedDay.sunset))} Uhr</div></div>
+          </div>
+          <div>
+            <strong>Stundenblick</strong>
+            <div class="weather-hourly">
+              ${hourlyRows.map(entry => `
+                <div class="weather-hour-card">
+                  <strong>${escapeHtml(entry.time)} Uhr</strong>
+                  <div>${escapeHtml(weatherLabel(entry.code))}</div>
+                  <div class="compact">${Math.round(entry.temp ?? 0)}Â°C</div>
+                  <div class="compact">Regen ${Math.round(entry.precipitation ?? 0)}%</div>
+                </div>
+              `).join('') || '<div class="doc-status">Keine Stundenwerte fuer diesen Tag verfuegbar.</div>'}
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     function revokeDocumentPreviewUrl(){
@@ -2695,6 +3027,7 @@
 
     function init(){
       bindHeroToggle();
+      bindThemeToggle();
       bindTabs();
       bindModeButtons();
       buildDayButtons();
@@ -2726,7 +3059,7 @@
       }
       const footerNote = document.querySelector('.footer-note');
       if (footerNote){
-        footerNote.textContent = 'Optimiert fuer Smartphone-Nutzung: grosse Touch-Flaechen, kompaktere Karten und eine reduzierte Darstellung ohne untere Zusatznavigation.';
+        footerNote.remove();
       }
       window.addEventListener('beforeunload', revokeDocumentPreviewUrl);
     }
