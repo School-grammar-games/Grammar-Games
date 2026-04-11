@@ -23,7 +23,7 @@
       --radius:18px;
       --tap:54px;
       --maxw:1240px;
-      --bottom-bar:78px;
+      --bottom-bar:0px;
     }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html{scroll-behavior:smooth}
@@ -387,6 +387,17 @@
       border-radius:16px;
       background:#fff;
     }
+    .doc-preview[hidden]{
+      display:none;
+    }
+    .doc-preview-hint{
+      padding:18px;
+      border-radius:16px;
+      border:1px dashed #44699f;
+      background:#12213a;
+      color:var(--muted);
+      line-height:1.5;
+    }
     .doc-status{
       padding:14px;
       border-radius:14px;
@@ -475,38 +486,6 @@
       border:none;
       background:#fff;
     }
-    .bottom-nav{
-      position:fixed;
-      left:0;right:0;bottom:0;
-      z-index:60;
-      padding:8px 10px calc(8px + env(safe-area-inset-bottom));
-      background:linear-gradient(180deg,rgba(9,17,31,.2),rgba(9,17,31,.98) 22%);
-      backdrop-filter:blur(10px);
-    }
-    .bottom-nav-inner{
-      max-width:var(--maxw);
-      margin:0 auto;
-      display:grid;
-      grid-template-columns:repeat(5,1fr);
-      gap:8px;
-    }
-    .nav-mini{
-      min-height:56px;
-      border-radius:16px;
-      border:1px solid #395583;
-      background:rgba(23,40,68,.96);
-      color:var(--text);
-      font-size:.82rem;
-      line-height:1.15;
-      display:grid;
-      place-items:center;
-      text-align:center;
-      padding:6px;
-    }
-    .nav-mini.active{
-      background:linear-gradient(180deg,#2f568a,#24466f);
-      border-color:#7bc0ff;
-    }
     .footer-note{
       color:var(--muted);
       font-size:.88rem;
@@ -514,7 +493,7 @@
       padding:4px 2px 0;
     }
     @media (hover:hover){
-      .tab-btn:hover,.day-btn:hover,.action-btn:hover,.small-btn:hover,.seg-btn:hover,.chip:hover,.nav-mini:hover{
+      .tab-btn:hover,.day-btn:hover,.action-btn:hover,.small-btn:hover,.seg-btn:hover,.chip:hover{
         filter:brightness(1.07);
         transform:translateY(-1px);
       }
@@ -523,7 +502,6 @@
       .app{
         padding-bottom:22px;
       }
-      .bottom-nav{display:none}
       .grid-2{
         grid-template-columns:1fr 1fr;
       }
@@ -550,16 +528,59 @@
         grid-template-columns:repeat(3,minmax(0,1fr));
       }
     }
+    @media (max-width:720px){
+      .app{
+        padding:12px 12px calc(18px + env(safe-area-inset-bottom));
+        gap:12px;
+      }
+      .hero{
+        padding:16px;
+      }
+      .stat-grid{
+        grid-template-columns:1fr;
+      }
+      .tabs-wrap{
+        padding:6px 0 0;
+      }
+      .tabs{
+        gap:8px;
+        padding:4px 0 6px;
+      }
+      .tab-btn{
+        min-width:138px;
+        padding:10px 12px;
+      }
+      .section{
+        padding:14px;
+        gap:14px;
+      }
+      .inline-actions{
+        display:grid;
+        grid-template-columns:1fr;
+      }
+      .inline-actions .small-btn{
+        width:100%;
+      }
+      .doc-preview{
+        min-height:52vh;
+      }
+      .footer-note{
+        font-size:.83rem;
+      }
+    }
     @media (max-width:480px){
       body{font-size:17px}
-      .hero{padding:18px}
-      .section{padding:16px}
-      .tab-btn{min-width:148px}
+      .hero{padding:15px}
+      .section{padding:13px}
+      .tab-btn{min-width:126px}
       .day-btn{flex:0 0 252px}
       .small-btn,.action-btn,.seg-btn,.tab-btn{min-height:50px}
       .pill,.chip,.badge{font-size:.98rem}
       iframe.map{min-height:320px}
       .action-grid-2x2{grid-template-columns:1fr}
+      .doc-preview{
+        min-height:46vh;
+      }
     }
   </style>
 </head>
@@ -823,23 +844,16 @@
             </div>
           </div>
 
-          <iframe id="documentPreview" class="doc-preview" title="Dokumentenvorschau"></iframe>
+          <div id="documentPreviewHint" class="doc-preview-hint">
+            Dokument waehlen und die Vorschau gezielt laden. Auf Smartphones wird nichts mehr automatisch im Hintergrund geladen.
+          </div>
+          <iframe id="documentPreview" class="doc-preview" title="Dokumentenvorschau" hidden></iframe>
         </div>
       </section>
     </main>
 
     <div class="footer-note">
       Optimiert für Smartphone-Nutzung: große Touch-Flächen, horizontale Auswahlleisten, klare Reiterstruktur, Sticky-Navigation und reduzierte Informationsdichte pro Bereich.
-    </div>
-  </div>
-
-  <div class="bottom-nav" aria-hidden="false">
-    <div class="bottom-nav-inner">
-      <button class="nav-mini active" data-tab="programm">Programm</button>
-      <button class="nav-mini" data-tab="verkehr">Verkehr</button>
-      <button class="nav-mini" data-tab="maps">Maps</button>
-      <button class="nav-mini" data-tab="unterkunft">Hostel</button>
-      <button class="nav-mini" data-tab="dokumente">Dokumente</button>
     </div>
   </div>
 
@@ -850,7 +864,7 @@
         <button class="small-btn ghost" onclick="closeModal('tubeModal')">Schließen</button>
       </div>
       <div class="modal-body">
-        <iframe src="https://content.tfl.gov.uk/standard-tube-map.pdf" title="Tube Map"></iframe>
+        <iframe data-pdf-src="https://content.tfl.gov.uk/standard-tube-map.pdf" title="Tube Map"></iframe>
       </div>
     </div>
   </div>
@@ -862,7 +876,7 @@
         <button class="small-btn ghost" onclick="closeModal('riverModal')">Schließen</button>
       </div>
       <div class="modal-body">
-        <iframe src="https://tfl.gov.uk/cdn/static/cms/documents/riverservices-map.pdf" title="River Services Map"></iframe>
+        <iframe data-pdf-src="https://tfl.gov.uk/cdn/static/cms/documents/riverservices-map.pdf" title="River Services Map"></iframe>
       </div>
     </div>
   </div>
@@ -1381,6 +1395,7 @@
     let travelMode = 'transit';
     let selectedDocument = '';
     let documentSource = 'local';
+    let activeDocumentPreviewUrl = '';
 
     function escapeHtml(value){
       return String(value).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -1390,13 +1405,13 @@
       document.querySelectorAll('.tab-panel').forEach(panel => {
         panel.classList.toggle('active', panel.id === tabId);
       });
-      document.querySelectorAll('.tab-btn, .nav-mini').forEach(btn => {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tabId);
       });
     }
 
     function bindTabs(){
-      document.querySelectorAll('.tab-btn, .nav-mini').forEach(btn => {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
       });
     }
@@ -1719,16 +1734,38 @@
       localStorage.setItem(`done_${dayId}_${index}`, value ? '1' : '0');
     }
 
+    function isPhoneLayout(){
+      return window.matchMedia('(max-width: 720px)').matches;
+    }
+
+    function openPdfModal(modalId){
+      const modal = document.getElementById(modalId);
+      const frame = modal.querySelector('iframe');
+      const pdfUrl = frame ? frame.dataset.pdfSrc : '';
+      if (!pdfUrl) return;
+      if (isPhoneLayout()){
+        window.open(pdfUrl, '_blank', 'noopener');
+        return;
+      }
+      frame.src = pdfUrl;
+      modal.classList.add('open');
+    }
+
     function openTubeMap(){
-      document.getElementById('tubeModal').classList.add('open');
+      openPdfModal('tubeModal');
     }
 
     function openRiverMap(){
-      document.getElementById('riverModal').classList.add('open');
+      openPdfModal('riverModal');
     }
 
     function closeModal(id){
-      document.getElementById(id).classList.remove('open');
+      const modal = document.getElementById(id);
+      modal.classList.remove('open');
+      const frame = modal.querySelector('iframe');
+      if (frame){
+        frame.removeAttribute('src');
+      }
     }
 
     function deg2rad(v){ return v * (Math.PI / 180); }
@@ -1815,6 +1852,29 @@
       return documentSource === 'github' ? getPrivateDocumentUrl(file) : getLocalDocumentUrl(file);
     }
 
+    function setDocumentHint(message){
+      const hint = document.getElementById('documentPreviewHint');
+      hint.innerHTML = message;
+      hint.hidden = false;
+    }
+
+    function revokeDocumentPreviewUrl(){
+      if (activeDocumentPreviewUrl){
+        URL.revokeObjectURL(activeDocumentPreviewUrl);
+        activeDocumentPreviewUrl = '';
+      }
+    }
+
+    function resetDocumentPreview(message){
+      const preview = document.getElementById('documentPreview');
+      revokeDocumentPreviewUrl();
+      preview.hidden = true;
+      preview.removeAttribute('src');
+      if (message){
+        setDocumentHint(message);
+      }
+    }
+
     function normalizeDocumentEntries(items){
       return items.map(item => {
         if (typeof item === 'string'){
@@ -1876,7 +1936,7 @@
         status.innerHTML = source === 'github'
           ? 'Keine PDFs im privaten Bereich <strong>Datenschutz/Dokumente</strong> gefunden. Pruefe den Ordnerinhalt im privaten Repository.'
           : 'Keine PDFs gefunden. Lege die Dateien im Ordner <strong>Dokumente</strong> ab und hinterlege optional eine <strong>manifest.json</strong> mit sprechenden Eintraegen, z. B. <code>{"files":[{"file":"Reiseprogramm.pdf","title":"Reiseprogramm"},{"file":"Tickets_und_Buchungen.pdf","title":"Tickets und Buchungen"}]}</code>.';
-        document.getElementById('documentPreview').removeAttribute('src');
+        resetDocumentPreview('Zurzeit ist keine PDF-Vorschau verfuegbar, weil keine Dokumente gefunden wurden.');
         selectedDocument = '';
         return;
       }
@@ -1885,14 +1945,41 @@
       status.innerHTML = source === 'github'
         ? `Gefunden: <strong>${files.length}</strong> PDF-Datei(en) aus dem privaten Repository <strong>Datenschutz/Dokumente</strong>.`
         : `Gefunden: <strong>${files.length}</strong> PDF-Datei(en) im Bereich <strong>Dokumente</strong>.`;
-      openDocument(selectedDocument);
+      resetDocumentPreview(isPhoneLayout()
+        ? 'Auf dem Smartphone werden PDFs nicht mehr automatisch geladen. Tippe auf <strong>Vorschau laden</strong> oder <strong>In neuem Tab oeffnen</strong>.'
+        : 'Waehle ein Dokument aus und lade die Vorschau gezielt. So startet die Seite ohne automatische PDF-Downloads.');
     }
 
-    function openDocument(file){
+    async function openDocument(file){
       if (!file) return;
       selectedDocument = file;
       document.getElementById('documentSelect').value = file;
-      document.getElementById('documentPreview').src = `${getDocumentUrl(file)}#view=FitH`;
+      const status = document.getElementById('documentStatus');
+      const preview = document.getElementById('documentPreview');
+      status.innerHTML = `Lade Vorschau fuer <strong>${escapeHtml(file)}</strong> ...`;
+      setDocumentHint(`Lade Vorschau fuer <strong>${escapeHtml(file)}</strong> ...`);
+      preview.hidden = true;
+      preview.removeAttribute('src');
+      revokeDocumentPreviewUrl();
+
+      try{
+        const response = await fetch(getDocumentUrl(file), {cache:'no-store'});
+        if (!response.ok){
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const blob = await response.blob();
+        const pdfBlob = blob.type === 'application/pdf' ? blob : new Blob([blob], {type:'application/pdf'});
+        activeDocumentPreviewUrl = URL.createObjectURL(pdfBlob);
+        preview.src = `${activeDocumentPreviewUrl}#view=FitH`;
+        preview.hidden = false;
+        document.getElementById('documentPreviewHint').hidden = true;
+        status.innerHTML = isPhoneLayout()
+          ? `Vorschau fuer <strong>${escapeHtml(file)}</strong> geladen. Falls dein Smartphone trotzdem keine Einbettung zeigt, nutze <strong>In neuem Tab oeffnen</strong>.`
+          : `Vorschau fuer <strong>${escapeHtml(file)}</strong> geladen.`;
+      }catch(error){
+        resetDocumentPreview('Die Vorschau konnte nicht geladen werden. Nutze bitte <strong>In neuem Tab oeffnen</strong>.');
+        status.innerHTML = `Die Vorschau fuer <strong>${escapeHtml(file)}</strong> konnte nicht geladen werden.`;
+      }
     }
 
     function openSelectedDocument(){
@@ -1920,7 +2007,31 @@
       loadDocumentList();
       document.getElementById('startSelect').addEventListener('change', applyRoute);
       document.getElementById('endSelect').addEventListener('change', applyRoute);
-      document.getElementById('documentSelect').addEventListener('change', openSelectedDocument);
+      document.getElementById('documentSelect').addEventListener('change', event => {
+        selectedDocument = event.target.value;
+        if (!selectedDocument){
+          resetDocumentPreview('Dokument waehlen und die Vorschau gezielt laden.');
+          return;
+        }
+        if (isPhoneLayout()){
+          resetDocumentPreview(`Ausgewaehlt: <strong>${escapeHtml(selectedDocument)}</strong>. Tippe jetzt auf <strong>Vorschau laden</strong> oder <strong>In neuem Tab oeffnen</strong>.`);
+          return;
+        }
+        openDocument(selectedDocument);
+      });
+      const docIntro = document.querySelector('#dokumente .section-head .compact');
+      if (docIntro){
+        docIntro.textContent = 'PDFs aus dem Ordner Dokumente auswaehlen und bei Bedarf gezielt laden.';
+      }
+      const previewButton = document.querySelector('#dokumente .inline-actions .small-btn');
+      if (previewButton){
+        previewButton.textContent = 'Vorschau laden';
+      }
+      const footerNote = document.querySelector('.footer-note');
+      if (footerNote){
+        footerNote.textContent = 'Optimiert fuer Smartphone-Nutzung: grosse Touch-Flaechen, kompaktere Karten und eine reduzierte Darstellung ohne untere Zusatznavigation.';
+      }
+      window.addEventListener('beforeunload', revokeDocumentPreviewUrl);
     }
 
     init();
