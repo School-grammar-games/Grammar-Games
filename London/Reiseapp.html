@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=0.92, viewport-fit=cover" />
-  <title>London Schülerfahrt 2026 – Reiseapp</title>
+  <title>Reiseapp für London 2026</title>
   <style>
     :root{
       --bg:#09111f;
@@ -1012,7 +1012,7 @@
     <header class="hero card" id="heroCard">
       <div class="hero-top">
         <div class="hero-heading">
-          <h1>London 2026 – Reiseapp für Begleitlehrkräfte</h1>
+          <h1>Reiseapp für London 2026</h1>
           <p class="subtitle">Schülerfahrt vom <strong>12. April bis 17. April 2026</strong>. Mobile-first aufgebaut, touch-optimiert und klar in Reiter gegliedert.</p>
         </div>
         <button class="small-btn hero-toggle" id="heroToggle" type="button" aria-expanded="true">Infos einklappen</button>
@@ -2650,7 +2650,7 @@
                   <div class="compact">${Math.round(entry.temp ?? 0)}Â°C</div>
                   <div class="compact">Regen ${Math.round(entry.precipitation ?? 0)}%</div>
                 </div>
-              `).join('') || '<div class="doc-status">Keine Stundenwerte fuer diesen Tag verfuegbar.</div>'}
+              `).join('') || '<div class="doc-status">Keine Stundenwerte für diesen Tag verfügbar.</div>'}
             </div>
           </div>
         </div>
@@ -2680,7 +2680,7 @@
                   <div class="compact">${Math.round(entry.temp ?? 0)}Â°C</div>
                   <div class="compact">Regen ${Math.round(entry.precipitation ?? 0)}%</div>
                 </div>
-              `).join('') || '<div class="doc-status">Keine Stundenwerte fuer diesen Tag verfuegbar.</div>'}
+              `).join('') || '<div class="doc-status">Keine Stundenwerte für diesen Tag verfügbar.</div>'}
             </div>
           </div>
         </div>
@@ -2973,9 +2973,9 @@
 
     function weatherLabel(code){
       const normalizedLabels = {
-        1:'Ueberwiegend klar',
-        2:'Teilweise bewoelkt',
-        3:'Bewoelkt'
+        1:'Überwiegend klar',
+        2:'Teilweise bewölkt',
+        3:'Bewölkt'
       };
       return normalizedLabels[code] || weatherCodeMap[code] || 'Wetterdaten';
     }
@@ -3027,7 +3027,7 @@
         code: daily.weather_code?.[index]
       }));
       if (!dailyRows.length){
-        panel.innerHTML = '<div class="doc-status">Keine Wetterdaten verfuegbar.</div>';
+        panel.innerHTML = '<div class="doc-status">Keine Wetterdaten verfügbar.</div>';
         return;
       }
       selectedWeatherDayIndex = Math.min(selectedWeatherDayIndex, dailyRows.length - 1);
@@ -3080,7 +3080,7 @@
         const data = await response.json();
         renderWeatherPanel(data);
       }catch(error){
-        panel.innerHTML = '<div class="doc-status">Wetterdaten konnten gerade nicht geladen werden. Bitte spaeter noch einmal versuchen.</div>';
+        panel.innerHTML = '<div class="doc-status">Wetterdaten konnten gerade nicht geladen werden. Bitte später noch einmal versuchen.</div>';
       }
     }
 
@@ -3102,7 +3102,7 @@
         code: daily.weather_code?.[index]
       }));
       if (!dailyRows.length){
-        panel.innerHTML = '<div class="doc-status">Keine Wetterdaten verfuegbar.</div>';
+        panel.innerHTML = '<div class="doc-status">Keine Wetterdaten verfügbar.</div>';
         return;
       }
       selectedWeatherDayIndex = Math.min(selectedWeatherDayIndex, dailyRows.length - 1);
@@ -3167,7 +3167,7 @@
                   <div class="compact">${Math.round(entry.temp ?? 0)}Â°C</div>
                   <div class="compact">Regen ${Math.round(entry.precipitation ?? 0)}%</div>
                 </div>
-              `).join('') || '<div class="doc-status">Keine Stundenwerte fuer diesen Tag verfuegbar.</div>'}
+              `).join('') || '<div class="doc-status">Keine Stundenwerte für diesen Tag verfügbar.</div>'}
             </div>
           </div>
         </div>
@@ -3192,7 +3192,7 @@
         code: daily.weather_code?.[index]
       }));
       if (!dailyRows.length){
-        panel.innerHTML = '<div class="doc-status">Keine Wetterdaten verfuegbar.</div>';
+        panel.innerHTML = '<div class="doc-status">Keine Wetterdaten verfügbar.</div>';
         return;
       }
       selectedWeatherDayIndex = Math.min(selectedWeatherDayIndex, dailyRows.length - 1);
@@ -3221,7 +3221,7 @@
           </div>
           <div class="weather-meta">
             <div class="detail-card"><strong>Wind</strong><div class="compact">${Math.round(current.wind_speed_10m ?? 0)} km/h</div></div>
-            <div class="detail-card"><strong>Gefuehlt</strong><div class="compact">${formatTemp(current.apparent_temperature ?? current.temperature_2m)}</div></div>
+            <div class="detail-card"><strong>Gefühlt</strong><div class="compact">${formatTemp(current.apparent_temperature ?? current.temperature_2m)}</div></div>
           </div>
         </div>
         <div class="weather-forecast">
@@ -3269,7 +3269,7 @@
                   <div class="compact">${formatTemp(entry.temp)}</div>
                   <div class="compact">Regen ${Math.round(entry.precipitation ?? 0)}%</div>
                 </div>
-              `).join('') || '<div class="doc-status">Keine Stundenwerte fuer diesen Tag verfuegbar.</div>'}
+              `).join('') || '<div class="doc-status">Keine Stundenwerte für diesen Tag verfügbar.</div>'}
             </div>
           </div>
         </div>
@@ -3498,6 +3498,11 @@
       if (heroSubtitle){
         heroSubtitle.innerHTML = 'Sch\u00fclerfahrt vom <strong>12. April bis 17. April 2026</strong>.';
       }
+      const heroTitle = document.querySelector('.hero-heading h1');
+      if (heroTitle){
+        heroTitle.textContent = isTeacherView ? 'London 2026 – Reiseapp für Begleitlehrkräfte' : 'Reiseapp für London 2026';
+      }
+      document.title = isTeacherView ? 'London Schülerfahrt 2026 – Reiseapp für Begleitlehrkräfte' : 'Reiseapp für London 2026';
       if (isTeacherView){
         const docIntro = document.querySelector('#dokumente .section-head .compact');
         if (docIntro){
