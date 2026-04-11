@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/ldn-26-k7m4",
+      "destination": "/Reiseapp.html"
+    },
+    {
+      "source": "/ldn-26-k7m4/",
+      "destination": "/Reiseapp.html"
+    }
+  ]
+}

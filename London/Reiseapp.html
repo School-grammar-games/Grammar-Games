@@ -2145,6 +2145,8 @@
     let weatherDataCache = null;
     let selectedWeatherDayIndex = 0;
     let lastStandardTab = 'programm';
+    const teacherViewPaths = new Set(['/ldn-26-k7m4', '/ldn-26-k7m4/']);
+    const isTeacherView = teacherViewPaths.has(window.location.pathname.toLowerCase());
 
     function escapeHtml(value){
       return String(value).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -2192,6 +2194,9 @@
     }
 
     function setActiveTab(tabId){
+      if (tabId === 'dokumente' && !isTeacherView){
+        tabId = 'programm';
+      }
       if (tabId !== 'photos'){
         lastStandardTab = tabId;
       }
@@ -2212,6 +2217,21 @@
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
       });
+    }
+
+    function applyViewMode(){
+      if (isTeacherView) return;
+      const docsTabButton = document.querySelector('.tab-btn[data-tab="dokumente"]');
+      const docsPanel = document.getElementById('dokumente');
+      if (docsTabButton){
+        docsTabButton.remove();
+      }
+      if (docsPanel){
+        docsPanel.remove();
+      }
+      if (lastStandardTab === 'dokumente'){
+        lastStandardTab = 'programm';
+      }
     }
 
     function isMapLocation(id){
@@ -3366,36 +3386,44 @@
     });
 
     function init(){
+      applyViewMode();
       bindHeroToggle();
       bindThemeToggle();
       bindTabs();
       bindModeButtons();
       buildDayButtons();
       renderDay();
-      loadDocumentList();
+      if (isTeacherView){
+        loadDocumentList();
+      }
       loadWeather();
       document.getElementById('startSelect').addEventListener('change', applyRoute);
       document.getElementById('endSelect').addEventListener('change', applyRoute);
-      document.getElementById('documentSelect').addEventListener('change', event => {
-        selectedDocument = event.target.value;
-        if (!selectedDocument){
-          resetDocumentPreview('Dokument waehlen, um die Vorschau automatisch anzuzeigen.');
-          return;
-        }
-        openDocument(selectedDocument);
-      });
+      const documentSelect = document.getElementById('documentSelect');
+      if (isTeacherView && documentSelect){
+        documentSelect.addEventListener('change', event => {
+          selectedDocument = event.target.value;
+          if (!selectedDocument){
+            resetDocumentPreview('Dokument waehlen, um die Vorschau automatisch anzuzeigen.');
+            return;
+          }
+          openDocument(selectedDocument);
+        });
+      }
       const heroSubtitle = document.querySelector('.subtitle');
       if (heroSubtitle){
         heroSubtitle.innerHTML = 'Sch\u00fclerfahrt vom <strong>12. April bis 17. April 2026</strong>.';
       }
-      const docIntro = document.querySelector('#dokumente .section-head .compact');
-      if (docIntro){
-        docIntro.textContent = 'PDFs aus dem Ordner Dokumente werden automatisch in der App angezeigt.';
-      }
-      const previewButton = document.querySelector('#dokumente .inline-actions .small-btn');
-      if (previewButton){
-        previewButton.textContent = 'Dokument herunterladen';
-        previewButton.onclick = downloadSelectedDocument;
+      if (isTeacherView){
+        const docIntro = document.querySelector('#dokumente .section-head .compact');
+        if (docIntro){
+          docIntro.textContent = 'PDFs aus dem Ordner Dokumente werden automatisch in der App angezeigt.';
+        }
+        const previewButton = document.querySelector('#dokumente .inline-actions .small-btn');
+        if (previewButton){
+          previewButton.textContent = 'Dokument herunterladen';
+          previewButton.onclick = downloadSelectedDocument;
+        }
       }
       const footerNote = document.querySelector('.footer-note');
       if (footerNote){
