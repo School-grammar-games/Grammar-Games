@@ -687,10 +687,22 @@
       border-color:#9fb8d5;
       color:var(--text);
     }
+    body.light-mode .location-chips .chip{
+      background:#fff;
+      border-color:#9fb8d5;
+      color:var(--text);
+      box-shadow:0 1px 0 rgba(47,111,200,.06);
+    }
     body.light-mode .location-grid .chip.active{
       background:linear-gradient(180deg,#2f6fc8,#255ba7);
       border-color:#255ba7;
       color:#fff;
+    }
+    body.light-mode .location-chips .chip.active{
+      background:linear-gradient(180deg,#2f6fc8,#255ba7);
+      border-color:#255ba7;
+      color:#fff;
+      box-shadow:none;
     }
     body.light-mode .weather-current{
       background:linear-gradient(180deg,#ddecff,#f2f7ff);
