@@ -2215,6 +2215,8 @@
     let lastStandardTab = 'programm';
     const teacherViewPaths = new Set(['/ldn-26-k7m4', '/ldn-26-k7m4/']);
     const isTeacherView = teacherViewPaths.has(window.location.pathname.toLowerCase());
+    const appViewportContent = 'width=device-width, initial-scale=0.92, viewport-fit=cover';
+    const photosViewportContent = 'width=device-width, initial-scale=1.0, viewport-fit=cover';
 
     function escapeHtml(value){
       return String(value).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -2261,6 +2263,18 @@
       });
     }
 
+    function applyViewportMode(tabId){
+      const viewportMeta = document.querySelector('meta[name="viewport"]');
+      if (!viewportMeta) return;
+      const targetContent = tabId === 'photos' ? photosViewportContent : appViewportContent;
+      viewportMeta.setAttribute('content', targetContent);
+      if (tabId !== 'photos'){
+        requestAnimationFrame(() => {
+          viewportMeta.setAttribute('content', appViewportContent);
+        });
+      }
+    }
+
     function setActiveTab(tabId){
       if (tabId === 'dokumente' && !isTeacherView){
         tabId = 'programm';
@@ -2268,6 +2282,7 @@
       if (tabId !== 'photos'){
         lastStandardTab = tabId;
       }
+      applyViewportMode(tabId);
       document.body.classList.toggle('photos-mode', tabId === 'photos');
       document.querySelectorAll('.tab-panel').forEach(panel => {
         panel.classList.toggle('active', panel.id === tabId);
@@ -3454,6 +3469,7 @@
     });
 
     function init(){
+      applyViewportMode('programm');
       applyViewMode();
       bindHeroToggle();
       bindThemeToggle();
