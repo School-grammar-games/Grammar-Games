@@ -953,6 +953,14 @@
         padding:12px 12px calc(18px + env(safe-area-inset-bottom));
         gap:12px;
       }
+      body:not(.photos-mode) .app{
+        width:122%;
+        max-width:none;
+        margin-left:-11%;
+        margin-right:-11%;
+        transform:scale(.82);
+        transform-origin:top center;
+      }
       .hero{
         padding:16px;
       }
@@ -1000,6 +1008,12 @@
     }
     @media (max-width:480px){
       body{font-size:17px}
+      body:not(.photos-mode) .app{
+        width:128%;
+        margin-left:-14%;
+        margin-right:-14%;
+        transform:scale(.78);
+      }
       .hero{padding:15px}
       .section{padding:13px}
       .tab-btn{min-width:126px}
