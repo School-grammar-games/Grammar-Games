@@ -1,0 +1,4120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Exam Trainer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+
+  :root {
+    --bg: #f0eee8;
+    --surface: #ffffff;
+    --surface2: #f7f5f0;
+    --border: #ddd9d0;
+    --border-strong: #b8b4aa;
+    --accent-talk: #e8420a;
+    --accent-picture: #d4860a;
+    --accent-dialogue: #1a7f4e;
+    --accent-blue: #1a5fd4;
+    --text: #1a1815;
+    --text-muted: #7a766e;
+    --radius: 14px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60vw 35vh at 10% 0%, rgba(26,95,212,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 50vw 40vh at 90% 100%, rgba(26,127,78,0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    padding: 1rem 1.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow: hidden;
+  }
+
+  /* ── Mode tabs ────────────────────────────────── */
+  .mode-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+    flex-shrink: 0;
+  }
+
+  .mode-tab {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.65rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .mode-tab:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.1); }
+
+  .mode-tab[data-mode="talk"].active   { border-color: var(--accent-talk);     background: #fff5f2; box-shadow: 0 2px 12px rgba(232,66,10,0.15); }
+  .mode-tab[data-mode="picture"].active { border-color: var(--accent-picture);  background: #fffbf0; box-shadow: 0 2px 12px rgba(212,134,10,0.15); }
+  .mode-tab[data-mode="dialogue"].active{ border-color: var(--accent-dialogue); background: #f0fff6; box-shadow: 0 2px 12px rgba(26,127,78,0.12); }
+
+  .mode-icon { font-size: 1.25rem; line-height: 1; }
+
+  .mode-tab h3 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .mode-tab[data-mode="talk"].active   h3 { color: var(--accent-talk); }
+  .mode-tab[data-mode="picture"].active h3 { color: var(--accent-picture); }
+  .mode-tab[data-mode="dialogue"].active h3 { color: var(--accent-dialogue); }
+
+  /* ── Main card ────────────────────────────────── */
+  .main-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.5rem 1rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    overflow: hidden;
+    min-height: 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  .main-card.picture-mode {
+    gap: 0.45rem;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+
+  .topic-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .topic-header-row.task-mode {
+    justify-content: center;
+    gap: 0.25rem;
+    min-height: 1.9rem;
+  }
+
+  .topic-header-row.task-mode .section-label {
+    display: none;
+  }
+
+  .section-note {
+    font-size: 0.86rem;
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 300;
+    text-align: right;
+    display: none;
+  }
+
+  .section-note.active {
+    display: block;
+  }
+
+  .topic-header-row.task-mode .section-note.active {
+    display: block;
+    width: 100%;
+    text-align: center;
+    color: var(--text);
+    font-style: normal;
+    font-weight: 700;
+    font-size: 0.98rem;
+    letter-spacing: 0.01em;
+    background: #fff7e6;
+    border: 1px solid #ead7ad;
+    border-radius: 10px;
+    padding: 0.5rem 0.9rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+
+  /* Topic area */
+  .topic-area {
+    position: relative;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 1.8rem 2.2rem;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: visible;
+    min-height: 0;
+  }
+
+  .topic-area.picture-layout {
+    padding: 0.3rem 0.55rem;
+    overflow: hidden;
+  }
+
+  .topic-inner {
+    overflow: visible;
+    width: 100%;
+    max-width: 780px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .topic-inner.picture-topic {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .topic-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+
+  .topic-title {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: clamp(1.5rem, 3.2vw, 2.2rem);
+    font-weight: 800;
+    line-height: 1.25;
+    overflow: visible;
+    padding: 0.08em 0 0.18em;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
+
+  .topic-inner.talk-topic,
+  .topic-inner.dialogue-topic {
+    align-items: center;
+  }
+
+  .topic-inner.talk-topic .topic-title,
+  .topic-inner.dialogue-topic .topic-title {
+    text-align: center;
+    font-size: clamp(2rem, 4.8vw, 3.1rem);
+    margin-bottom: 0.5rem;
+  }
+
+  .topic-inner.dialogue-topic .topic-bullets {
+    width: fit-content;
+    max-width: min(100%, 900px);
+    margin: 0 auto;
+    align-self: center;
+  }
+
+  .topic-inner.dialogue-topic .topic-bullets li {
+    font-size: clamp(1rem, 2vw, 1.15rem);
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .topic-inner.dialogue-topic .topic-bullets li::before {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .topic-subtitle {
+    font-size: clamp(0.82rem, 1.5vw, 0.92rem);
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 300;
+    margin-bottom: 0.9rem;
+  }
+
+  .topic-divider {
+    height: 1.5px;
+    background: var(--border);
+    border: none;
+    border-radius: 2px;
+    margin-bottom: 0.8rem;
+  }
+
+  .topic-bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .topic-bullets li {
+    font-size: clamp(0.92rem, 1.8vw, 1.05rem);
+    color: var(--text-muted);
+    font-weight: 400;
+    display: flex;
+    align-items: baseline;
+    gap: 0.65rem;
+    line-height: 1.45;
+  }
+
+  .topic-bullets li::before {
+    content: '–';
+    flex-shrink: 0;
+    color: var(--border-strong);
+    font-weight: 600;
+  }
+
+  .partner-dialogue {
+    width: 100%;
+    max-width: 980px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2.2rem;
+    margin-top: 0.1rem;
+  }
+
+  .partner-column {
+    min-width: 0;
+  }
+
+  .partner-heading {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: clamp(1.1rem, 2vw, 1.45rem);
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 0.95rem;
+  }
+
+  .partner-bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .partner-bullets li {
+    font-size: clamp(1rem, 2vw, 1.12rem);
+    color: var(--text);
+    font-weight: 700;
+    display: flex;
+    align-items: baseline;
+    gap: 0.65rem;
+    line-height: 1.45;
+  }
+
+  .partner-bullets li::before {
+    content: '–';
+    flex-shrink: 0;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .placeholder {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--border-strong);
+  }
+
+  .placeholder-icon  { font-size: 2rem; opacity: 0.45; }
+  .placeholder-text  { font-size: 1rem; font-style: italic; }
+  .placeholder-hint  { font-size: 0.75rem; font-family: 'DM Mono', monospace; letter-spacing: 0.06em; opacity: 0.7; }
+
+  /* ── Picture ──────────────────────────────────── */
+  .picture-display {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 10px;
+    margin: 0 auto;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+  }
+
+  .picture-placeholder {
+    width: 100%;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    border-radius: 8px;
+    border: 2px dashed var(--border);
+    color: var(--text-muted);
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .picture-topic-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .topic-number-inline {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.45rem;
+    opacity: 0.82;
+  }
+
+  .picture-number-inline {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.6rem;
+    margin-bottom: 0;
+    padding: 0.2rem 0.42rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.85);
+    border: 1px solid rgba(0,0,0,0.08);
+    backdrop-filter: blur(2px);
+  }
+
+  .selection-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: none;
+    align-items: stretch;
+    justify-content: center;
+    background: rgba(240, 238, 232, 0.92);
+    backdrop-filter: blur(4px);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+
+  .selection-overlay.visible {
+    display: flex;
+  }
+
+  .selection-panel {
+    width: min(100%, 980px);
+    height: 100%;
+    max-height: 100%;
+    background: rgba(255,255,255,0.98);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.10);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .selection-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .selection-title {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .selection-close {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.18s;
+  }
+
+  .selection-close:hover {
+    color: var(--text);
+    border-color: var(--text);
+  }
+
+  .selection-grid {
+    padding: 0.95rem;
+    overflow: auto;
+    display: grid;
+    gap: 0.7rem;
+    align-content: start;
+  }
+
+  .selection-grid.talk-grid,
+  .selection-grid.dialogue-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .selection-grid.picture-grid {
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  }
+
+  .selection-item {
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 0.75rem 0.85rem;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.18s ease;
+    color: var(--text);
+    min-width: 0;
+  }
+
+  .selection-item:hover {
+    transform: translateY(-1px);
+    border-color: var(--border-strong);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    background: var(--surface);
+  }
+
+  .selection-item-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+  }
+
+  .selection-item-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--text);
+  }
+
+  .selection-item-subtitle {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 0.28rem;
+    line-height: 1.35;
+  }
+
+  .selection-item.picture-choice {
+    text-align: center;
+    padding: 0.7rem 0.5rem 0.75rem;
+  }
+
+  .selection-item.picture-choice .selection-item-title {
+    font-size: 0.92rem;
+  }
+
+  .selection-item-picture-figure {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .selection-item-picture-thumb {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    object-position: center;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #ece8e0;
+    display: block;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);
+  }
+
+  .selection-item.picture-choice .selection-item-number {
+    margin-bottom: 0;
+    text-align: center;
+  }
+
+  /* ── Controls row ─────────────────────────────── */
+  .controls-row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.88fr) minmax(360px, 1.24fr) minmax(0, 0.88fr);
+    align-items: stretch;
+    gap: 0.75rem;
+    flex-shrink: 0;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .controls-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    min-width: 0;
+    align-items: stretch;
+  }
+
+  .controls-left { justify-self: stretch; }
+  .controls-right { justify-self: stretch; }
+
+  .controls-group > * {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* ── TIMER – centrepiece ──────────────────────── */
+  .timer-block {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
+    gap: 0;
+    min-width: 0;
+    height: 100%;
+  }
+
+  .timer-card {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 0.5rem 1.1rem 0.5rem 0.8rem;
+    transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+    width: 100%;
+    min-height: 4rem;
+    height: 100%;
+    justify-content: center;
+  }
+
+  .timer-card.running {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(26,95,212,0.1), 0 2px 12px rgba(26,95,212,0.12);
+    background: #f0f5ff;
+  }
+
+  /* Warning: last 10 s – aggressive red highlight */
+  .timer-card.warning-state {
+    border-color: var(--accent-talk);
+    box-shadow: 0 0 0 4px rgba(232,66,10,0.15), 0 2px 16px rgba(232,66,10,0.2);
+    background: #fff2ee;
+    animation: shakeCard 0.4s ease;
+  }
+
+  .timer-card.done-state {
+    border-color: var(--accent-dialogue);
+    background: #edfff5;
+    box-shadow: 0 0 0 3px rgba(26,127,78,0.12);
+  }
+
+  @keyframes shakeCard {
+    0%,100% { transform: translateX(0); }
+    25%      { transform: translateX(-4px); }
+    75%      { transform: translateX(4px); }
+  }
+
+  .timer-display {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(1.65rem, 3vw, 2.2rem);
+    font-weight: 500;
+    min-width: 3.3ch;
+    color: var(--text);
+    transition: color 0.3s;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    text-align: center;
+  }
+
+  .timer-display.warning {
+    color: var(--accent-talk);
+    animation: timerPulse 0.5s infinite alternate;
+    font-weight: 700;
+  }
+
+  .timer-display.done { color: var(--accent-dialogue); }
+
+  @keyframes timerPulse {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0.65; transform: scale(0.97); }
+  }
+
+  .timer-sub {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .timer-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    border-radius: 50%;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    transition: all 0.18s;
+    line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    width: 1.8rem; height: 1.8rem;
+    background: var(--surface);
+  }
+
+  .timer-btn:hover { color: var(--text); border-color: var(--text); background: var(--surface2); }
+
+  .btn-time-setting {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    min-height: 4rem;
+    padding: 0.5rem 0.9rem;
+    color: white;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    background: linear-gradient(135deg, #6c8bb5, #88a5cb);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .btn-time-setting-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.38rem;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .btn-time-setting select {
+    width: 100%;
+    max-width: 10.4rem;
+    background: rgba(255,255,255,0.96);
+    border: 1.5px solid rgba(255,255,255,0.85);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 0.38rem 0.7rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    text-align: center;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+  }
+
+  .btn-time-setting select:focus {
+    outline: 2px solid rgba(255,255,255,0.9);
+    outline-offset: 1px;
+  }
+
+  /* ── Action buttons ───────────────────────────── */
+  .btn-randomize,
+  .btn-selection,
+  .btn-reset-view,
+  .btn-time-setting {
+    flex-shrink: 0;
+    border: none;
+    border-radius: 12px;
+    padding: 0 1.05rem;
+    min-height: 4rem;
+    color: white;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.22s;
+    letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  .btn-randomize,
+  .btn-selection,
+  .btn-reset-view,
+  .btn-time-setting {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .btn-reset-view {
+    background: linear-gradient(135deg, #6d6a63, #8b877f);
+  }
+
+  .btn-randomize:hover,
+  .btn-selection:hover,
+  .btn-reset-view:hover,
+  .btn-time-setting:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+  }
+
+  .btn-randomize:active,
+  .btn-selection:active,
+  .btn-reset-view:active,
+  .btn-time-setting:active {
+    transform: scale(0.97);
+  }
+
+  .btn-randomize[data-mode="talk"],
+  .btn-selection[data-mode="talk"]     { background: linear-gradient(135deg, #e8420a, #ff6b35); }
+  .btn-randomize[data-mode="picture"],
+  .btn-selection[data-mode="picture"]  { background: linear-gradient(135deg, #d4860a, #f5a623); }
+  .btn-randomize[data-mode="dialogue"],
+  .btn-selection[data-mode="dialogue"] { background: linear-gradient(135deg, #1a7f4e, #00b87a); }
+
+  .btn-time-setting {
+    padding: 0.5rem 0.9rem;
+    min-height: 4rem;
+  }
+
+
+  @media (max-width: 1100px) {
+    .controls-row {
+      grid-template-columns: 1fr;
+    }
+
+    .controls-group {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .timer-block {
+      order: -1;
+    }
+  }
+
+  /* ── Share section ────────────────────────────── */
+  .share-section {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.8rem 1.4rem;
+    flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+
+  .share-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .share-header h3 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .share-toggle-icon { color: var(--text-muted); transition: transform 0.3s; font-size: 0.7rem; }
+  .share-toggle-icon.open { transform: rotate(180deg); }
+
+  .share-content {
+    display: none;
+    grid-template-columns: auto 1fr;
+    gap: 1.2rem;
+    align-items: start;
+    margin-top: 1rem;
+  }
+
+  .share-content.visible { display: grid; }
+
+  #qr-canvas {
+    border-radius: 6px;
+    background: white;
+    display: block;
+    border: 1px solid var(--border);
+    width: 152px;
+    height: 152px;
+  }
+
+  .share-info { display: flex; flex-direction: column; gap: 0.6rem; }
+
+  .share-url-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent-blue);
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  .share-note {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .btn-copy {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.18s;
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .btn-copy:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+
+  .live-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #c0000a;
+    letter-spacing: 0.08em;
+    animation: livePulse 1.4s infinite;
+  }
+
+  @keyframes livePulse {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+  }
+
+  .share-mode-row {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .share-mode-btn {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.3rem 0.75rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.18s;
+  }
+
+  .share-mode-btn.active {
+    background: var(--text);
+    color: var(--surface);
+    border-color: var(--text);
+  }
+
+  /* Viewer overlay – covers full screen for student view */
+  #viewer-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    gap: 1.5rem;
+  }
+
+  #viewer-overlay.active { display: flex; }
+  #viewer-overlay.viewer-picture-mode { padding: 0.9rem 1rem 1rem; gap: 0; }
+
+  .viewer-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    color: #c0000a;
+    animation: livePulse 1.4s infinite;
+  }
+
+  .viewer-topic-area {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem 2.2rem;
+    width: 100%;
+    max-width: 1180px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex: 1;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .viewer-topic-area .topic-inner.picture-topic {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .viewer-picture-frame {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .viewer-topic-area .picture-display {
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  #viewer-overlay.viewer-picture-mode .viewer-topic-area {
+    width: min(96vw, 1700px);
+    max-width: none;
+    height: min(86vh, 1100px);
+    padding: 0.8rem;
+    border-radius: 18px;
+  }
+
+  #viewer-overlay.viewer-picture-mode .viewer-picture-frame {
+    width: 100%;
+    height: 100%;
+  }
+
+  #viewer-overlay.viewer-picture-mode .viewer-picture-frame .picture-display {
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  .viewer-timer {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(3rem, 8vw, 5rem);
+    font-weight: 500;
+    text-align: center;
+    color: var(--text);
+    letter-spacing: 0.04em;
+    transition: color 0.3s;
+    padding: 0.5rem 2rem;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+  }
+
+  #viewer-overlay.viewer-picture-mode .viewer-timer {
+    position: fixed;
+    right: 1.35rem;
+    bottom: 1.35rem;
+    left: auto;
+    transform: none;
+    z-index: 120;
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    padding: 0.28rem 1.2rem;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(4px);
+    border: 2px solid rgba(0,0,0,0.12);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+  }
+
+  .viewer-timer.warning { color: var(--accent-talk); animation: timerPulse 0.5s infinite alternate; }
+  .viewer-timer.done    { color: var(--accent-dialogue); }
+
+  #viewer-overlay.viewer-picture-mode .viewer-badge {
+    position: fixed;
+    top: 0.9rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 121;
+  }
+
+  .viewer-waiting {
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* ── Animations ───────────────────────────────── */
+  @keyframes spinPop {
+    0%   { transform: rotate(0deg) scale(1); }
+    50%  { transform: rotate(180deg) scale(1.2); }
+    100% { transform: rotate(360deg) scale(1); }
+  }
+
+  .spin { animation: spinPop 0.4s ease; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .slide-in { animation: slideIn 0.3s ease; }
+
+  /* ── Responsive ───────────────────────────────── */
+  @media (max-width: 800px) {
+    .partner-dialogue {
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .teacher-footer {
+      justify-content: stretch;
+    }
+
+    .teacher-apply-btn {
+      width: 100%;
+    }
+
+    .app { padding: 0.6rem; gap: 0.5rem; }
+    .mode-tab { padding: 0.55rem 0.5rem; }
+    .mode-icon { font-size: 1.1rem; }
+    .mode-tab h3 { font-size: 0.7rem; }
+    .controls-row { grid-template-columns: 1fr; gap: 0.5rem; }
+    .timer-block { width: 100%; min-width: 0; }
+    .timer-card { width: 100%; min-height: 3.4rem; }
+    .btn-randomize, .btn-selection, .btn-reset-view, .btn-time-setting { width: 100%; justify-content: center; min-height: 2.8rem; }
+    .share-content { grid-template-columns: 1fr; }
+    .timer-display { font-size: 2rem; }
+    .selection-grid.talk-grid,
+    .selection-grid.dialogue-grid,
+    .selection-grid.picture-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-height: 600px) {
+    .app { gap: 0.4rem; padding: 0.5rem 1rem; }
+    .main-card { padding: 0.7rem 1.1rem; gap: 0.5rem; }
+    .topic-area { padding: 0.7rem 1.1rem; }
+    .topic-area.picture-layout { padding: 0.45rem 0.7rem; }
+    .topic-header-row { align-items: flex-start; }
+    .section-note { text-align: left; font-size: 0.8rem; }
+    .share-section { padding: 0.55rem 1rem; }
+  }
+
+  .app-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .teacher-toggle-btn {
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 0.55rem 0.95rem;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+
+  .teacher-toggle-btn:hover {
+    transform: translateY(-1px);
+    border-color: var(--accent-blue);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  }
+
+  .teacher-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(26, 24, 21, 0.42);
+    backdrop-filter: blur(5px);
+  }
+
+  .teacher-modal.visible {
+    display: flex;
+  }
+
+  .teacher-dialog {
+    width: min(1180px, 100%);
+    max-height: min(92vh, 980px);
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    box-shadow: 0 16px 42px rgba(0,0,0,0.18);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .teacher-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .teacher-header-title {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+  }
+
+  .teacher-header-title h2 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .teacher-header-title p {
+    color: var(--text-muted);
+    font-size: 0.84rem;
+  }
+
+  .teacher-close-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .teacher-close-btn:hover {
+    color: var(--text);
+    border-color: var(--text);
+  }
+
+  .teacher-body {
+    padding: 1rem 1.15rem 1.2rem;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .teacher-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .teacher-section {
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    min-height: 0;
+  }
+
+  .teacher-section.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .teacher-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+  }
+
+  .teacher-section-title {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+  }
+
+  .teacher-section-title h3 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .teacher-section-title p,
+  .teacher-section-note {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  .teacher-counter {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .teacher-textarea {
+    width: 100%;
+    min-height: 220px;
+    resize: vertical;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 0.9rem 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  .teacher-input-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+
+  .teacher-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-width: 0;
+  }
+
+  .teacher-input-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .teacher-input {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 0.72rem 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: var(--text);
+  }
+
+  .teacher-textarea:focus,
+  .teacher-input:focus,
+  .teacher-import-input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(26,95,212,0.10);
+  }
+
+  .teacher-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .teacher-action-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 0.65rem 0.95rem;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: white;
+    background: linear-gradient(135deg, #6c8bb5, #88a5cb);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .teacher-action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 16px rgba(0,0,0,0.16);
+  }
+
+  .teacher-action-btn.secondary {
+    color: var(--text);
+    background: linear-gradient(135deg, #ece8e0, #ffffff);
+    border: 1.5px solid var(--border);
+    box-shadow: none;
+  }
+
+  .teacher-action-btn.success {
+    background: linear-gradient(135deg, #1a7f4e, #00b87a);
+  }
+
+  .teacher-action-btn.warning {
+    background: linear-gradient(135deg, #d4860a, #f5a623);
+  }
+
+  .teacher-action-btn.danger {
+    background: linear-gradient(135deg, #b11f12, #e8420a);
+  }
+
+  .teacher-action-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .teacher-status {
+    display: none;
+    border-radius: 12px;
+    padding: 0.75rem 0.95rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .teacher-status.visible {
+    display: block;
+  }
+
+  .teacher-status.success {
+    border-color: rgba(26,127,78,0.35);
+    background: #effdf6;
+    color: #14563a;
+  }
+
+  .teacher-status.error {
+    border-color: rgba(232,66,10,0.35);
+    background: #fff2ee;
+    color: #8e2405;
+  }
+
+  .teacher-status.info {
+    border-color: rgba(26,95,212,0.25);
+    background: #f3f7ff;
+    color: #1647a1;
+  }
+
+  .teacher-dropzone {
+    border: 2px dashed var(--border-strong);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.86);
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  }
+
+  .teacher-dropzone.dragover {
+    border-color: var(--accent-blue);
+    background: #f3f7ff;
+    transform: translateY(-1px);
+  }
+
+  .teacher-dropzone strong {
+    color: var(--text);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+
+  .teacher-dropzone small {
+    display: block;
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  .teacher-picture-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    gap: 0.75rem;
+    max-height: 340px;
+    overflow: auto;
+  }
+
+  .teacher-picture-card {
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .teacher-picture-card.clickable {
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+
+  .teacher-picture-card.clickable:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    border-color: rgba(232,66,10,0.45);
+  }
+
+  .teacher-picture-card img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    background: #ece8e0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .teacher-picture-card-body {
+    padding: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .teacher-picture-card-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .teacher-picture-badge {
+    align-self: flex-start;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    padding: 0.16rem 0.42rem;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    background: var(--surface2);
+  }
+
+  .teacher-picture-remove {
+    border: 1px solid rgba(232,66,10,0.28);
+    background: #fff5f2;
+    color: #b11f12;
+    border-radius: 8px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .teacher-picture-remove-hint {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #b11f12;
+    line-height: 1.2;
+  }
+
+  .teacher-import-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .teacher-import-card {
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .teacher-import-card h4 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .teacher-hidden-input {
+    display: none;
+  }
+
+  .teacher-empty-note {
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 0.8rem;
+    text-align: center;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.65);
+    font-size: 0.84rem;
+  }
+
+  @media (max-width: 900px) {
+    .teacher-grid,
+    .teacher-import-grid,
+    .teacher-input-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .teacher-dialog {
+      max-height: 96vh;
+      width: 100%;
+      border-radius: 14px;
+    }
+
+    .teacher-body {
+      padding: 0.8rem;
+    }
+
+    .teacher-textarea {
+      min-height: 180px;
+    }
+
+    .teacher-picture-gallery {
+      grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="app-toolbar">
+    <button class="teacher-toggle-btn" type="button" onclick="openTeacherModal()" aria-haspopup="dialog" aria-controls="teacher-modal">
+      <span>🛠</span>
+      <span>Teacher Mode</span>
+    </button>
+  </div>
+
+  <!-- Mode Tabs -->
+  <div class="mode-tabs">
+    <div class="mode-tab active" data-mode="talk" onclick="setMode('talk')">
+      <span class="mode-icon">🎤</span>
+      <h3 id="mode-label-talk">One Minute Talk</h3>
+    </div>
+    <div class="mode-tab" data-mode="picture" onclick="setMode('picture')">
+      <span class="mode-icon">🖼️</span>
+      <h3 id="mode-label-picture">Picture Description</h3>
+    </div>
+    <div class="mode-tab" data-mode="dialogue" onclick="setMode('dialogue')">
+      <span class="mode-icon">💬</span>
+      <h3 id="mode-label-dialogue">Dialogue</h3>
+    </div>
+  </div>
+
+  <!-- Main Card -->
+  <div class="main-card">
+    <div class="topic-header-row">
+      <div class="section-label" id="topic-label">Current Topic</div>
+      <div class="section-note" id="topic-note"></div>
+    </div>
+
+    <!-- Topic Area -->
+    <div class="topic-area" id="topic-area">
+      <div class="placeholder">
+        <span class="placeholder-icon">🎲</span>
+        <span class="placeholder-text">No topic selected yet</span>
+        <span class="placeholder-hint">Press &quot;Randomize&quot; or &quot;Selection&quot; to get started</span>
+      </div>
+
+      <div class="selection-overlay" id="selection-overlay" aria-hidden="true">
+        <div class="selection-panel">
+          <div class="selection-header">
+            <div class="selection-title" id="selection-title">Choose an item</div>
+            <button class="selection-close" type="button" onclick="hideSelectionOverlay()" aria-label="Close selection">✕</button>
+          </div>
+          <div class="selection-grid" id="selection-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-row">
+      <div class="controls-group controls-left">
+        <button class="btn-randomize" data-mode="talk" id="rand-btn" onclick="randomize()">
+          <span id="dice-icon">🎲</span> Randomize
+        </button>
+
+        <button class="btn-selection" data-mode="talk" id="selection-btn" onclick="openSelectionOverlay()">
+          <span>☰</span> Selection
+        </button>
+      </div>
+
+      <div class="timer-block">
+        <div class="timer-card" id="timer-group">
+          <button class="timer-btn" onclick="toggleTimer()" title="Start/Pause" id="play-btn">▶</button>
+          <span class="timer-display" id="timer-display">01:00</span>
+          <button class="timer-btn" onclick="resetTimer()" title="Reset timer">↺</button>
+        </div>
+      </div>
+
+      <div class="controls-group controls-right">
+        <label class="btn-time-setting" for="timer-preset">
+          <span class="btn-time-setting-label"><span>⏱</span> Zeiteinstellung</span>
+          <select id="timer-preset" onchange="setTimerPreset(this.value)">
+            <option value="30">0:30</option>
+            <option value="60" selected>1:00</option>
+            <option value="90">1:30</option>
+            <option value="120">2:00</option>
+            <option value="150">2:30</option>
+            <option value="180">3:00</option>
+            <option value="210">3:30</option>
+            <option value="240">4:00</option>
+            <option value="270">4:30</option>
+            <option value="300">5:00</option>
+            <option value="330">5:30</option>
+            <option value="360">6:00</option>
+            <option value="390">6:30</option>
+            <option value="420">7:00</option>
+            <option value="450">7:30</option>
+            <option value="480">8:00</option>
+          </select>
+        </label>
+
+        <button class="btn-reset-view" id="reset-view-btn" onclick="resetCurrentView()">
+          <span>↺</span> Reset
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share / QR Section -->
+  <div class="share-section">
+    <div class="share-header" onclick="toggleShare()">
+      <h3 id="share-header-title">📡 Live Share &amp; QR Code</h3>
+      <div style="display:flex;align-items:center;gap:0.6rem">
+        <span class="live-badge" id="live-badge" style="display:none">● LIVE</span>
+        <span class="share-toggle-icon" id="share-chevron">▼</span>
+      </div>
+    </div>
+    <div class="share-content" id="share-content">
+
+      <!-- Left: QR -->
+      <canvas id="qr-canvas" width="140" height="140"></canvas>
+
+      <!-- Right: info + controls -->
+      <div class="share-info">
+
+        <!-- Live sync panel -->
+        <div id="panel-live" style="display:flex;flex-direction:column;gap:0.5rem">
+          <div class="share-url-box" id="live-url-display">— Session wird gestartet …</div>
+          <p class="share-note" id="live-note">Schüler öffnen diesen Link und sehen <strong>in Echtzeit</strong> dasselbe Thema und den laufenden Timer.<br>Erfordert Internetverbindung (Firebase). Falls „Verbinde …“ länger als wenige Sekunden stehen bleibt, Seite mit <strong>Strg+F5</strong> neu laden oder Browser-Schutz/VPN testweise deaktivieren.</p>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+            <button class="btn-copy" id="btn-start-session" onclick="startSession()">▶ Session starten</button>
+            <button class="btn-copy" id="btn-copy-live" onclick="copyLiveLink()" style="display:none">📋 Link kopieren</button>
+            <button class="btn-copy" id="btn-stop-session" onclick="stopSession()" style="display:none;border-color:#e8420a;color:#e8420a">■ Stoppen</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="teacher-modal" id="teacher-modal" aria-hidden="true">
+  <div class="teacher-dialog" role="dialog" aria-modal="true" aria-labelledby="teacher-modal-title">
+    <div class="teacher-header">
+      <div class="teacher-header-title">
+        <h2 id="teacher-modal-title">Teacher Mode</h2>
+        <p>Manage topics, images, import/export and persistent settings without changing the student view.</p>
+      </div>
+      <button class="teacher-close-btn" type="button" onclick="closeTeacherModal()" aria-label="Close teacher mode">✕</button>
+    </div>
+    <div class="teacher-body">
+      <div class="teacher-status" id="teacher-status"></div>
+
+      <div class="teacher-grid">
+        <section class="teacher-section full-width">
+          <div class="teacher-section-head">
+            <div class="teacher-section-title">
+              <h3>Mode names</h3>
+              <p>Rename the three main modes. The updated names appear directly in the mode tabs.</p>
+            </div>
+          </div>
+          <div class="teacher-input-grid">
+            <label class="teacher-input-group" for="teacher-mode-name-talk">
+              <span class="teacher-input-label">Talk mode</span>
+              <input class="teacher-input" id="teacher-mode-name-talk" type="text" maxlength="60" placeholder="One Minute Talk">
+            </label>
+            <label class="teacher-input-group" for="teacher-mode-name-picture">
+              <span class="teacher-input-label">Picture mode</span>
+              <input class="teacher-input" id="teacher-mode-name-picture" type="text" maxlength="60" placeholder="Picture Description">
+            </label>
+            <label class="teacher-input-group" for="teacher-mode-name-dialogue">
+              <span class="teacher-input-label">Dialogue mode</span>
+              <input class="teacher-input" id="teacher-mode-name-dialogue" type="text" maxlength="60" placeholder="Dialogue">
+            </label>
+            <label class="teacher-input-group" for="teacher-task-text-talk">
+              <span class="teacher-input-label">Talk task text</span>
+              <input class="teacher-input" id="teacher-task-text-talk" type="text" maxlength="180" placeholder="Task: Speak for one minute about the topic.">
+            </label>
+            <label class="teacher-input-group" for="teacher-task-text-picture">
+              <span class="teacher-input-label">Picture task text</span>
+              <input class="teacher-input" id="teacher-task-text-picture" type="text" maxlength="180" placeholder="Task: Describe the picture and think of a story that matches it.">
+            </label>
+            <label class="teacher-input-group" for="teacher-task-text-dialogue">
+              <span class="teacher-input-label">Dialogue task text</span>
+              <input class="teacher-input" id="teacher-task-text-dialogue" type="text" maxlength="180" placeholder="Task: Discuss the situation with your partner and cover all points below.">
+            </label>
+          </div>
+          <div class="teacher-actions">
+            <button class="teacher-action-btn success" type="button" onclick="saveModeLabelsFromInputs()">Save mode names</button>
+            <button class="teacher-action-btn success" type="button" onclick="saveTaskTextsFromInputs()">Save task texts</button>
+          </div>
+        </section>
+
+        <section class="teacher-section">
+          <div class="teacher-section-head">
+            <div class="teacher-section-title">
+              <h3 id="teacher-section-title-talk">One Minute Talk</h3>
+              <p>One topic per line. Randomize and Selection use this list directly.</p>
+            </div>
+            <div class="teacher-counter" id="teacher-talk-count">0 topics</div>
+          </div>
+          <textarea class="teacher-textarea" id="teacher-talk-textarea" spellcheck="false" placeholder="Holidays&#10;Books &amp; Films&#10;Animals"></textarea>
+          <div class="teacher-actions">
+            <button class="teacher-action-btn success" type="button" onclick="saveTalkTopicsFromTextarea()">Save talk topics</button>
+            <button class="teacher-action-btn secondary" type="button" onclick="triggerTalkImport()">Import TXT / DOCX / PDF</button>
+          </div>
+        </section>
+
+        <section class="teacher-section">
+          <div class="teacher-section-head">
+            <div class="teacher-section-title">
+              <h3 id="teacher-section-title-dialogue">Dialogue</h3>
+              <p>One block per topic. Blank lines separate blocks. First line = title, following lines = bullet points.</p>
+            </div>
+            <div class="teacher-counter" id="teacher-dialogue-count">0 dialogue topics</div>
+          </div>
+          <textarea class="teacher-textarea" id="teacher-dialogue-textarea" spellcheck="false" placeholder="Planning a class trip&#10;destination&#10;transport&#10;costs&#10;&#10;Buying a birthday present&#10;budget&#10;ideas"></textarea>
+          <div class="teacher-actions">
+            <button class="teacher-action-btn success" type="button" onclick="saveDialogueTopicsFromTextarea()">Save dialogue topics</button>
+            <button class="teacher-action-btn secondary" type="button" onclick="triggerDialogueImport()">Import TXT / DOCX / PDF</button>
+          </div>
+        </section>
+
+        <section class="teacher-section full-width">
+          <div class="teacher-section-head">
+            <div class="teacher-section-title">
+              <h3 id="teacher-section-title-picture">Picture Description</h3>
+              <p>Add custom images with drag &amp; drop or by choosing files. Built-in standard images stay available until they are explicitly cleared.</p>
+            </div>
+            <div class="teacher-counter" id="teacher-picture-count">0 pictures</div>
+          </div>
+          <div class="teacher-dropzone" id="teacher-picture-dropzone" onclick="triggerPictureUpload()">
+            <strong>Drop images here or click to upload</strong>
+            <small>Supported formats: JPG, JPEG, PNG, WEBP. Uploaded images stay available after reloading the page.</small>
+          </div>
+          <div class="teacher-picture-gallery" id="teacher-picture-list"></div>
+        </section>
+
+        <section class="teacher-section full-width">
+          <div class="teacher-section-head">
+            <div class="teacher-section-title">
+              <h3>Import / Export</h3>
+              <p>Import topic files in the browser, export current settings as ZIP, or replace text content via a structured settings import.</p>
+            </div>
+          </div>
+          <div class="teacher-import-grid">
+            <div class="teacher-import-card">
+              <h4>Structured settings import</h4>
+              <p class="teacher-section-note">Replaces the current One-Minute-Talk and Dialogue content, mode names, and task texts with data from a validated settings file. Accepts the exported TXT settings file and JSON files.</p>
+              <div class="teacher-actions">
+                <button class="teacher-action-btn secondary" type="button" onclick="triggerJsonImport()">Import settings file</button>
+              </div>
+            </div>
+            <div class="teacher-import-card">
+              <h4>Export current settings</h4>
+              <p class="teacher-section-note">Creates a ZIP file with all current topics, mode names, task texts, and custom uploaded images.</p>
+              <div class="teacher-actions">
+                <button class="teacher-action-btn warning" type="button" onclick="exportCurrentSettings()">Export ZIP</button>
+                <button class="teacher-action-btn danger" type="button" onclick="clearManagedContent()">Clear current content</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="teacher-footer">
+        <button class="teacher-action-btn success teacher-apply-btn" id="teacher-apply-btn" type="button">Apply changes</button>
+      </div>
+
+      <input class="teacher-hidden-input" id="teacher-picture-input" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple>
+      <input class="teacher-hidden-input" id="teacher-talk-import" type="file" accept=".txt,.docx,.pdf,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+      <input class="teacher-hidden-input" id="teacher-dialogue-import" type="file" accept=".txt,.docx,.pdf,text/plain,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+      <input class="teacher-hidden-input" id="teacher-json-import" type="file" accept=".json,.txt,application/json,text/plain">
+    </div>
+  </div>
+</div>
+
+<!-- Viewer overlay (shown to students in live mode) -->
+<div id="viewer-overlay">
+  <div class="viewer-badge">● LIVE SESSION</div>
+  <div class="viewer-topic-area" id="viewer-topic-area">
+    <div class="viewer-waiting">
+      <span style="font-size:2rem">⏳</span>
+      <span>Warte auf den Lehrer …</span>
+    </div>
+  </div>
+  <div class="viewer-timer" id="viewer-timer">—</div>
+</div>
+<!-- Firebase SDK (module) -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getDatabase, ref, set, onValue, remove, get }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+import { getAuth, signInAnonymously }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+// ─── FIREBASE CONFIG ──────────────────────────────────────────────────────────
+// IMPORTANT:
+// 1) Rotate the previously exposed Firebase / Google key first.
+// 2) Replace ALL placeholder values below with the NEW config values from your
+//    Firebase Web App settings before deploying this file.
+// 3) Enable "Anonymous" authentication in Firebase Authentication.
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAX8bo0pwfVKQkSTvVb-4XWZyCHzLW05LA",
+  authDomain: "exam-trainer-f80e9.firebaseapp.com",
+  databaseURL: "https://exam-trainer-f80e9-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "exam-trainer-f80e9",
+  storageBucket: "exam-trainer-f80e9.firebasestorage.app",
+  messagingSenderId: "1057077260835",
+  appId: "1:1057077260835:web:381c58e4543b0e6af7b796"
+};
+
+let fbApp = null;
+let db = null;
+let auth = null;
+let authPromise = null;
+
+function firebaseConfigLooksComplete() {
+  return FIREBASE_CONFIG
+    && Object.values(FIREBASE_CONFIG).every(v =>
+      typeof v === 'string' &&
+      v.trim() !== '' &&
+      !v.startsWith('PASTE_NEW_')
+    );
+}
+
+function initFB() {
+  if (db && auth) return true;
+
+  if (!firebaseConfigLooksComplete()) {
+    window._fb_error?.('Firebase-Konfiguration fehlt. Trage zuerst deine neuen Firebase-Werte im FIREBASE_CONFIG-Block ein.');
+    return false;
+  }
+
+  try {
+    fbApp = fbApp || initializeApp(FIREBASE_CONFIG);
+    db = getDatabase(fbApp);
+    auth = getAuth(fbApp);
+    return true;
+  } catch(e) {
+    console.error('Firebase init failed:', e);
+    window._fb_error?.('Firebase konnte nicht initialisiert werden.');
+    return false;
+  }
+}
+
+async function ensureAuth() {
+  if (!initFB()) {
+    throw new Error('Firebase-Konfiguration fehlt oder ist ungültig.');
+  }
+
+  if (auth.currentUser) return auth.currentUser;
+
+  if (!authPromise) {
+    authPromise = signInAnonymously(auth)
+      .then(cred => cred.user || auth.currentUser)
+      .catch(err => {
+        authPromise = null;
+        throw err;
+      });
+  }
+
+  return authPromise;
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function genId() { return Math.random().toString(36).slice(2,8).toUpperCase(); }
+
+function fmt(s) {
+  return `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+}
+
+// ─── HOST API (called from main script via window.*) ──────────────────────────
+window._fb_startSession = async function() {
+  if (!initFB()) return false;
+
+  const id = genId();
+
+  try {
+    const user = await ensureAuth();
+    const sessionRef = ref(db, `sessions/${id}`);
+    window._activeSessionId = id;
+    window._sessionRef = sessionRef;
+    window._sessionOwnerUid = user.uid;
+
+    await window._fb_push();
+
+    const confirmSnap = await get(sessionRef);
+    if (!confirmSnap.exists()) {
+      throw new Error('Die Session konnte nach dem Schreiben nicht bestätigt werden.');
+    }
+    if (confirmSnap.val()?.ownerUid !== user.uid) {
+      throw new Error('Die Session gehört nicht zum aktuell angemeldeten Nutzer.');
+    }
+
+    window._fb_onSessionStarted(id);
+    return true;
+  } catch(e) {
+    console.error('FB startSession failed:', e);
+    try { if (window._sessionRef) await remove(window._sessionRef); } catch(_) {}
+    window._sessionRef = null;
+    window._activeSessionId = null;
+    window._sessionOwnerUid = null;
+    window._fb_error(e && e.message ? e.message : 'Live-Sync konnte nicht gestartet werden.');
+    return false;
+  }
+}
+
+window._fb_push = async function() {
+  if (!window._sessionRef) return false;
+
+  const user = await ensureAuth();
+
+  if (typeof window._syncLiveState === 'function') window._syncLiveState();
+
+  const s = {
+    ownerUid: user.uid,
+    mode: window.currentMode,
+    topic: window.currentTopic ? JSON.stringify(window.currentTopic) : null,
+    timerTotal: window.timerTotal,
+    timerSeconds: window.timerSeconds,
+    timerRunning: window.timerRunning,
+    ts: Date.now()
+  };
+
+  try {
+    await set(window._sessionRef, s);
+    return true;
+  } catch(e) {
+    console.error('FB push failed:', e);
+    window._fb_error(e && e.message ? e.message : 'Live-Sync konnte nicht aktualisiert werden.');
+    throw e;
+  }
+}
+
+window._fb_stopSession = async function() {
+  if (window._sessionRef) {
+    try {
+      await ensureAuth();
+      await remove(window._sessionRef);
+    } catch(e) {
+      console.error('FB stopSession failed:', e);
+    }
+  }
+  window._sessionRef = null;
+  window._activeSessionId = null;
+  window._sessionOwnerUid = null;
+}
+
+// ─── VIEWER (student) ─────────────────────────────────────────────────────────
+const _p = new URLSearchParams(location.search);
+if (_p.get('viewer') === '1' && _p.has('session')) {
+  const sid = (_p.get('session') || '').toUpperCase();
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const topicArea = document.getElementById('viewer-topic-area');
+    const timerEl   = document.getElementById('viewer-timer');
+    const sessionPath = `sessions/${sid}`;
+    const sessionRestUrl = `${FIREBASE_CONFIG.databaseURL.replace(/\/$/, '')}/${sessionPath}.json`;
+
+    document.getElementById('viewer-overlay').classList.add('active');
+
+    let vTimer = null;
+    let hasSeenLiveData = false;
+    let hasReceivedAnyResponse = false;
+    let lastRenderedSignature = null;
+    let restPoll = null;
+
+    function resetViewerTimer() {
+      clearInterval(vTimer);
+      timerEl.textContent = '—';
+      timerEl.className = 'viewer-timer';
+    }
+
+    function renderViewerState(data) {
+      const signature = JSON.stringify(data ?? null);
+      if (signature === lastRenderedSignature) return;
+      lastRenderedSignature = signature;
+
+      clearInterval(vTimer);
+
+      const viewerEscape = value => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+      const renderViewerDialogueTask = topic => {
+        const bullets = Array.isArray(topic?.bullets) ? topic.bullets : [];
+        const partnerLines = bullets
+          .map(line => String(line).trim())
+          .filter(Boolean)
+          .map(line => {
+            const match = line.match(/^([AB]):\s*(.+)$/i);
+            if (!match) return null;
+            return {
+              partner: match[1].toUpperCase(),
+              parts: match[2].split(/\s*[·•]\s*/).map(part => part.trim()).filter(Boolean)
+            };
+          })
+          .filter(Boolean);
+
+        if (partnerLines.length === 2 && partnerLines.some(item => item.partner === 'A') && partnerLines.some(item => item.partner === 'B')) {
+          const renderPartner = (label, items) => `
+            <div class="partner-column">
+              <div class="partner-heading">Partner ${label}</div>
+              <ul class="partner-bullets">
+                ${items.map(item => `<li>${viewerEscape(item)}</li>`).join('')}
+              </ul>
+            </div>
+          `;
+          const a = partnerLines.find(item => item.partner === 'A');
+          const b = partnerLines.find(item => item.partner === 'B');
+          return `<div class="partner-dialogue">${renderPartner('A', a?.parts || [])}${renderPartner('B', b?.parts || [])}</div>`;
+        }
+
+        return `
+          <ul class="topic-bullets">
+            ${bullets.map(item => `<li>${viewerEscape(item)}</li>`).join('')}
+          </ul>
+        `;
+      };
+
+      if (!data) {
+        document.getElementById('viewer-overlay').classList.remove('viewer-picture-mode');
+        topicArea.innerHTML = hasSeenLiveData
+          ? `<div class="viewer-waiting"><span style="font-size:2rem">🔚</span><span>Session beendet</span></div>`
+          : `<div class="viewer-waiting"><span style="font-size:2rem">⚠️</span><span>Session nicht gefunden. Prüfe, ob der Lehrer die Session wirklich gestartet hat.</span></div>`;
+        resetViewerTimer();
+        return;
+      }
+
+      hasSeenLiveData = true;
+
+      let topic = null;
+      try {
+        topic = data.topic ? JSON.parse(data.topic) : null;
+      } catch (e) {
+        console.error('Viewer topic parse failed:', e);
+        topic = null;
+      }
+
+      if (!topic) {
+        document.getElementById('viewer-overlay').classList.remove('viewer-picture-mode');
+        topicArea.innerHTML = `<div class="viewer-waiting"><span style="font-size:2rem">⏳</span><span>Warte auf das nächste Thema …</span></div>`;
+      } else if (topic.type === 'talk') {
+        document.getElementById('viewer-overlay').classList.remove('viewer-picture-mode');
+        topicArea.innerHTML = `<div class="topic-inner talk-topic">
+          <div class="topic-title">${viewerEscape(topic.title || '')}</div>
+        </div>`;
+      } else if (topic.type === 'picture') {
+        document.getElementById('viewer-overlay').classList.add('viewer-picture-mode');
+        const src = viewerEscape(topic.src || '');
+        const alt = viewerEscape(topic.label || 'Picture');
+        topicArea.innerHTML = `<div class="topic-inner picture-topic">
+          <div class="viewer-picture-frame">
+            ${src ? `<img src="${src}" class="picture-display" onerror="this.style.display='none'" alt="${alt}">` : '<div class="picture-placeholder"><span style="font-size:2.5rem">🖼️</span><span>No picture available</span></div>'}
+          </div>
+        </div>`;
+      } else if (topic.type === 'dialogue') {
+        document.getElementById('viewer-overlay').classList.remove('viewer-picture-mode');
+        topicArea.innerHTML = `<div class="topic-inner dialogue-topic">
+          <div class="topic-title">${viewerEscape(topic.title || '')}</div>
+          <hr class="topic-divider">
+          ${renderViewerDialogueTask(topic)}
+        </div>`;
+      }
+
+      let secs = data.timerSeconds ?? data.timerTotal ?? 60;
+
+      if (data.timerRunning) secs = Math.max(0, secs - Math.floor((Date.now() - data.ts) / 1000));
+
+      function tickV() {
+        timerEl.textContent = fmt(secs);
+        timerEl.className = 'viewer-timer';
+        if (secs <= 10 && secs > 0) timerEl.classList.add('warning');
+        else if (secs === 0) timerEl.classList.add('done');
+      }
+
+      tickV();
+      if (data.timerRunning && secs > 0) {
+        vTimer = setInterval(() => {
+          secs = Math.max(0, secs - 1);
+          tickV();
+          if (secs === 0) clearInterval(vTimer);
+        }, 1000);
+      }
+    }
+
+    async function fetchSessionViaRest() {
+      try {
+        const user = await ensureAuth();
+        const idToken = await user.getIdToken();
+        const url = `${sessionRestUrl}?auth=${encodeURIComponent(idToken)}&_=${Date.now()}`;
+
+        const res = await fetch(url, {
+          method: 'GET',
+          cache: 'no-store',
+          mode: 'cors'
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        hasReceivedAnyResponse = true;
+        renderViewerState(data);
+      } catch (err) {
+        console.error('Viewer REST polling failed:', err);
+      }
+    }
+
+    async function startViewerSync() {
+      topicArea.innerHTML = `<div class="viewer-waiting"><span style="font-size:2rem">⏳</span><span>Verbinde zur Live-Session …</span></div>`;
+
+      const slowConnectionTimer = setTimeout(() => {
+        if (!hasReceivedAnyResponse) {
+          topicArea.innerHTML = `<div class="viewer-waiting"><span style="font-size:2rem">⏳</span><span>Verbindung dauert länger als erwartet …</span><span style="font-size:0.85rem">Es wird automatisch weiter versucht.</span></div>`;
+        }
+      }, 4000);
+
+      const softErrorTimer = setTimeout(() => {
+        if (!hasReceivedAnyResponse) {
+          topicArea.innerHTML = `<div class="viewer-waiting"><span style="font-size:2rem">⚠️</span><span>Direkte Live-Verbindung ist langsam.</span><span style="font-size:0.85rem">Die Seite versucht weiter, die Session automatisch zu laden.</span></div>`;
+          resetViewerTimer();
+        }
+      }, 9000);
+
+      try {
+        await ensureAuth();
+
+        fetchSessionViaRest();
+        restPoll = setInterval(fetchSessionViaRest, 2000);
+
+        const sessionRef = ref(db, sessionPath);
+        onValue(sessionRef, snap => {
+          hasReceivedAnyResponse = true;
+          clearTimeout(slowConnectionTimer);
+          clearTimeout(softErrorTimer);
+          renderViewerState(snap.val());
+        }, err => {
+          console.error('Viewer live listener failed:', err);
+        });
+      } catch (err) {
+        console.error('Viewer auth/init failed:', err);
+        topicArea.innerHTML = `<div class="viewer-waiting"><span style="font-size:2rem">⚠️</span><span>Live-Session konnte nicht aufgebaut werden.</span><span style="font-size:0.85rem">Prüfe die Firebase-Konfiguration und ob anonyme Anmeldung aktiviert ist.</span></div>`;
+        resetViewerTimer();
+      }
+    }
+
+    startViewerSync();
+  });
+}
+
+window._fb_ready = true;
+</script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+
+const DEFAULT_TALK_TOPICS = [
+  "Holidays",
+  "Books & Films",
+  "Animals",
+  "Clubs and Activities at School",
+  "Friendship",
+  "Adventures",
+  "Sports",
+  "Free Time Activities",
+  "My Hometown"
+];
+
+const STANDARD_PICTURE_COUNT = 38;
+
+const DEFAULT_DIALOGUE_TOPICS = [
+  { n: 1, title: "Planning a visit to a concert", bullets: ["date / time", "ticket prices & how to buy tickets", "sit / stand", "plan where to meet before and how to get there"] },
+  { n: 2, title: "Planning a dinner", bullets: ["day / time", "special food needs (vegan / vegetarian) / preferences", "what to eat (main course / dessert)", "shopping list"] },
+  { n: 3, title: "Planning Saturday night", bullets: ["fun activity", "who can join", "time / place", "transport options", "costs"] },
+  { n: 4, title: "Planning a holiday", bullets: ["where / when", "flight or train tickets", "place to stay", "activities", "prices"] },
+  { n: 5, title: "Planning a restaurant visit", bullets: ["who", "type of food", "special needs like vegetarian options", "time / place to meet and how you'll get there"] },
+  { n: 6, title: "Planning a summer weekend", bullets: ["place", "weather", "who can come", "plan food or snacks", "transport"] },
+  { n: 7, title: "Planning a winter weekend", bullets: ["weather", "indoor and outdoor activities", "clothes", "food"] },
+  { n: 8, title: "Planning a surprise party for a friend", bullets: ["date / time", "place", "people to invite", "decorations", "food and drinks"] },
+  { n: 9, title: "Planning a sleepover", bullets: ["who / how many friends", "whose house", "activities", "snacks"] },
+  { n: 10, title: "Choosing a costume for carnival", bullets: ["funny, traditional, or creative costume?", "group costume?", "make it yourself or buy it", "accessories or special makeup"] },
+  { n: 11, title: "Planning trick-or-treating on Halloween", bullets: ["costume", "where to go", "who", "time"] },
+  { n: 12, title: "Choosing a school club", bullets: ["your interests", "discuss offers at your school", "who is already in the club", "is time a problem?", "parents"] },
+  { n: 13, title: "Social media: A posted a photo of both of you", bullets: ["A: why he/she posted it · feelings · solution", "B: describe the picture · feelings · talk politely about your concerns"] },
+  { n: 14, title: "Planning a presentation on your favourite animal", bullets: ["which animal", "facts: where it lives and what it eats", "poster / PowerPoint / pictures", "who speaks / who says what"] },
+  { n: 15, title: "Talking about future jobs", bullets: ["ideas", "describe a typical workday", "skills / favourite subjects at school", "training you need"] },
+  { n: 16, title: "Planning to welcome a new classmate", bullets: ["what to do on his/her first day", "show school", "explain rules", "activities to help them get to know classmates"] },
+  { n: 17, title: "Giving advice: fitting in at school", bullets: ["change style or hobbies to be accepted?", "how to be cooler", "talk about the importance of being yourself"] },
+  { n: 18, title: "Taking care of a neighbour's dog", bullets: ["dog's daily routine", "where will the dog sleep?", "food / water", "walks", "emergencies"] },
+  { n: 19, title: "Lending your mobile phone to a friend", bullets: ["discuss how the phone broke and why they need yours", "worries", "rules", "agree on when you get your phone back and in what condition"] },
+  { n: 20, title: "Talk about ideal places to live", bullets: ["area: city, countryside, near the sea, near the mountains…", "compare to where you live now", "imagine the lifestyle you'd have in your dream location"] }
+];
+
+const STORAGE_KEYS = {
+  talkTopics: 'examTrainer.v2.talkTopics',
+  dialogueTopics: 'examTrainer.v2.dialogueTopics',
+  standardPicturesEnabled: 'examTrainer.v2.standardPicturesEnabled',
+  disabledStandardPictureIds: 'examTrainer.v2.disabledStandardPictureIds',
+  modeLabels: 'examTrainer.v2.modeLabels',
+  taskTexts: 'examTrainer.v2.taskTexts'
+};
+
+const DEFAULT_MODE_LABELS = {
+  talk: 'One Minute Talk',
+  picture: 'Picture Description',
+  dialogue: 'Dialogue'
+};
+
+const DEFAULT_TASK_TEXTS = {
+  talk: 'Task: Speak for one minute about the topic.',
+  picture: 'Task: Describe the picture and think of a story that matches it.',
+  dialogue: 'Task: Discuss the situation with your partner and cover all points below.'
+};
+
+const MEDIA_DB = {
+  name: 'examTrainerMediaDB',
+  version: 1,
+  store: 'customPictures'
+};
+
+const ACCEPTED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const BULLET_PREFIX_REGEX = /^\s*(?:[-*•‣▪◦]|\d+[.)]|[A-Za-z][.)])\s*/;
+
+let talkTopics = [...DEFAULT_TALK_TOPICS];
+let dialogueTopics = DEFAULT_DIALOGUE_TOPICS.map(topic => normalizeDialogueTopic(topic)).filter(Boolean);
+let standardPicturesEnabled = true;
+let modeLabels = { ...DEFAULT_MODE_LABELS };
+let taskTexts = { ...DEFAULT_TASK_TEXTS };
+let standardPictures = [];
+let customPictures = [];
+let disabledStandardPictureIds = [];
+
+let currentMode = 'talk';
+let lastTalkIndex = -1;
+let lastPicId = null;
+let lastDialogueIndex = -1;
+let currentTopic = null;
+
+let timerSeconds = 60;
+let timerTotal = 60;
+let timerRunning = false;
+let timerInterval = null;
+let shareVisible = false;
+
+function normalizeStandardPictureIds(list) {
+  const ids = Array.isArray(list) ? list : [];
+  const cleaned = ids
+    .map(value => Number.parseInt(value, 10))
+    .filter(value => Number.isInteger(value) && value >= 1 && value <= STANDARD_PICTURE_COUNT);
+  return Array.from(new Set(cleaned)).sort((a, b) => a - b);
+}
+
+function buildStandardPictures() {
+  const disabledIds = new Set(disabledStandardPictureIds);
+  return Array.from({ length: STANDARD_PICTURE_COUNT }, (_, index) => index + 1)
+    .filter(pictureIndex => !disabledIds.has(pictureIndex))
+    .map(pictureIndex => ({
+      id: `std-${pictureIndex}`,
+      sourceType: 'standard',
+      standardIndex: pictureIndex,
+      name: `Bild${pictureIndex}.jpg`,
+      label: `Picture ${pictureIndex}`,
+      src: `Bilder/Bild${pictureIndex}.jpg`,
+      blob: null,
+      liveSrc: `Bilder/Bild${pictureIndex}.jpg`
+    }));
+}
+
+function rebuildStandardPictures() {
+  standardPictures = standardPicturesEnabled ? buildStandardPictures() : [];
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function cleanImportLine(line) {
+  return String(line ?? '')
+    .replace(/\r/g, '')
+    .replace(BULLET_PREFIX_REGEX, '')
+    .trim();
+}
+
+function normalizeModeLabels(value) {
+  const fallback = { ...DEFAULT_MODE_LABELS };
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return {
+    talk: String(source.talk ?? fallback.talk).trim() || fallback.talk,
+    picture: String(source.picture ?? fallback.picture).trim() || fallback.picture,
+    dialogue: String(source.dialogue ?? fallback.dialogue).trim() || fallback.dialogue
+  };
+}
+
+function normalizeTaskTexts(value) {
+  const fallback = { ...DEFAULT_TASK_TEXTS };
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return {
+    talk: String(source.talk ?? fallback.talk).trim() || fallback.talk,
+    picture: String(source.picture ?? fallback.picture).trim() || fallback.picture,
+    dialogue: String(source.dialogue ?? fallback.dialogue).trim() || fallback.dialogue
+  };
+}
+
+function normalizeTalkTopics(list) {
+  const seen = new Set();
+  return (Array.isArray(list) ? list : [])
+    .map(item => String(item ?? '').trim())
+    .filter(Boolean)
+    .filter(item => {
+      const key = item.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function normalizeDialogueTopic(topic) {
+  if (typeof topic === 'string') {
+    const title = topic.trim();
+    return title ? { title, bullets: [] } : null;
+  }
+
+  if (!topic || typeof topic !== 'object') return null;
+
+  const title = String(topic.title ?? '').trim();
+  const bullets = Array.isArray(topic.bullets)
+    ? topic.bullets.map(item => String(item ?? '').trim()).filter(Boolean)
+    : [];
+
+  if (!title) return null;
+  return { title, bullets };
+}
+
+function normalizeDialogueTopics(list) {
+  return (Array.isArray(list) ? list : [])
+    .map(item => normalizeDialogueTopic(item))
+    .filter(Boolean);
+}
+
+function parseTalkTopicsFromText(text) {
+  return normalizeTalkTopics(String(text ?? '').replace(/\r/g, '').split('\n'));
+}
+
+function parseDialogueTopicsFromText(text, options = {}) {
+  const sourceText = String(text ?? '').replace(/\r/g, '');
+  const blocks = sourceText
+    .split(/\n\s*\n+/)
+    .map(block => block.split('\n').map(line => options.cleanBullets ? cleanImportLine(line) : String(line ?? '').trim()).filter(Boolean))
+    .filter(block => block.length);
+
+  let topics = blocks.map(block => ({ title: block[0], bullets: block.slice(1) }));
+
+  if (options.importFallback) {
+    const lines = sourceText.split('\n').map(line => line.trim()).filter(Boolean);
+    const hasBlankLines = /\n\s*\n/.test(sourceText);
+    const hasBulletMarkers = lines.some((line, idx) => idx > 0 && BULLET_PREFIX_REGEX.test(line));
+    const allShort = lines.every(line => line.length <= 80);
+    if ((!topics.length && lines.length) || (topics.length === 1 && !hasBlankLines && !hasBulletMarkers && allShort && lines.length > 1)) {
+      topics = lines.map(line => ({ title: cleanImportLine(line), bullets: [] }));
+    }
+  }
+
+  return normalizeDialogueTopics(topics);
+}
+
+function talkTopicsToTextareaValue() {
+  return talkTopics.join('\n');
+}
+
+function dialogueTopicsToTextareaValue() {
+  return dialogueTopics.map(topic => [topic.title, ...topic.bullets].join('\n')).join('\n\n');
+}
+
+function getAllPictures() {
+  return [...standardPictures, ...customPictures].map((picture, index) => ({
+    ...picture,
+    orderIndex: index,
+    number: index + 1
+  }));
+}
+
+function getPictureById(id) {
+  return getAllPictures().find(picture => picture.id === id) || null;
+}
+
+function getPictureDisplayName(picture) {
+  return picture?.label || picture?.name || 'Picture';
+}
+
+function buildTalkTopicState(idx) {
+  return {
+    type: 'talk',
+    id: `talk-${idx}`,
+    idx,
+    title: talkTopics[idx]
+  };
+}
+
+function buildDialogueTopicState(idx) {
+  const topic = dialogueTopics[idx];
+  return {
+    type: 'dialogue',
+    id: `dialogue-${idx}`,
+    idx,
+    title: topic?.title || '',
+    bullets: Array.isArray(topic?.bullets) ? [...topic.bullets] : []
+  };
+}
+
+async function ensurePictureLiveSrc(picture) {
+  if (!picture) return '';
+  if (picture.sourceType === 'standard') return picture.src;
+  if (picture.liveSrc) return picture.liveSrc;
+  if (!picture.blob) return picture.src;
+  picture.liveSrc = await blobToConstrainedDataURL(picture.blob, 1600, 0.9);
+  return picture.liveSrc;
+}
+
+async function buildPictureTopicState(pictureId) {
+  const picture = getPictureById(pictureId);
+  if (!picture) return null;
+  const liveSrc = await ensurePictureLiveSrc(picture);
+  return {
+    type: 'picture',
+    id: picture.id,
+    pictureId: picture.id,
+    sourceType: picture.sourceType,
+    standardIndex: picture.standardIndex || null,
+    number: renderTopicNumber(picture.number),
+    label: getPictureDisplayName(picture),
+    displaySrc: picture.src,
+    liveSrc,
+    fileName: picture.name || ''
+  };
+}
+
+function getLiveTopicPayload() {
+  if (!currentTopic) return null;
+  if (currentTopic.type === 'talk') {
+    return { type: 'talk', id: currentTopic.id, idx: currentTopic.idx, title: currentTopic.title };
+  }
+  if (currentTopic.type === 'dialogue') {
+    return { type: 'dialogue', id: currentTopic.id, idx: currentTopic.idx, title: currentTopic.title, bullets: [...(currentTopic.bullets || [])] };
+  }
+  if (currentTopic.type === 'picture') {
+    return {
+      type: 'picture',
+      id: currentTopic.pictureId,
+      label: currentTopic.label,
+      src: currentTopic.liveSrc || currentTopic.displaySrc || '',
+      number: currentTopic.number,
+      sourceType: currentTopic.sourceType || 'standard',
+      standardIndex: currentTopic.standardIndex || null
+    };
+  }
+  return null;
+}
+
+function syncExposedDatasets() {
+  window.TALK_TOPICS = [...talkTopics];
+  window.DIALOGUE_TOPICS = dialogueTopics.map(topic => ({ title: topic.title, bullets: [...topic.bullets] }));
+  window.MODE_LABELS = { ...modeLabels };
+  window.TASK_TEXTS = { ...taskTexts };
+}
+
+function updateModeLabelsUI() {
+  const tabTalk = document.getElementById('mode-label-talk');
+  const tabPicture = document.getElementById('mode-label-picture');
+  const tabDialogue = document.getElementById('mode-label-dialogue');
+  const sectionTalk = document.getElementById('teacher-section-title-talk');
+  const sectionPicture = document.getElementById('teacher-section-title-picture');
+  const sectionDialogue = document.getElementById('teacher-section-title-dialogue');
+
+  if (tabTalk) tabTalk.textContent = modeLabels.talk;
+  if (tabPicture) tabPicture.textContent = modeLabels.picture;
+  if (tabDialogue) tabDialogue.textContent = modeLabels.dialogue;
+  if (sectionTalk) sectionTalk.textContent = modeLabels.talk;
+  if (sectionPicture) sectionPicture.textContent = modeLabels.picture;
+  if (sectionDialogue) sectionDialogue.textContent = modeLabels.dialogue;
+}
+
+function refreshTeacherModeNameInputs() {
+  const talkInput = document.getElementById('teacher-mode-name-talk');
+  const pictureInput = document.getElementById('teacher-mode-name-picture');
+  const dialogueInput = document.getElementById('teacher-mode-name-dialogue');
+
+  if (talkInput) talkInput.value = modeLabels.talk;
+  if (pictureInput) pictureInput.value = modeLabels.picture;
+  if (dialogueInput) dialogueInput.value = modeLabels.dialogue;
+}
+
+function refreshTeacherTaskTextInputs() {
+  const talkInput = document.getElementById('teacher-task-text-talk');
+  const pictureInput = document.getElementById('teacher-task-text-picture');
+  const dialogueInput = document.getElementById('teacher-task-text-dialogue');
+
+  if (talkInput) talkInput.value = taskTexts.talk;
+  if (pictureInput) pictureInput.value = taskTexts.picture;
+  if (dialogueInput) dialogueInput.value = taskTexts.dialogue;
+}
+
+function syncLiveState() {
+  window.currentMode = currentMode;
+  window.currentTopic = getLiveTopicPayload();
+  window.timerSeconds = timerSeconds;
+  window.timerTotal = timerTotal;
+  window.timerRunning = timerRunning;
+}
+
+window._syncLiveState = syncLiveState;
+syncExposedDatasets();
+syncLiveState();
+
+function getPlaceholderConfig(mode = currentMode) {
+  const config = {
+    talk: { icon: '🎲', text: 'No topic selected yet' },
+    picture: { icon: '🖼️', text: 'No picture selected yet' },
+    dialogue: { icon: '💬', text: 'No dialogue selected yet' }
+  };
+  return config[mode] || config.talk;
+}
+
+function getEmptyHintForMode(mode = currentMode) {
+  if (mode === 'talk' && talkTopics.length === 0) return 'Open Teacher Mode to add One-Minute-Talk topics.';
+  if (mode === 'dialogue' && dialogueTopics.length === 0) return 'Open Teacher Mode to add dialogue tasks.';
+  if (mode === 'picture' && getAllPictures().length === 0) return 'Open Teacher Mode to add pictures.';
+  return 'Press "Randomize" or "Selection" to get started';
+}
+
+function getPlaceholderHTML(mode = currentMode, overrideText = '') {
+  const cfg = getPlaceholderConfig(mode);
+  const text = overrideText || cfg.text;
+  return `<div class="placeholder">
+    <span class="placeholder-icon">${cfg.icon}</span>
+    <span class="placeholder-text">${text}</span>
+    <span class="placeholder-hint">${getEmptyHintForMode(mode)}</span>
+  </div>`;
+}
+
+function clearTopicArea(overrideMode = currentMode, overrideText = '') {
+  const area = document.getElementById('topic-area');
+  area.classList.remove('picture-layout');
+  currentTopic = null;
+  syncLiveState();
+  hideSelectionOverlay();
+  area.querySelectorAll(':scope > :not(#selection-overlay)').forEach(node => node.remove());
+  area.insertAdjacentHTML('afterbegin', getPlaceholderHTML(overrideMode, overrideText));
+}
+
+function renderTopicNumber(n) {
+  return String(n).padStart(2, '0');
+}
+
+function renderTalkTopicHTML(idx) {
+  return `
+    <div class="topic-inner talk-topic">
+      <div class="topic-number topic-number-inline">#${renderTopicNumber(idx + 1)}</div>
+      <div class="topic-title">${escapeHtml(talkTopics[idx] || '')}</div>
+    </div>
+  `;
+}
+
+function renderPictureTopicHTML(picture) {
+  const label = getPictureDisplayName(picture);
+  const src = escapeHtml(picture?.src || '');
+  const fallback = escapeHtml(label || picture?.name || 'Picture');
+  return `
+    <div class="topic-inner picture-topic">
+      <div class="picture-topic-wrap">
+        <div class="topic-number topic-number-inline picture-number-inline">#${renderTopicNumber(picture.number)}</div>
+        ${src ? `<img src="${src}" class="picture-display" onerror="this.parentElement.innerHTML='<div class=\\'picture-placeholder\\'><span style=\\'font-size:2.5rem\\'>🖼️</span><span>${fallback} not found</span></div>'" alt="${fallback}">` : `<div class="picture-placeholder"><span style="font-size:2.5rem">🖼️</span><span>No picture available</span></div>`}
+      </div>
+    </div>
+  `;
+}
+
+function renderDialogueTaskHTML(topic) {
+  const bullets = Array.isArray(topic?.bullets) ? topic.bullets : [];
+  const partnerLines = bullets
+    .map(line => String(line).trim())
+    .filter(Boolean)
+    .map(line => {
+      const match = line.match(/^([AB]):\s*(.+)$/i);
+      if (!match) return null;
+      return {
+        partner: match[1].toUpperCase(),
+        parts: match[2].split(/\s*[·•]\s*/).map(part => part.trim()).filter(Boolean)
+      };
+    })
+    .filter(Boolean);
+
+  if (partnerLines.length === 2 && partnerLines.some(item => item.partner === 'A') && partnerLines.some(item => item.partner === 'B')) {
+    const a = partnerLines.find(item => item.partner === 'A');
+    const b = partnerLines.find(item => item.partner === 'B');
+    const renderPartner = (label, items) => `
+      <div class="partner-column">
+        <div class="partner-heading">Partner ${label}</div>
+        <ul class="partner-bullets">
+          ${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+        </ul>
+      </div>
+    `;
+    return `<div class="partner-dialogue">${renderPartner('A', a?.parts || [])}${renderPartner('B', b?.parts || [])}</div>`;
+  }
+
+  return `
+    <ul class="topic-bullets">
+      ${bullets.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
+    </ul>
+  `;
+}
+
+function renderDialogueTopicHTML(idx) {
+  const topic = dialogueTopics[idx];
+  return `
+    <div class="topic-inner dialogue-topic">
+      <div class="topic-number topic-number-inline">#${renderTopicNumber(idx + 1)}</div>
+      <div class="topic-title">${escapeHtml(topic?.title || '')}</div>
+      <hr class="topic-divider">
+      ${renderDialogueTaskHTML(topic)}
+    </div>
+  `;
+}
+
+function applyTopicLayout(kind) {
+  const area = document.getElementById('topic-area');
+  area.classList.toggle('picture-layout', kind === 'picture');
+}
+
+function setAreaContent(html, kind) {
+  const area = document.getElementById('topic-area');
+  applyTopicLayout(kind);
+  hideSelectionOverlay();
+  area.querySelectorAll(':scope > :not(#selection-overlay)').forEach(node => node.remove());
+  area.insertAdjacentHTML('afterbegin', html);
+  area.classList.remove('slide-in');
+  void area.offsetWidth;
+  area.classList.add('slide-in');
+}
+
+function showEmptyModeState(mode = currentMode, message = '') {
+  clearTopicArea(mode, message || getPlaceholderConfig(mode).text);
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  syncLiveState();
+  document.querySelectorAll('.mode-tab').forEach(tab => tab.classList.remove('active'));
+  document.querySelector(`.mode-tab[data-mode="${mode}"]`)?.classList.add('active');
+  document.getElementById('rand-btn').dataset.mode = mode;
+  document.getElementById('selection-btn').dataset.mode = mode;
+
+  const labels = { talk: '', picture: '', dialogue: '' };
+  const notes = { ...taskTexts };
+
+  document.getElementById('topic-label').textContent = labels[mode];
+  const topicNote = document.getElementById('topic-note');
+  topicNote.textContent = notes[mode];
+  topicNote.classList.toggle('active', !!notes[mode]);
+
+  const headerRow = document.querySelector('.topic-header-row');
+  const mainCard = document.querySelector('.main-card');
+  headerRow.classList.toggle('task-mode', !!notes[mode]);
+  mainCard.classList.toggle('picture-mode', mode === 'picture');
+
+  resetTimer();
+  clearTopicArea(mode);
+  updateShareURL();
+  maybePush();
+}
+
+function pickRandomIndex(length, lastIndex) {
+  if (length <= 0) return -1;
+  if (length === 1) return 0;
+  let idx = -1;
+  do {
+    idx = Math.floor(Math.random() * length);
+  } while (idx === lastIndex);
+  return idx;
+}
+
+function setTalkTopic(idx) {
+  if (idx < 0 || idx >= talkTopics.length) {
+    showEmptyModeState('talk', 'No talk topics available');
+    return;
+  }
+  lastTalkIndex = idx;
+  currentTopic = buildTalkTopicState(idx);
+  syncLiveState();
+  setAreaContent(renderTalkTopicHTML(idx), 'talk');
+}
+
+async function setPictureTopicById(pictureId) {
+  const picture = getPictureById(pictureId);
+  if (!picture) {
+    showEmptyModeState('picture', 'No picture available');
+    return;
+  }
+  lastPicId = picture.id;
+  currentTopic = await buildPictureTopicState(picture.id);
+  syncLiveState();
+  setAreaContent(renderPictureTopicHTML(picture), 'picture');
+}
+
+function setDialogueTopic(idx) {
+  if (idx < 0 || idx >= dialogueTopics.length) {
+    showEmptyModeState('dialogue', 'No dialogue topics available');
+    return;
+  }
+  lastDialogueIndex = idx;
+  currentTopic = buildDialogueTopicState(idx);
+  syncLiveState();
+  setAreaContent(renderDialogueTopicHTML(idx), 'dialogue');
+}
+
+async function randomize() {
+  resetTimer();
+  const dice = document.getElementById('dice-icon');
+  dice.classList.remove('spin');
+  void dice.offsetWidth;
+  dice.classList.add('spin');
+
+  if (currentMode === 'talk') {
+    if (!talkTopics.length) showEmptyModeState('talk', 'No talk topics available');
+    else setTalkTopic(pickRandomIndex(talkTopics.length, lastTalkIndex));
+  } else if (currentMode === 'picture') {
+    const pictures = getAllPictures();
+    if (!pictures.length) showEmptyModeState('picture', 'No picture available');
+    else {
+      const lastIndex = pictures.findIndex(picture => picture.id === lastPicId);
+      const nextIndex = pickRandomIndex(pictures.length, lastIndex);
+      await setPictureTopicById(pictures[nextIndex].id);
+    }
+  } else {
+    if (!dialogueTopics.length) showEmptyModeState('dialogue', 'No dialogue topics available');
+    else setDialogueTopic(pickRandomIndex(dialogueTopics.length, lastDialogueIndex));
+  }
+
+  updateShareURL();
+  maybePush();
+}
+
+function getSelectionItems() {
+  if (currentMode === 'talk') {
+    return {
+      title: 'Select a talk topic',
+      gridClass: 'talk-grid',
+      emptyMessage: 'No talk topics are available. Open Teacher Mode to add topics.',
+      items: talkTopics.map((title, idx) => ({
+        number: renderTopicNumber(idx + 1),
+        title: escapeHtml(title),
+        action: `selectItem('talk', ${idx})`
+      }))
+    };
+  }
+
+  if (currentMode === 'picture') {
+    const pictures = getAllPictures();
+    return {
+      title: 'Select a picture',
+      gridClass: 'picture-grid',
+      emptyMessage: 'No pictures are available. Open Teacher Mode to add images.',
+      items: pictures.map((picture) => ({
+        number: renderTopicNumber(picture.number),
+        title: escapeHtml(getPictureDisplayName(picture)),
+        media: `<div class="selection-item-picture-figure"><img src="${escapeHtml(picture.src || '')}" alt="${escapeHtml(getPictureDisplayName(picture))}" class="selection-item-picture-thumb" loading="lazy" onerror="this.style.display='none'; this.parentElement.insertAdjacentHTML('afterbegin', '<div class=&quot;picture-placeholder&quot; style=&quot;min-height:96px;font-size:0.82rem;padding:0.8rem;&quot;>Picture unavailable</div>');"><div class="selection-item-number">#${renderTopicNumber(picture.number)}</div></div>`,
+        extraClass: 'picture-choice',
+        action: `selectItem('picture', '${escapeHtml(picture.id)}')`
+      }))
+    };
+  }
+
+  return {
+    title: 'Select a dialogue task',
+    gridClass: 'dialogue-grid',
+    emptyMessage: 'No dialogue topics are available. Open Teacher Mode to add dialogue tasks.',
+    items: dialogueTopics.map((topic, idx) => ({
+      number: renderTopicNumber(idx + 1),
+      title: escapeHtml(topic.title),
+      action: `selectItem('dialogue', ${idx})`
+    }))
+  };
+}
+
+function openSelectionOverlay() {
+  const overlay = document.getElementById('selection-overlay');
+  const titleEl = document.getElementById('selection-title');
+  const grid = document.getElementById('selection-grid');
+  const config = getSelectionItems();
+
+  titleEl.textContent = config.title;
+  grid.className = `selection-grid ${config.gridClass}`;
+
+  if (!config.items.length) {
+    grid.innerHTML = `<div class="teacher-empty-note" style="grid-column:1 / -1">${escapeHtml(config.emptyMessage)}</div>`;
+  } else {
+    grid.innerHTML = config.items.map(item => `
+      <button type="button" class="selection-item ${item.extraClass || ''}" onclick="${item.action}">
+        ${item.media ? item.media : `<div class="selection-item-number">#${item.number}</div>`}
+        ${item.title ? `<div class="selection-item-title">${item.title}</div>` : ''}
+        ${item.subtitle ? `<div class="selection-item-subtitle">${item.subtitle}</div>` : ''}
+      </button>
+    `).join('');
+  }
+
+  overlay.classList.add('visible');
+  overlay.setAttribute('aria-hidden', 'false');
+}
+
+function hideSelectionOverlay() {
+  const overlay = document.getElementById('selection-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('visible');
+  overlay.setAttribute('aria-hidden', 'true');
+}
+
+async function selectItem(kind, value) {
+  resetTimer();
+  if (kind === 'talk') setTalkTopic(Number(value));
+  if (kind === 'picture') await setPictureTopicById(String(value));
+  if (kind === 'dialogue') setDialogueTopic(Number(value));
+  updateShareURL();
+  maybePush();
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60).toString().padStart(2, '0');
+  const sec = (s % 60).toString().padStart(2, '0');
+  return `${m}:${sec}`;
+}
+
+function updateTimerDisplay() {
+  syncLiveState();
+  const el = document.getElementById('timer-display');
+  const grp = document.getElementById('timer-group');
+  el.textContent = formatTime(timerSeconds);
+  el.className = 'timer-display';
+  grp.className = 'timer-card';
+  if (timerSeconds <= 10 && timerSeconds > 0) {
+    el.classList.add('warning');
+    grp.classList.add('warning-state');
+  } else if (timerSeconds === 0) {
+    el.classList.add('done');
+    grp.classList.add('done-state');
+  } else if (timerRunning) {
+    grp.classList.add('running');
+  }
+}
+
+function toggleTimer() {
+  if (timerSeconds === 0) {
+    resetTimer();
+    return;
+  }
+  timerRunning = !timerRunning;
+  document.getElementById('play-btn').textContent = timerRunning ? '⏸' : '▶';
+  if (timerRunning) {
+    document.getElementById('timer-group').classList.add('running');
+    maybePush();
+    timerInterval = setInterval(() => {
+      if (timerSeconds > 0) {
+        timerSeconds--;
+        updateTimerDisplay();
+      } else {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        document.getElementById('play-btn').textContent = '▶';
+        updateTimerDisplay();
+      }
+    }, 1000);
+  } else {
+    clearInterval(timerInterval);
+    updateTimerDisplay();
+  }
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerInterval = null;
+  timerSeconds = timerTotal;
+  const preset = document.getElementById('timer-preset');
+  if (preset && String(preset.value) !== String(timerTotal)) preset.value = String(timerTotal);
+  document.getElementById('play-btn').textContent = '▶';
+  updateTimerDisplay();
+  maybePush();
+  syncLiveState();
+}
+
+function setTimerPreset(val) {
+  timerTotal = parseInt(val, 10) || 60;
+  const preset = document.getElementById('timer-preset');
+  if (preset) preset.value = String(timerTotal);
+  resetTimer();
+}
+
+function resetCurrentView() {
+  hideSelectionOverlay();
+  resetTimer();
+  clearTopicArea(currentMode);
+  updateShareURL();
+  maybePush();
+}
+
+function toggleShare() {
+  shareVisible = !shareVisible;
+  document.getElementById('share-content').classList.toggle('visible', shareVisible);
+  document.getElementById('share-chevron').classList.toggle('open', shareVisible);
+}
+
+window._fb_onSessionStarted = function(id) {
+  document.getElementById('btn-start-session').style.display = 'none';
+  document.getElementById('btn-copy-live').style.display = 'inline-flex';
+  document.getElementById('btn-stop-session').style.display = 'inline-flex';
+  document.getElementById('live-badge').style.display = 'inline';
+  const url = `${location.href.split('?')[0]}?session=${id}&viewer=1`;
+  document.getElementById('live-url-display').textContent = url;
+  drawQR(url);
+};
+
+window._fb_error = function(message) {
+  const msg = message || 'Firebase-Verbindung fehlgeschlagen.';
+  document.getElementById('live-url-display').textContent = `⚠️ ${msg}`;
+  document.getElementById('btn-start-session').style.display = 'inline-flex';
+  document.getElementById('btn-copy-live').style.display = 'none';
+  document.getElementById('btn-stop-session').style.display = 'none';
+  document.getElementById('live-badge').style.display = 'none';
+};
+
+async function startSession() {
+  const liveBox = document.getElementById('live-url-display');
+  liveBox.textContent = '⏳ Verbinde …';
+
+  if (typeof window._fb_startSession !== 'function') {
+    liveBox.textContent = '⚠️ Firebase-Modul wurde nicht geladen. Bitte Seite mit Strg+F5 neu laden.';
+    return;
+  }
+
+  try {
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Zeitüberschreitung beim Verbinden mit Firebase.')), 8000)
+    );
+    await Promise.race([window._fb_startSession(), timeout]);
+  } catch (e) {
+    console.error('startSession failed:', e);
+    liveBox.textContent = `⚠️ ${e && e.message ? e.message : 'Live-Sync konnte nicht gestartet werden.'}`;
+  }
+}
+
+function stopSession() {
+  window._fb_stopSession().then(() => {
+    document.getElementById('btn-start-session').style.display = 'inline-flex';
+    document.getElementById('btn-copy-live').style.display = 'none';
+    document.getElementById('btn-stop-session').style.display = 'none';
+    document.getElementById('live-badge').style.display = 'none';
+    document.getElementById('live-url-display').textContent = '— Session beendet';
+    drawQR('');
+  });
+}
+
+function copyLiveLink() {
+  const url = document.getElementById('live-url-display').textContent;
+  if (!url || url.startsWith('—') || url.startsWith('⏳') || url.startsWith('⚠️')) return;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('btn-copy-live');
+    btn.textContent = '✅ Kopiert!';
+    setTimeout(() => { btn.innerHTML = '📋 Link kopieren'; }, 2000);
+  });
+}
+
+function buildShareURL() {
+  const params = new URLSearchParams();
+  params.set('mode', currentMode);
+  params.set('timer', timerTotal);
+  if (currentTopic?.type === 'talk') {
+    params.set('topic', currentTopic.idx);
+    params.set('talkId', currentTopic.id);
+  } else if (currentTopic?.type === 'picture') {
+    if (currentTopic.standardIndex) params.set('pic', currentTopic.standardIndex);
+    params.set('pictureId', currentTopic.pictureId || currentTopic.id);
+  } else if (currentTopic?.type === 'dialogue') {
+    params.set('dialogue', currentTopic.idx);
+    params.set('dialogueId', currentTopic.id);
+  }
+  return `${location.href.split('?')[0]}?${params.toString()}`;
+}
+
+function updateShareURL() {
+  // Snapshot-Funktion bleibt bewusst deaktiviert.
+}
+
+function maybePush() {
+  syncLiveState();
+  if (window._sessionRef) window._fb_push().catch(() => {});
+}
+
+function drawQR(url) {
+  const canvas = document.getElementById('qr-canvas');
+  const ctx = canvas.getContext('2d');
+  const size = canvas.width;
+
+  ctx.clearRect(0, 0, size, size);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+
+  if (!url) return;
+
+  if (typeof qrcode !== 'function') {
+    ctx.fillStyle = '#eee';
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#888';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('QR library', size / 2, size / 2 - 8);
+    ctx.fillText('not loaded', size / 2, size / 2 + 8);
+    return;
+  }
+
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+
+    const count = qr.getModuleCount();
+    const quiet = 4;
+    const cell = size / (count + quiet * 2);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#000000';
+
+    for (let row = 0; row < count; row++) {
+      for (let col = 0; col < count; col++) {
+        if (!qr.isDark(row, col)) continue;
+        const x = Math.round((col + quiet) * cell);
+        const y = Math.round((row + quiet) * cell);
+        const w = Math.ceil(cell);
+        const h = Math.ceil(cell);
+        ctx.fillRect(x, y, w, h);
+      }
+    }
+  } catch (error) {
+    console.error('QR generation failed:', error);
+    ctx.fillStyle = '#eee';
+    ctx.fillRect(0, 0, size, size);
+    ctx.fillStyle = '#888';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('QR error', size / 2, size / 2);
+  }
+}
+
+function showTeacherStatus(message, type = 'info') {
+  const box = document.getElementById('teacher-status');
+  if (!box) return;
+  box.textContent = message;
+  box.className = `teacher-status visible ${type}`;
+}
+
+function clearTeacherStatus() {
+  const box = document.getElementById('teacher-status');
+  if (!box) return;
+  box.textContent = '';
+  box.className = 'teacher-status';
+}
+
+function openTeacherModal() {
+  const modal = document.getElementById('teacher-modal');
+  if (!modal) return;
+  modal.classList.add('visible');
+  modal.setAttribute('aria-hidden', 'false');
+  refreshTeacherUI();
+}
+
+function closeTeacherModal() {
+  const modal = document.getElementById('teacher-modal');
+  if (!modal) return;
+  modal.classList.remove('visible');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+function refreshTeacherCounters() {
+  const talkCount = document.getElementById('teacher-talk-count');
+  const dialogueCount = document.getElementById('teacher-dialogue-count');
+  const pictureCount = document.getElementById('teacher-picture-count');
+  if (talkCount) talkCount.textContent = `${talkTopics.length} topic${talkTopics.length === 1 ? '' : 's'}`;
+  if (dialogueCount) dialogueCount.textContent = `${dialogueTopics.length} topic${dialogueTopics.length === 1 ? '' : 's'}`;
+  const customCount = customPictures.length;
+  const standardCount = standardPicturesEnabled ? standardPictures.length : 0;
+  const totalPictures = getAllPictures().length;
+  if (pictureCount) pictureCount.textContent = `${totalPictures} pictures (${standardCount} standard, ${customCount} custom)`;
+}
+
+function renderTeacherPictureList() {
+  const list = document.getElementById('teacher-picture-list');
+  if (!list) return;
+  const pictures = getAllPictures();
+  if (!pictures.length) {
+    list.innerHTML = '<div class="teacher-empty-note" style="grid-column:1 / -1">No pictures available.</div>';
+    return;
+  }
+
+  list.innerHTML = pictures.map(picture => `
+    <div class="teacher-picture-card clickable" role="button" tabindex="0" onclick="removePictureFromTeacherList('${escapeHtml(picture.id)}')" onkeydown="handleTeacherPictureCardKey(event, '${escapeHtml(picture.id)}')" aria-label="Remove ${escapeHtml(getPictureDisplayName(picture))}">
+      <img src="${escapeHtml(picture.src || '')}" alt="${escapeHtml(getPictureDisplayName(picture))}" loading="lazy">
+      <div class="teacher-picture-card-body">
+        <span class="teacher-picture-badge">${picture.sourceType === 'standard' ? 'Standard' : 'Custom'}</span>
+        <div class="teacher-picture-card-title">${escapeHtml(getPictureDisplayName(picture))}</div>
+        <div class="teacher-picture-remove-hint">Click to remove</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function refreshTeacherUI() {
+  const talkArea = document.getElementById('teacher-talk-textarea');
+  const dialogueArea = document.getElementById('teacher-dialogue-textarea');
+  if (talkArea) talkArea.value = talkTopicsToTextareaValue();
+  if (dialogueArea) dialogueArea.value = dialogueTopicsToTextareaValue();
+  refreshTeacherModeNameInputs();
+  refreshTeacherTaskTextInputs();
+  updateModeLabelsUI();
+  refreshTeacherCounters();
+  renderTeacherPictureList();
+}
+
+function persistTalkTopics() {
+  localStorage.setItem(STORAGE_KEYS.talkTopics, JSON.stringify(talkTopics));
+}
+
+function persistDialogueTopics() {
+  localStorage.setItem(STORAGE_KEYS.dialogueTopics, JSON.stringify(dialogueTopics));
+}
+
+function persistStandardPicturesEnabled() {
+  localStorage.setItem(STORAGE_KEYS.standardPicturesEnabled, String(standardPicturesEnabled));
+}
+
+function persistDisabledStandardPictureIds() {
+  localStorage.setItem(STORAGE_KEYS.disabledStandardPictureIds, JSON.stringify(disabledStandardPictureIds));
+}
+
+function persistModeLabels() {
+  localStorage.setItem(STORAGE_KEYS.modeLabels, JSON.stringify(modeLabels));
+}
+
+function persistTaskTexts() {
+  localStorage.setItem(STORAGE_KEYS.taskTexts, JSON.stringify(taskTexts));
+}
+
+function loadPersistedTextData() {
+  try {
+    const talkRaw = localStorage.getItem(STORAGE_KEYS.talkTopics);
+    if (talkRaw !== null) {
+      talkTopics = normalizeTalkTopics(JSON.parse(talkRaw));
+    }
+  } catch (error) {
+    console.warn('Could not load persisted talk topics:', error);
+    talkTopics = [...DEFAULT_TALK_TOPICS];
+  }
+
+  try {
+    const dialogueRaw = localStorage.getItem(STORAGE_KEYS.dialogueTopics);
+    if (dialogueRaw !== null) {
+      dialogueTopics = normalizeDialogueTopics(JSON.parse(dialogueRaw));
+    }
+  } catch (error) {
+    console.warn('Could not load persisted dialogue topics:', error);
+    dialogueTopics = DEFAULT_DIALOGUE_TOPICS.map(topic => normalizeDialogueTopic(topic)).filter(Boolean);
+  }
+
+  try {
+    const standardPicturesRaw = localStorage.getItem(STORAGE_KEYS.standardPicturesEnabled);
+    if (standardPicturesRaw !== null) {
+      standardPicturesEnabled = standardPicturesRaw === 'true';
+    }
+  } catch (error) {
+    console.warn('Could not load persisted standard-picture setting:', error);
+    standardPicturesEnabled = true;
+  }
+
+  try {
+    const disabledStandardPicturesRaw = localStorage.getItem(STORAGE_KEYS.disabledStandardPictureIds);
+    if (disabledStandardPicturesRaw !== null) {
+      disabledStandardPictureIds = normalizeStandardPictureIds(JSON.parse(disabledStandardPicturesRaw));
+    }
+  } catch (error) {
+    console.warn('Could not load disabled standard-picture ids:', error);
+    disabledStandardPictureIds = [];
+  }
+
+  try {
+    const modeLabelsRaw = localStorage.getItem(STORAGE_KEYS.modeLabels);
+    if (modeLabelsRaw !== null) {
+      modeLabels = normalizeModeLabels(JSON.parse(modeLabelsRaw));
+    }
+  } catch (error) {
+    console.warn('Could not load persisted mode labels:', error);
+    modeLabels = { ...DEFAULT_MODE_LABELS };
+  }
+
+  try {
+    const taskTextsRaw = localStorage.getItem(STORAGE_KEYS.taskTexts);
+    if (taskTextsRaw !== null) {
+      taskTexts = normalizeTaskTexts(JSON.parse(taskTextsRaw));
+    }
+  } catch (error) {
+    console.warn('Could not load persisted task texts:', error);
+    taskTexts = { ...DEFAULT_TASK_TEXTS };
+  }
+
+  rebuildStandardPictures();
+  syncExposedDatasets();
+}
+
+function openPictureDB() {
+  return new Promise((resolve, reject) => {
+    if (!('indexedDB' in window)) {
+      reject(new Error('IndexedDB is not available in this browser.'));
+      return;
+    }
+    const request = indexedDB.open(MEDIA_DB.name, MEDIA_DB.version);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(MEDIA_DB.store)) {
+        db.createObjectStore(MEDIA_DB.store, { keyPath: 'id' });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error('Could not open the media database.'));
+  });
+}
+
+async function idbGetAllPictures() {
+  const db = await openPictureDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(MEDIA_DB.store, 'readonly');
+    const store = tx.objectStore(MEDIA_DB.store);
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result || []);
+    request.onerror = () => reject(request.error || new Error('Could not read pictures from IndexedDB.'));
+    tx.oncomplete = () => db.close();
+    tx.onerror = () => db.close();
+  });
+}
+
+async function idbPutPicture(record) {
+  const db = await openPictureDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(MEDIA_DB.store, 'readwrite');
+    tx.objectStore(MEDIA_DB.store).put(record);
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not save picture.')); };
+  });
+}
+
+async function idbDeletePicture(id) {
+  const db = await openPictureDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(MEDIA_DB.store, 'readwrite');
+    tx.objectStore(MEDIA_DB.store).delete(id);
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not delete picture.')); };
+  });
+}
+
+async function idbClearPictures() {
+  const db = await openPictureDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(MEDIA_DB.store, 'readwrite');
+    tx.objectStore(MEDIA_DB.store).clear();
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error || new Error('Could not clear pictures.')); };
+  });
+}
+
+function revokeCustomPictureUrls() {
+  customPictures.forEach(picture => {
+    if (picture?.src && picture.src.startsWith('blob:')) {
+      try { URL.revokeObjectURL(picture.src); } catch (_) {}
+    }
+  });
+}
+
+async function loadCustomPicturesFromDB() {
+  revokeCustomPictureUrls();
+  const records = await idbGetAllPictures().catch(error => {
+    console.warn('Could not load custom pictures:', error);
+    return [];
+  });
+
+  customPictures = records.map(record => ({
+    ...record,
+    sourceType: 'custom',
+    label: record.name,
+    src: URL.createObjectURL(record.blob),
+    liveSrc: null
+  }));
+}
+
+function createPictureId() {
+  return `custom-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function imageFileAccepted(file) {
+  const name = String(file?.name || '').toLowerCase();
+  return ACCEPTED_IMAGE_TYPES.has(file.type) || /\.(jpg|jpeg|png|webp)$/.test(name);
+}
+
+function sanitizeFilename(name) {
+  return String(name || 'file').replace(/[^a-zA-Z0-9._-]+/g, '_');
+}
+
+function blobToConstrainedDataURL(blob, maxSize = 1600, quality = 0.9) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const ratio = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const width = Math.max(1, Math.round(img.width * ratio));
+      const height = Math.max(1, Math.round(img.height * ratio));
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(objectUrl);
+      const targetType = blob.type === 'image/png' ? 'image/png' : 'image/jpeg';
+      resolve(canvas.toDataURL(targetType, quality));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('The uploaded image could not be processed.'));
+    };
+    img.src = objectUrl;
+  });
+}
+
+async function addCustomPictureFiles(fileList) {
+  const files = Array.from(fileList || []).filter(imageFileAccepted);
+  if (!files.length) {
+    showTeacherStatus('No supported image files were selected.', 'error');
+    return;
+  }
+
+  let added = 0;
+  for (const file of files) {
+    const record = {
+      id: createPictureId(),
+      name: file.name,
+      type: file.type || 'image/jpeg',
+      createdAt: new Date().toISOString(),
+      blob: file
+    };
+    await idbPutPicture(record);
+    added += 1;
+  }
+
+  await loadCustomPicturesFromDB();
+  refreshTeacherUI();
+  await refreshCurrentTopicAfterDataChange();
+  showTeacherStatus(`${added} image${added === 1 ? '' : 's'} added successfully.`, 'success');
+}
+
+async function removeCustomPicture(id) {
+  const picture = customPictures.find(item => item.id === id);
+  if (!picture) return;
+  await idbDeletePicture(id);
+  await loadCustomPicturesFromDB();
+  refreshTeacherUI();
+  await refreshCurrentTopicAfterDataChange(true, 'The active picture was removed and the view was reset.');
+  showTeacherStatus(`Removed custom image "${picture.name}".`, 'success');
+}
+
+function handleTeacherPictureCardKey(event, pictureId) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  removePictureFromTeacherList(pictureId);
+}
+
+async function removePictureFromTeacherList(id) {
+  const picture = getPictureById(id);
+  if (!picture) return;
+
+  const message = picture.sourceType === 'standard'
+    ? `Remove the standard image "${getPictureDisplayName(picture)}" from the active picture pool?`
+    : `Delete the custom image "${getPictureDisplayName(picture)}"?`;
+
+  if (!window.confirm(message)) return;
+
+  if (picture.sourceType === 'standard') {
+    standardPicturesEnabled = true;
+    disabledStandardPictureIds = normalizeStandardPictureIds([...disabledStandardPictureIds, picture.standardIndex]);
+    persistStandardPicturesEnabled();
+    persistDisabledStandardPictureIds();
+    rebuildStandardPictures();
+    syncExposedDatasets();
+    refreshTeacherUI();
+    await refreshCurrentTopicAfterDataChange(true, 'The active picture was removed and the view was reset.');
+    showTeacherStatus(`Removed standard image "${getPictureDisplayName(picture)}" from the active picture pool.`, 'success');
+    return;
+  }
+
+  await removeCustomPicture(id);
+}
+
+async function refreshCurrentTopicAfterDataChange(resetIfInvalid = false, invalidMessage = '') {
+  syncExposedDatasets();
+
+  if (!currentTopic) {
+    syncLiveState();
+    maybePush();
+    updateShareURL();
+    return;
+  }
+
+  if (currentTopic.type === 'talk') {
+    if (currentTopic.idx >= 0 && currentTopic.idx < talkTopics.length) {
+      currentTopic = buildTalkTopicState(currentTopic.idx);
+      if (currentMode === 'talk') setAreaContent(renderTalkTopicHTML(currentTopic.idx), 'talk');
+    } else if (resetIfInvalid || !talkTopics.length) {
+      resetCurrentView();
+      if (invalidMessage) showTeacherStatus(invalidMessage, 'info');
+      return;
+    }
+  }
+
+  if (currentTopic.type === 'dialogue') {
+    if (currentTopic.idx >= 0 && currentTopic.idx < dialogueTopics.length) {
+      currentTopic = buildDialogueTopicState(currentTopic.idx);
+      if (currentMode === 'dialogue') setAreaContent(renderDialogueTopicHTML(currentTopic.idx), 'dialogue');
+    } else if (resetIfInvalid || !dialogueTopics.length) {
+      resetCurrentView();
+      if (invalidMessage) showTeacherStatus(invalidMessage, 'info');
+      return;
+    }
+  }
+
+  if (currentTopic.type === 'picture') {
+    const pictureId = currentTopic.pictureId || currentTopic.id;
+    const picture = getPictureById(pictureId);
+    if (picture) {
+      currentTopic = await buildPictureTopicState(picture.id);
+      if (currentMode === 'picture') setAreaContent(renderPictureTopicHTML(picture), 'picture');
+    } else if (resetIfInvalid) {
+      resetCurrentView();
+      if (invalidMessage) showTeacherStatus(invalidMessage, 'info');
+      return;
+    }
+  }
+
+  syncLiveState();
+  maybePush();
+  updateShareURL();
+}
+
+function saveModeLabelsFromInputs(showStatus = true) {
+  const nextLabels = normalizeModeLabels({
+    talk: document.getElementById('teacher-mode-name-talk')?.value,
+    picture: document.getElementById('teacher-mode-name-picture')?.value,
+    dialogue: document.getElementById('teacher-mode-name-dialogue')?.value
+  });
+
+  modeLabels = nextLabels;
+  persistModeLabels();
+  syncExposedDatasets();
+  updateModeLabelsUI();
+  refreshTeacherModeNameInputs();
+
+  if (showStatus) {
+    showTeacherStatus('Mode names saved.', 'success');
+  }
+}
+
+function saveTaskTextsFromInputs(showStatus = true) {
+  const nextTaskTexts = normalizeTaskTexts({
+    talk: document.getElementById('teacher-task-text-talk')?.value,
+    picture: document.getElementById('teacher-task-text-picture')?.value,
+    dialogue: document.getElementById('teacher-task-text-dialogue')?.value
+  });
+
+  taskTexts = nextTaskTexts;
+  persistTaskTexts();
+  syncExposedDatasets();
+  refreshTeacherTaskTextInputs();
+
+  if (currentMode) {
+    const topicNote = document.getElementById('topic-note');
+    if (topicNote) {
+      topicNote.textContent = taskTexts[currentMode] || '';
+      topicNote.classList.toggle('active', !!taskTexts[currentMode]);
+    }
+    document.querySelector('.topic-header-row')?.classList.toggle('task-mode', !!taskTexts[currentMode]);
+  }
+
+  if (showStatus) {
+    showTeacherStatus('Task texts saved.', 'success');
+  }
+}
+
+async function saveTalkTopicsFromTextarea(showStatus = true) {
+  const textarea = document.getElementById('teacher-talk-textarea');
+  const parsed = parseTalkTopicsFromText(textarea?.value || '');
+  talkTopics = parsed;
+  persistTalkTopics();
+  syncExposedDatasets();
+  refreshTeacherUI();
+  await refreshCurrentTopicAfterDataChange(true, 'The active talk topic was reset because the list changed.');
+  if (showStatus) {
+    showTeacherStatus(`Saved ${talkTopics.length} talk topic${talkTopics.length === 1 ? '' : 's'}.`, 'success');
+  }
+}
+
+async function saveDialogueTopicsFromTextarea(showStatus = true) {
+  const textarea = document.getElementById('teacher-dialogue-textarea');
+  const parsed = parseDialogueTopicsFromText(textarea?.value || '');
+  dialogueTopics = parsed;
+  persistDialogueTopics();
+  syncExposedDatasets();
+  refreshTeacherUI();
+  await refreshCurrentTopicAfterDataChange(true, 'The active dialogue topic was reset because the list changed.');
+  if (showStatus) {
+    showTeacherStatus(`Saved ${dialogueTopics.length} dialogue topic${dialogueTopics.length === 1 ? '' : 's'}.`, 'success');
+  }
+}
+
+async function applyTeacherChangesAndClose(event) {
+  event?.preventDefault?.();
+
+  try {
+    saveModeLabelsFromInputs(false);
+    saveTaskTextsFromInputs(false);
+    await saveTalkTopicsFromTextarea(false);
+    await saveDialogueTopicsFromTextarea(false);
+    closeTeacherModal();
+    showTeacherStatus('Changes applied.', 'success');
+  } catch (error) {
+    console.error('Applying teacher changes failed:', error);
+    showTeacherStatus('Could not apply the changes.', 'error');
+  }
+}
+
+window.applyTeacherChangesAndClose = applyTeacherChangesAndClose;
+
+function triggerPictureUpload() {
+  document.getElementById('teacher-picture-input')?.click();
+}
+
+function triggerTalkImport() {
+  document.getElementById('teacher-talk-import')?.click();
+}
+
+function triggerDialogueImport() {
+  document.getElementById('teacher-dialogue-import')?.click();
+}
+
+function triggerJsonImport() {
+  document.getElementById('teacher-json-import')?.click();
+}
+
+async function extractTextFromFile(file) {
+  const name = String(file?.name || '').toLowerCase();
+  if (name.endsWith('.txt')) {
+    return file.text();
+  }
+
+  if (name.endsWith('.docx')) {
+    if (typeof mammoth === 'undefined') {
+      throw new Error('DOCX import is not available because Mammoth could not be loaded.');
+    }
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value || '';
+  }
+
+  if (name.endsWith('.pdf')) {
+    if (typeof pdfjsLib === 'undefined') {
+      throw new Error('PDF import is not available because pdf.js could not be loaded.');
+    }
+
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+    const pages = [];
+
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+      const page = await pdf.getPage(pageNumber);
+      const content = await page.getTextContent();
+      const rows = new Map();
+
+      content.items.forEach(item => {
+        const text = String(item.str || '').trim();
+        if (!text) return;
+        const x = Math.round(item.transform[4] || 0);
+        const y = Math.round(item.transform[5] || 0);
+        if (!rows.has(y)) rows.set(y, []);
+        rows.get(y).push({ x, text });
+      });
+
+      const pageLines = Array.from(rows.entries())
+        .sort((a, b) => b[0] - a[0])
+        .map(([, parts]) => parts.sort((a, b) => a.x - b.x).map(part => part.text).join(' ').replace(/\s+/g, ' ').trim())
+        .filter(Boolean);
+
+      pages.push(pageLines.join('\n'));
+    }
+
+    return pages.join('\n\n');
+  }
+
+  throw new Error('Unsupported file format. Please use TXT, DOCX or PDF.');
+}
+
+async function importTalkTopicsFromFile(file) {
+  const text = await extractTextFromFile(file);
+  const parsed = parseTalkTopicsFromText(text);
+  talkTopics = parsed;
+  persistTalkTopics();
+  syncExposedDatasets();
+  refreshTeacherUI();
+  await refreshCurrentTopicAfterDataChange(true, 'The active talk topic was reset because the imported list replaced the current content.');
+  showTeacherStatus(`Imported ${talkTopics.length} talk topic${talkTopics.length === 1 ? '' : 's'} from ${file.name}.`, 'success');
+}
+
+async function importDialogueTopicsFromFile(file) {
+  const text = await extractTextFromFile(file);
+  const parsed = parseDialogueTopicsFromText(text, { cleanBullets: true, importFallback: true });
+  dialogueTopics = parsed;
+  persistDialogueTopics();
+  syncExposedDatasets();
+  refreshTeacherUI();
+  await refreshCurrentTopicAfterDataChange(true, 'The active dialogue topic was reset because the imported list replaced the current content.');
+  showTeacherStatus(`Imported ${dialogueTopics.length} dialogue topic${dialogueTopics.length === 1 ? '' : 's'} from ${file.name}.`, 'success');
+}
+
+function validateImportJson(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('The JSON file must contain an object.');
+  }
+  if (!Array.isArray(data.talkTopics) || !Array.isArray(data.dialogueTopics)) {
+    throw new Error('The JSON file must contain both "talkTopics" and "dialogueTopics" arrays.');
+  }
+  return {
+    talkTopics: normalizeTalkTopics(data.talkTopics),
+    dialogueTopics: normalizeDialogueTopics(data.dialogueTopics),
+    modeLabels: normalizeModeLabels(data.modeLabels),
+    taskTexts: normalizeTaskTexts(data.taskTexts)
+  };
+}
+
+async function importJsonSettings(file) {
+  const raw = await file.text();
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    throw new Error('The selected settings file could not be parsed as JSON.');
+  }
+
+  const validated = validateImportJson(parsed);
+  const replaceConfirmed = window.confirm('Replace the current One-Minute-Talk and Dialogue content with the JSON data?');
+  if (!replaceConfirmed) {
+    showTeacherStatus('JSON import cancelled.', 'info');
+    return;
+  }
+
+  talkTopics = validated.talkTopics;
+  dialogueTopics = validated.dialogueTopics;
+  modeLabels = validated.modeLabels;
+  taskTexts = validated.taskTexts;
+  persistModeLabels();
+  persistTaskTexts();
+
+  if (parsed.standardPictures && typeof parsed.standardPictures === 'object') {
+    if (typeof parsed.standardPictures.enabled === 'boolean') {
+      standardPicturesEnabled = parsed.standardPictures.enabled;
+    }
+    if (Array.isArray(parsed.standardPictures.disabledIds)) {
+      disabledStandardPictureIds = normalizeStandardPictureIds(parsed.standardPictures.disabledIds);
+    } else if (parsed.standardPictures.enabled === false) {
+      disabledStandardPictureIds = normalizeStandardPictureIds(Array.from({ length: STANDARD_PICTURE_COUNT }, (_, index) => index + 1));
+    } else {
+      disabledStandardPictureIds = [];
+    }
+    rebuildStandardPictures();
+    persistStandardPicturesEnabled();
+    persistDisabledStandardPictureIds();
+  }
+  persistTalkTopics();
+  persistDialogueTopics();
+  syncExposedDatasets();
+  refreshTeacherUI();
+  await refreshCurrentTopicAfterDataChange(true, 'The active topic was reset because JSON import replaced the current content.');
+  showTeacherStatus('Settings import completed successfully.', 'success');
+}
+
+async function exportCurrentSettings() {
+  if (typeof JSZip === 'undefined') {
+    showTeacherStatus('ZIP export is not available because JSZip could not be loaded.', 'error');
+    return;
+  }
+
+  const customPictureRecords = await idbGetAllPictures().catch(error => {
+    console.warn('Could not read custom pictures for ZIP export:', error);
+    return [];
+  });
+
+  const zip = new JSZip();
+  const metadata = {
+    version: 6,
+    exportedAt: new Date().toISOString(),
+    modeLabels: { ...modeLabels },
+    taskTexts: { ...taskTexts },
+    talkTopics: [...talkTopics],
+    dialogueTopics: dialogueTopics.map(topic => ({ title: topic.title, bullets: [...topic.bullets] })),
+    customPictures: customPictureRecords.map(picture => ({
+      id: picture.id,
+      name: picture.name,
+      type: picture.type,
+      createdAt: picture.createdAt,
+      sourceType: 'custom'
+    })),
+    standardPictures: {
+      enabled: standardPicturesEnabled,
+      availableCount: STANDARD_PICTURE_COUNT,
+      activeCount: standardPicturesEnabled ? standardPictures.length : 0,
+      disabledIds: [...disabledStandardPictureIds],
+      folder: 'Bilder',
+      pattern: 'Bild{n}.jpg'
+    }
+  };
+
+  zip.file('exam-trainer-data.txt', JSON.stringify(metadata, null, 2));
+  const customFolder = zip.folder('custom-pictures');
+
+  customPictureRecords.forEach((picture, index) => {
+    if (!picture?.blob) return;
+    const fallbackName = `image-${index + 1}.jpg`;
+    customFolder.file(`${picture.id}-${sanitizeFilename(picture.name || fallbackName)}`, picture.blob);
+  });
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `exam-trainer-settings-${new Date().toISOString().slice(0, 10)}.zip`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+
+  const exportedCount = customPictureRecords.filter(picture => !!picture?.blob).length;
+  showTeacherStatus(`ZIP export created successfully${exportedCount ? ` with ${exportedCount} custom image${exportedCount === 1 ? '' : 's'}` : ''}.`, 'success');
+}
+
+async function clearManagedContent() {
+  const confirmed = window.confirm('Do you really want to remove all current One-Minute-Talk topics, all Dialogue topics, all uploaded custom images, and the built-in standard pictures from the active picture pool?');
+  if (!confirmed) return;
+
+  talkTopics = [];
+  dialogueTopics = [];
+  standardPicturesEnabled = false;
+  disabledStandardPictureIds = normalizeStandardPictureIds(Array.from({ length: STANDARD_PICTURE_COUNT }, (_, index) => index + 1));
+  rebuildStandardPictures();
+  persistTalkTopics();
+  persistDialogueTopics();
+  persistStandardPicturesEnabled();
+  persistDisabledStandardPictureIds();
+  await idbClearPictures();
+  await loadCustomPicturesFromDB();
+  syncExposedDatasets();
+  refreshTeacherUI();
+  resetCurrentView();
+  showTeacherStatus('Current content was cleared. No talk topics, dialogue topics, or pictures remain active.', 'success');
+}
+
+async function handleTalkImportChange(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    await importTalkTopicsFromFile(file);
+  } catch (error) {
+    console.error(error);
+    showTeacherStatus(error.message || 'Talk import failed.', 'error');
+  } finally {
+    event.target.value = '';
+  }
+}
+
+async function handleDialogueImportChange(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    await importDialogueTopicsFromFile(file);
+  } catch (error) {
+    console.error(error);
+    showTeacherStatus(error.message || 'Dialogue import failed.', 'error');
+  } finally {
+    event.target.value = '';
+  }
+}
+
+async function handleJsonImportChange(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    await importJsonSettings(file);
+  } catch (error) {
+    console.error(error);
+    showTeacherStatus(error.message || 'JSON import failed.', 'error');
+  } finally {
+    event.target.value = '';
+  }
+}
+
+async function handlePictureInputChange(event) {
+  const files = event.target.files;
+  if (!files?.length) return;
+  try {
+    await addCustomPictureFiles(files);
+  } catch (error) {
+    console.error(error);
+    showTeacherStatus(error.message || 'Image upload failed.', 'error');
+  } finally {
+    event.target.value = '';
+  }
+}
+
+function initTeacherModalEvents() {
+  const modal = document.getElementById('teacher-modal');
+  modal?.addEventListener('click', event => {
+    if (event.target === modal) closeTeacherModal();
+  });
+
+  document.getElementById('teacher-talk-import')?.addEventListener('change', handleTalkImportChange);
+  document.getElementById('teacher-dialogue-import')?.addEventListener('change', handleDialogueImportChange);
+  document.getElementById('teacher-json-import')?.addEventListener('change', handleJsonImportChange);
+  document.getElementById('teacher-picture-input')?.addEventListener('change', handlePictureInputChange);
+  document.getElementById('teacher-apply-btn')?.addEventListener('click', applyTeacherChangesAndClose);
+
+  const dropzone = document.getElementById('teacher-picture-dropzone');
+  if (dropzone) {
+    ['dragenter', 'dragover'].forEach(type => {
+      dropzone.addEventListener(type, event => {
+        event.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(type => {
+      dropzone.addEventListener(type, event => {
+        event.preventDefault();
+        if (type === 'drop') {
+          dropzone.classList.remove('dragover');
+        } else if (!dropzone.contains(event.relatedTarget)) {
+          dropzone.classList.remove('dragover');
+        }
+      });
+    });
+
+    dropzone.addEventListener('drop', async event => {
+      const files = event.dataTransfer?.files;
+      dropzone.classList.remove('dragover');
+      if (!files?.length) return;
+      try {
+        await addCustomPictureFiles(files);
+      } catch (error) {
+        console.error(error);
+        showTeacherStatus(error.message || 'Image upload failed.', 'error');
+      }
+    });
+  }
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      hideSelectionOverlay();
+      closeTeacherModal();
+    }
+  });
+}
+
+async function initFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('mode')) {
+    const mode = params.get('mode');
+    if (['talk', 'picture', 'dialogue'].includes(mode)) setMode(mode);
+  }
+
+  if (params.has('timer')) {
+    const time = parseInt(params.get('timer'), 10);
+    if (!Number.isNaN(time)) {
+      timerTotal = time;
+      timerSeconds = time;
+      syncLiveState();
+      const select = document.getElementById('timer-preset');
+      for (const option of select.options) {
+        if (parseInt(option.value, 10) === time) {
+          select.value = String(time);
+          break;
+        }
+      }
+      updateTimerDisplay();
+    }
+  }
+
+  if (params.has('topic') && currentMode === 'talk') {
+    const idx = parseInt(params.get('topic'), 10);
+    if (!Number.isNaN(idx) && idx >= 0 && idx < talkTopics.length) setTalkTopic(idx);
+  }
+
+  if (params.has('talkId') && currentMode === 'talk') {
+    const idx = parseInt(String(params.get('talkId')).replace('talk-', ''), 10);
+    if (!Number.isNaN(idx) && idx >= 0 && idx < talkTopics.length) setTalkTopic(idx);
+  }
+
+  if (params.has('pictureId') && currentMode === 'picture') {
+    const pictureId = params.get('pictureId');
+    if (pictureId && getPictureById(pictureId)) await setPictureTopicById(pictureId);
+  } else if (params.has('pic') && currentMode === 'picture') {
+    const picNum = parseInt(params.get('pic'), 10);
+    const standardPicture = getAllPictures().find(picture => picture.sourceType === 'standard' && picture.standardIndex === picNum);
+    if (standardPicture) await setPictureTopicById(standardPicture.id);
+  }
+
+  if (params.has('dialogue') && currentMode === 'dialogue') {
+    const idx = parseInt(params.get('dialogue'), 10);
+    if (!Number.isNaN(idx) && idx >= 0 && idx < dialogueTopics.length) setDialogueTopic(idx);
+  }
+
+  if (params.has('dialogueId') && currentMode === 'dialogue') {
+    const idx = parseInt(String(params.get('dialogueId')).replace('dialogue-', ''), 10);
+    if (!Number.isNaN(idx) && idx >= 0 && idx < dialogueTopics.length) setDialogueTopic(idx);
+  }
+}
+
+async function bootApp() {
+  loadPersistedTextData();
+  await loadCustomPicturesFromDB();
+  refreshTeacherUI();
+  initTeacherModalEvents();
+  drawQR('');
+  updateTimerDisplay();
+  await initFromURL();
+  updateShareURL();
+  document.getElementById('selection-overlay')?.addEventListener('click', event => {
+    if (event.target.id === 'selection-overlay') hideSelectionOverlay();
+  });
+}
+
+bootApp();
+
+</script>
+</body>
+</html>
