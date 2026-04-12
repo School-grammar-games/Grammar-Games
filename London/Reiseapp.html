@@ -1843,6 +1843,7 @@
       mondayPlan.stops[0].note = 'Um 19:30 Uhr ist der Treffpunkt am Haupteingang mit Lehrkraft-Check. Um 20:00 Uhr startet die Fahrt pünktlich.';
       mondayPlan.stops[1].title = 'Fährabfahrt in Calais';
       mondayPlan.stops[1].note = 'Es muss aus dem Bus ausgestiegen werden. Es wird gemeinsam der Bus verlassen, gesammelt und ein Treffpunkt vereinbart, um vor Ankunft wieder gemeinsam zum Bus zu gehen.';
+      mondayPlan.stops[1].website = '';
       mondayPlan.stops[2].title = 'Ankunft London & Gepäckabgabe';
       mondayPlan.stops[2].note = 'Die voraussichtliche Ankunftszeit ist ca. 13:00 Uhr. Danach folgen Gepäckabgabe, Check-in und ein kurzes Frischmachen vor dem Nachmittagsprogramm.';
       mondayPlan.stops[3].note = 'Empfohlene Anlegestelle in Hostelnähe ist der Millbank Pier. Vom Hostel sind es etwa 18 bis 20 Minuten zu Fuß über Belgrave Road und Lupus Street Richtung Themse; dort kann der RB1/RB6 ostwärts bis Greenwich Pier genommen werden.';
@@ -1874,6 +1875,7 @@
     if (wednesdayPlan){
       wednesdayPlan.stops[0].note = 'Der Einlass ist am Vormittag; Tickets und Treffpunkt sollten vorher feststehen.';
       wednesdayPlan.stops[1].note = 'Bloomsbury und Russell Square sind dafür ein praktischer Bereich.';
+      wednesdayPlan.stops[1].website = '';
       wednesdayPlan.stops[1].notePlaceholder = 'Ort, Uhrzeit oder Sammelpunkt fürs Mittagessen eintragen ...';
       wednesdayPlan.stops[2].note = 'Am Nachmittag ist der Besuch an der Universität vorgesehen.';
       wednesdayPlan.stops[3].note = 'Für den Abend passen Erkundung und Abendessen mit klaren Treffzeiten gut zusammen.';
@@ -1892,8 +1894,10 @@
       thursdayPlan.stops[3].note = 'Die späteste Rückkehr zum Hostel sollte für Gepäck und Abfahrt sicher eingeplant werden.';
       thursdayPlan.stops[4].title = 'Check-In Fährhafen Dover';
       thursdayPlan.stops[4].note = 'Der Check-In erfolgt an den Eastern Docks in Dover.';
+      thursdayPlan.stops[4].website = '';
       thursdayPlan.stops[5].title = 'Fährfahrt Dover -> Dunkerque';
       thursdayPlan.stops[5].note = 'Die Fähre fährt um 20:00 Uhr in Dover ab und erreicht Dunkerque um 23:00 Uhr.';
+      thursdayPlan.stops[5].website = '';
     }
 
     const mainRoutes = {
@@ -2443,7 +2447,7 @@
         const mapsButton = isMapLocation(loc.id)
           ? `<button class="small-btn" onclick="openLocation('${loc.id}')">Google Maps</button>`
           : '';
-        const websiteUrl = stop.website || loc.official;
+        const websiteUrl = Object.prototype.hasOwnProperty.call(stop, 'website') ? stop.website : loc.official;
         const websiteButton = websiteUrl
           ? `<button class="small-btn" onclick="openLiveSite('${websiteUrl}')">Webseite</button>`
           : '';
