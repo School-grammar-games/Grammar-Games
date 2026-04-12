@@ -2614,7 +2614,10 @@
       return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(point.query)}`;
     }
 
-    function makeMapsSearchEmbedUrl(query, center = null){
+    function makeMapsSearchEmbedUrl(query, center = null, originQuery = null){
+      if (originQuery){
+        return `https://maps.google.com/maps?hl=de&saddr=${encodeURIComponent(originQuery)}&daddr=${encodeURIComponent(query)}&dirflg=w&output=embed`;
+      }
       const centerParams = center && Number.isFinite(center.lat) && Number.isFinite(center.lon)
         ? `&ll=${center.lat},${center.lon}&z=15`
         : '';
@@ -2905,17 +2908,17 @@
         : 'Standpunkt: aktueller Standort per GPS.');
     }
 
-    function updateHostelMarkerVisibility(visible){
+    function updateHostelMarkerVisibility(){
       const marker = document.getElementById('hostelMapMarker');
       if (!marker) return;
-      marker.hidden = !visible;
+      marker.hidden = true;
     }
 
     function updateHostelNearbyMode(checked){
       hostelNearbyUseHostel = checked;
       localStorage.setItem('hostelNearbyUseHostel', checked ? '1' : '0');
       updateHostelMapStatus();
-      updateHostelMarkerVisibility(checked);
+      updateHostelMarkerVisibility();
     }
 
     function bindUnterkunftActions(){
@@ -2944,34 +2947,34 @@
         toggle.addEventListener('change', event => updateHostelNearbyMode(event.target.checked));
       }
       updateHostelMapStatus();
-      updateHostelMarkerVisibility(hostelNearbyUseHostel);
+      updateHostelMarkerVisibility();
     }
 
-    function setUnterkunftMapSearch(query, label, sourceLabel, center = null, showHostelMarker = false){
+    function setUnterkunftMapSearch(query, label, sourceLabel, center = null, originQuery = null){
       const frame = document.getElementById('hostelMapFrame');
       if (frame){
-        frame.src = makeMapsSearchEmbedUrl(query, center);
+        frame.src = makeMapsSearchEmbedUrl(query, center, originQuery);
       }
       updateHostelMapStatus(`${label}: ${sourceLabel}`);
-      updateHostelMarkerVisibility(showHostelMarker);
+      updateHostelMarkerVisibility();
     }
 
     function searchNearbyFromUnterkunft(searchTerm, label){
       if (hostelNearbyUseHostel){
-        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standpunkt ist das Hostel. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', locations.hostel, true);
+        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standpunkt ist das Hostel. Die Karte zeigt eine Google-Route ab dem Hostel und behält den Hostel-Marker sichtbar.', locations.hostel, locations.hostel.query);
         return;
       }
       updateHostelMapStatus(`${label}: aktueller Standort wird ermittelt ...`);
-      updateHostelMarkerVisibility(false);
+      updateHostelMarkerVisibility();
       if (!navigator.geolocation){
-        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standortfreigabe nicht verfügbar; Hostel wird als Ersatz verwendet. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', locations.hostel, true);
+        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standortfreigabe nicht verfügbar; Hostel wird als Ersatz verwendet. Die Karte zeigt eine Google-Route ab dem Hostel und behält den Hostel-Marker sichtbar.', locations.hostel, locations.hostel.query);
         return;
       }
       navigator.geolocation.getCurrentPosition(position => {
         const { latitude, longitude } = position.coords;
         setUnterkunftMapSearch(`${searchTerm} near ${latitude},${longitude}`, label, 'Standpunkt ist der aktuelle Standort per GPS. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', { lat: latitude, lon: longitude });
       }, () => {
-        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standort konnte nicht ermittelt werden; Hostel wird als Ersatz verwendet. Der Kartenausschnitt ist auf etwa 2 km Umgebung begrenzt.', locations.hostel, true);
+        setUnterkunftMapSearch(`${searchTerm} near ${locations.hostel.query}`, label, 'Standort konnte nicht ermittelt werden; Hostel wird als Ersatz verwendet. Die Karte zeigt eine Google-Route ab dem Hostel und behält den Hostel-Marker sichtbar.', locations.hostel, locations.hostel.query);
       }, { enableHighAccuracy:true, timeout:10000, maximumAge:300000 });
     }
 
