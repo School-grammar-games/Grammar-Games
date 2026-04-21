@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Sentence Order Drop (shuffled only, tall field)</title>
+  <style>
+    :root { color-scheme: dark; }
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:#0b0f14;
+      color:#e8eef6;
+      display:grid;
+      place-items:center;
+      min-height:100vh;
+      padding:12px;
+      box-sizing:border-box;
+    }
+    .wrap{ width:min(820px,100%); display:grid; gap:10px; }
+    .topbar{ display:flex; gap:8px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+    .stats{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .pill{
+      background:#121a24; border:1px solid #1e2a3a;
+      border-radius:999px; padding:6px 10px; font-size:14px; line-height:1;
+    }
+    .stage{
+      border:1px solid #1e2a3a;
+      border-radius:12px;
+      background:#081019;
+      overflow:hidden;
+    }
+    canvas{
+      width:100%;
+      height:auto;
+      display:block;
+      touch-action:none;
+    }
+    .panel{
+      display:grid;
+      gap:8px;
+      padding:10px;
+      border:1px solid #1e2a3a;
+      background:#0f1620;
+      border-radius:12px;
+    }
+    .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .label{ opacity:.9; font-size:13px; }
+    .chips{ display:flex; gap:6px; flex-wrap:wrap; }
+    .chip{
+      border:1px solid #1e2a3a;
+      background:#121a24;
+      border-radius:999px;
+      padding:4px 10px;
+      font-size:13px;
+      white-space:nowrap;
+    }
+
+    .controls{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:8px;
+      user-select:none; -webkit-user-select:none;
+    }
+    button{
+      appearance:none;
+      border:1px solid #1e2a3a;
+      background:#121a24;
+      color:#e8eef6;
+      border-radius:12px;
+      padding:12px 10px;
+      font-size:16px;
+      font-weight:600;
+    }
+    button:active{ transform:translateY(1px); }
+    .wide{ grid-column: span 3; }
+    .danger{ border-color:#4b2630; background:#1b1014; }
+    .hint{ font-size:12px; opacity:.85; line-height:1.3; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="stats">
+        <div class="pill" id="scorePill">Score: 0</div>
+        <div class="pill" id="roundPill">Round: 1</div>
+      </div>
+      <div class="stats">
+        <button id="pauseBtn" type="button">Pause</button>
+        <button id="restartBtn" type="button" class="danger">Restart</button>
+      </div>
+    </div>
+
+    <div class="panel" aria-label="Sentence pieces">
+      <div class="row">
+        <div class="label">Sentence pieces (random order):</div>
+        <div class="chips" id="piecesChips"></div>
+      </div>
+      <div class="hint">
+        Place the falling blocks so that the bottom line contains the pieces in the correct order (left-to-right).
+        The pieces may start anywhere on the bottom line; only the relative order matters.
+        When correct, the sentence clears and you earn 100 points.
+      </div>
+    </div>
+
+    <div class="stage">
+      <!-- doubled height (16:9 -> 16:18 effective aspect) -->
+      <canvas id="game" width="640" height="720" aria-label="Sentence drop game" role="img"></canvas>
+    </div>
+
+    <div class="controls" aria-label="Controls">
+      <button id="leftBtn" type="button">◀</button>
+      <button id="softBtn" type="button">▼</button>
+      <button id="rightBtn" type="button">▶</button>
+      <button id="dropBtn" type="button" class="wide">Drop</button>
+      <button id="helpBtn" type="button" class="wide">
+        Touch: swipe ◀/▶/▼, tap = soft drop, long-press = hard drop
+      </button>
+    </div>
+
+    <div class="hint">
+      Keyboard: ←/→ move, ↓ soft drop, Space hard drop, P pause.
+      Blocks are fixed 2×2 (no rotation). Article + noun are kept together (e.g., “a dog”).
+    </div>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  // ===== Grid: doubled height while keeping width reasonable =====
+  // Using 16 columns; 18 rows (double of 9) gives the "double height" feel.
+  const COLS = 16;
+  const ROWS = 18;
+
+  const CELL = Math.floor(Math.min(canvas.width / COLS, canvas.height / ROWS));
+  const GRID_W = COLS * CELL;
+  const GRID_H = ROWS * CELL;
+  const OFF_X = Math.floor((canvas.width - GRID_W) / 2);
+  const OFF_Y = Math.floor((canvas.height - GRID_H) / 2);
+
+  // Piece size (2x2)
+  const PIECE_W = 2;
+  const PIECE_H = 2;
+
+  // Bottom strip is the last 2 rows
+  const STRIP_TOP = ROWS - PIECE_H;
+
+  // ===== UI =====
+  const scorePill = document.getElementById('scorePill');
+  const roundPill = document.getElementById('roundPill');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const piecesChips = document.getElementById('piecesChips');
+
+  // ===== Sentences =====
+  const RAW_SENTENCES = [
+    "I have a dog",
+    "She likes the pizza",
+    "We play football",
+    "They have an apple",
+    "He reads a book",
+    "My sister has the red pen"
+  ];
+  const ARTICLES = new Set(["a","an","the"]);
+
+  function normalizeWord(w) {
+    return w.replace(/[^\w'-]+/g, "");
+  }
+  function chunkSentence(raw) {
+    const words = raw.trim().split(/\s+/).map(normalizeWord).filter(Boolean);
+    const chunks = [];
+    for (let i = 0; i < words.length; i++) {
+      const w = words[i];
+      if (ARTICLES.has(w.toLowerCase()) && i + 1 < words.length) {
+        chunks.push(`${w} ${words[i + 1]}`);
+        i++;
+      } else {
+        chunks.push(w);
+      }
+    }
+    return chunks;
+  }
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // ===== Game state =====
+  const emptyRow = () => Array(COLS).fill(0);
+  let board;              // board[y][x] = pieceId or 0
+  let piecesById;         // id -> {id,text,color,x,y}
+  let current;            // active falling piece
+  let targetChunks = [];  // correct order (hidden)
+  let bag = [];           // remaining pieces to spawn (random order)
+  let round = 1;
+  let score = 0;
+
+  let dropIntervalMs = 520;
+  let acc = 0;
+  let lastTs = 0;
+  let paused = false;
+  let gameOver = false;
+
+  let nextPieceId = 1;
+
+  const COLORS = ["#4cc9f0","#ffd166","#b5179e","#80ed99","#ff4d6d","#4895ef","#f8961e","#a8dadc"];
+  const GHOST = "rgba(232,238,246,0.18)";
+
+  function hashColor(text) {
+    let h = 0;
+    for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) >>> 0;
+    return COLORS[h % COLORS.length];
+  }
+
+  function updateUI() {
+    scorePill.textContent = `Score: ${score}`;
+    roundPill.textContent = `Round: ${round}`;
+  }
+
+  function renderChips(arr) {
+    piecesChips.innerHTML = "";
+    for (const t of arr) {
+      const el = document.createElement("div");
+      el.className = "chip";
+      el.textContent = t;
+      piecesChips.appendChild(el);
+    }
+  }
+
+  function newRound(keepScore = true) {
+    board = Array.from({ length: ROWS }, emptyRow);
+    piecesById = new Map();
+    nextPieceId = 1;
+
+    const raw = RAW_SENTENCES[(round - 1) % RAW_SENTENCES.length];
+    targetChunks = chunkSentence(raw);        // hidden target order
+    bag = shuffle(targetChunks);
+    if (bag.join("|") === targetChunks.join("|") && bag.length > 1) bag = shuffle(targetChunks);
+
+    renderChips(bag); // show only shuffled pieces
+    paused = false;
+    gameOver = false;
+    acc = 0;
+    pauseBtn.textContent = "Pause";
+
+    if (!keepScore) score = 0;
+    updateUI();
+
+    spawnNext();
+  }
+
+  function resetAll() {
+    round = 1;
+    score = 0;
+    newRound(true);
+  }
+
+  // ===== Mechanics =====
+  function newPiece(text) {
+    // random horizontal start; keep piece fully inside
+    const x = (Math.random() * (COLS - PIECE_W + 1)) | 0;
+    return {
+      id: nextPieceId++,
+      text,
+      color: hashColor(text),
+      x,
+      y: -PIECE_H
+    };
+  }
+
+  function spawnNext() {
+    if (bag.length === 0) {
+      // If they didn't solve it with available pieces, end round
+      gameOver = true;
+      paused = true;
+      pauseBtn.textContent = "No more pieces";
+      return;
+    }
+    const text = bag.shift();
+    renderChips(bag);
+
+    const p = newPiece(text);
+    piecesById.set(p.id, p);
+    current = p;
+
+    if (collides(current, 0, 1)) {
+      gameOver = true;
+      paused = true;
+      pauseBtn.textContent = "Blocked";
+    }
+  }
+
+  function collides(piece, dx = 0, dy = 0) {
+    const px = piece.x + dx;
+    const py = piece.y + dy;
+    for (let r = 0; r < PIECE_H; r++) {
+      for (let c = 0; c < PIECE_W; c++) {
+        const nx = px + c;
+        const ny = py + r;
+        if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
+        if (ny >= 0 && board[ny][nx]) return true;
+      }
+    }
+    return false;
+  }
+
+  function mergePiece(piece) {
+    for (let r = 0; r < PIECE_H; r++) {
+      for (let c = 0; c < PIECE_W; c++) {
+        const nx = piece.x + c;
+        const ny = piece.y + r;
+        if (ny >= 0 && ny < ROWS) board[ny][nx] = piece.id;
+      }
+    }
+  }
+
+  function move(dx) {
+    if (paused || gameOver) return;
+    if (!collides(current, dx, 0)) current.x += dx;
+  }
+
+  function softDrop() {
+    if (paused || gameOver) return;
+    if (!collides(current, 0, 1)) current.y += 1;
+    else lockDown();
+  }
+
+  function hardDrop() {
+    if (paused || gameOver) return;
+    let d = 0;
+    while (!collides(current, 0, d + 1)) d++;
+    current.y += d;
+    lockDown();
+  }
+
+  function lockDown() {
+    mergePiece(current);
+
+    if (current.y < 0) {
+      gameOver = true;
+      paused = true;
+      pauseBtn.textContent = "Overflow";
+      return;
+    }
+
+    // Evaluate bottom line condition (relative order anywhere)
+    if (sentenceCompleteRelativeOrder()) {
+      score += 100;
+      updateUI();
+      clearBottomStrip();
+      // Start next sentence immediately
+      round += 1;
+      newRound(true);
+      return;
+    }
+
+    spawnNext();
+  }
+
+  // ===== Completion check: correct relative order anywhere on bottom strip =====
+  function getStripSlots() {
+    // Each slot is 2 columns wide; we read left->right
+    const slots = [];
+    const slotCount = Math.floor(COLS / PIECE_W); // 8 for 16 cols
+    for (let s = 0; s < slotCount; s++) {
+      const x0 = s * PIECE_W;
+      const y0 = STRIP_TOP;
+
+      const id00 = board[y0][x0];
+      const id01 = board[y0][x0 + 1];
+      const id10 = board[y0 + 1][x0];
+      const id11 = board[y0 + 1][x0 + 1];
+
+      const filled = id00 && id01 && id10 && id11 && (id00 === id01 && id00 === id10 && id00 === id11);
+      slots.push(filled ? id00 : 0);
+    }
+    return slots;
+  }
+
+  function sentenceCompleteRelativeOrder() {
+    const slots = getStripSlots();                 // e.g. [0, id, id, 0, id, ...]
+    const texts = slots
+      .filter(id => id !== 0)
+      .map(id => (piecesById.get(id) ? piecesById.get(id).text : null))
+      .filter(Boolean);
+
+    // Must place exactly all pieces (no duplicates, no missing) into the bottom strip.
+    // Then: their left-to-right order must equal the hidden targetChunks.
+    if (texts.length !== targetChunks.length) return false;
+
+    for (let i = 0; i < targetChunks.length; i++) {
+      if (texts[i] !== targetChunks[i]) return false;
+    }
+    return true;
+  }
+
+  function clearBottomStrip() {
+    for (let y = STRIP_TOP; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) board[y][x] = 0;
+    }
+  }
+
+  // ===== Drawing =====
+  function drawCell(x, y, fill) {
+    const px = OFF_X + x * CELL;
+    const py = OFF_Y + y * CELL;
+    ctx.fillStyle = fill;
+    ctx.fillRect(px, py, CELL, CELL);
+    ctx.strokeStyle = "rgba(0,0,0,0.35)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(px + 0.5, py + 0.5, CELL - 1, CELL - 1);
+  }
+
+  function drawGrid() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#081019";
+    ctx.fillRect(OFF_X, OFF_Y, GRID_W, GRID_H);
+
+    ctx.strokeStyle = "rgba(232,238,246,0.06)";
+    ctx.lineWidth = 1;
+    for (let c = 1; c < COLS; c++) {
+      const x = OFF_X + c * CELL + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x, OFF_Y);
+      ctx.lineTo(x, OFF_Y + GRID_H);
+      ctx.stroke();
+    }
+    for (let r = 1; r < ROWS; r++) {
+      const y = OFF_Y + r * CELL + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(OFF_X, y);
+      ctx.lineTo(OFF_X + GRID_W, y);
+      ctx.stroke();
+    }
+
+    // Bottom strip highlight
+    ctx.fillStyle = "rgba(232,238,246,0.05)";
+    ctx.fillRect(OFF_X, OFF_Y + STRIP_TOP * CELL, GRID_W, PIECE_H * CELL);
+
+    // Slot separators in bottom strip
+    ctx.strokeStyle = "rgba(232,238,246,0.10)";
+    for (let s = 1; s < COLS / PIECE_W; s++) {
+      const x = OFF_X + s * PIECE_W * CELL + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x, OFF_Y + STRIP_TOP * CELL);
+      ctx.lineTo(x, OFF_Y + GRID_H);
+      ctx.stroke();
+    }
+  }
+
+  function ghostY(piece) {
+    let d = 0;
+    while (!collides(piece, 0, d + 1)) d++;
+    return piece.y + d;
+  }
+
+  function drawPiece(piece, yOverride = null, alpha = 1.0) {
+    const py = (yOverride === null) ? piece.y : yOverride;
+
+    for (let r = 0; r < PIECE_H; r++) {
+      for (let c = 0; c < PIECE_W; c++) {
+        const x = piece.x + c;
+        const y = py + r;
+        if (y < 0) continue;
+        ctx.globalAlpha = alpha;
+        drawCell(x, y, piece.color);
+      }
+    }
+    ctx.globalAlpha = 1.0;
+
+    if (py >= 0) {
+      const cx = OFF_X + (piece.x + PIECE_W / 2) * CELL;
+      const cy = OFF_Y + (py + PIECE_H / 2) * CELL;
+      const maxW = PIECE_W * CELL - 8;
+
+      let fontSize = 16;
+      ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
+      while (ctx.measureText(piece.text).width > maxW && fontSize > 10) {
+        fontSize -= 1;
+        ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
+      }
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "rgba(11,15,20,0.92)";
+      ctx.fillText(piece.text, cx, cy);
+    }
+  }
+
+  function drawBoard() {
+    // cells
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        const id = board[y][x];
+        if (!id) continue;
+        const p = piecesById.get(id);
+        drawCell(x, y, p ? p.color : "#4cc9f0");
+      }
+    }
+
+    // labels: draw on intact 2x2 top-lefts only
+    for (let y = 0; y < ROWS - 1; y++) {
+      for (let x = 0; x < COLS - 1; x++) {
+        const id = board[y][x];
+        if (!id) continue;
+        if (board[y][x+1] !== id || board[y+1][x] !== id || board[y+1][x+1] !== id) continue;
+
+        // only top-left once
+        if (x > 0 && board[y][x-1] === id) continue;
+        if (y > 0 && board[y-1][x] === id) continue;
+
+        const p = piecesById.get(id);
+        if (!p) continue;
+
+        const cx = OFF_X + (x + 1) * CELL;
+        const cy = OFF_Y + (y + 1) * CELL;
+        const maxW = PIECE_W * CELL - 8;
+
+        let fontSize = 16;
+        ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
+        while (ctx.measureText(p.text).width > maxW && fontSize > 10) {
+          fontSize -= 1;
+          ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
+        }
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "rgba(11,15,20,0.92)";
+        ctx.fillText(p.text, cx, cy);
+      }
+    }
+  }
+
+  function draw() {
+    drawGrid();
+    drawBoard();
+
+    if (current && !gameOver) {
+      drawPiece({ ...current, color: GHOST }, ghostY(current), 1.0);
+      drawPiece(current);
+    }
+
+    if (paused && !gameOver) {
+      ctx.fillStyle = "rgba(11,15,20,0.55)";
+      ctx.fillRect(OFF_X, OFF_Y, GRID_W, GRID_H);
+      ctx.fillStyle = "#e8eef6";
+      ctx.font = "700 22px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Paused", OFF_X + GRID_W / 2, OFF_Y + GRID_H / 2);
+    }
+
+    if (gameOver) {
+      ctx.fillStyle = "rgba(11,15,20,0.65)";
+      ctx.fillRect(OFF_X, OFF_Y, GRID_W, GRID_H);
+      ctx.fillStyle = "#e8eef6";
+      ctx.font = "700 22px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Round ended", OFF_X + GRID_W / 2, OFF_Y + GRID_H / 2 - 10);
+      ctx.font = "14px system-ui, sans-serif";
+      ctx.fillText("Press Restart to start over", OFF_X + GRID_W / 2, OFF_Y + GRID_H / 2 + 16);
+    }
+  }
+
+  // ===== Loop =====
+  function tick(ts) {
+    const dt = ts - lastTs;
+    lastTs = ts;
+
+    if (!paused && !gameOver) {
+      acc += dt;
+      if (acc >= dropIntervalMs) {
+        acc = acc % dropIntervalMs;
+        if (!collides(current, 0, 1)) current.y += 1;
+        else lockDown();
+      }
+    }
+    draw();
+    requestAnimationFrame(tick);
+  }
+
+  // ===== Controls =====
+  function togglePause() {
+    if (gameOver) return;
+    paused = !paused;
+    pauseBtn.textContent = paused ? "Resume" : "Pause";
+  }
+
+  window.addEventListener("keydown", (e) => {
+    if (e.repeat) return;
+    const k = e.key;
+    if (k === "ArrowLeft") { e.preventDefault(); move(-1); }
+    else if (k === "ArrowRight") { e.preventDefault(); move(1); }
+    else if (k === "ArrowDown") { e.preventDefault(); softDrop(); }
+    else if (k === " ") { e.preventDefault(); hardDrop(); }
+    else if (k.toLowerCase() === "p") { e.preventDefault(); togglePause(); }
+  });
+
+  document.getElementById("leftBtn").addEventListener("click", () => move(-1));
+  document.getElementById("rightBtn").addEventListener("click", () => move(1));
+  document.getElementById("softBtn").addEventListener("click", () => softDrop());
+  document.getElementById("dropBtn").addEventListener("click", () => hardDrop());
+  pauseBtn.addEventListener("click", () => togglePause());
+  restartBtn.addEventListener("click", () => resetAll());
+
+  // Touch: swipe L/R/D, tap = soft drop, long-press = hard drop
+  let tStart = null;
+  let longPressTimer = null;
+  const SWIPE_MIN = 22;
+  const SWIPE_TIME = 450;
+  const LONG_PRESS = 420;
+
+  canvas.addEventListener("pointerdown", (e) => {
+    canvas.setPointerCapture(e.pointerId);
+    tStart = { x: e.clientX, y: e.clientY, t: performance.now(), moved: false };
+
+    clearTimeout(longPressTimer);
+    longPressTimer = setTimeout(() => {
+      if (tStart && !tStart.moved) hardDrop();
+    }, LONG_PRESS);
+  });
+
+  canvas.addEventListener("pointermove", (e) => {
+    if (!tStart) return;
+    const dx = e.clientX - tStart.x;
+    const dy = e.clientY - tStart.y;
+    if (Math.abs(dx) > 6 || Math.abs(dy) > 6) tStart.moved = true;
+  });
+
+  canvas.addEventListener("pointerup", (e) => {
+    clearTimeout(longPressTimer);
+    if (!tStart) return;
+
+    const dx = e.clientX - tStart.x;
+    const dy = e.clientY - tStart.y;
+    const dt = performance.now() - tStart.t;
+
+    // tap: soft drop
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10 && dt < 250) {
+      softDrop();
+      tStart = null;
+      return;
+    }
+
+    if (dt <= SWIPE_TIME) {
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >= SWIPE_MIN) {
+        move(dx > 0 ? 1 : -1);
+      } else if (Math.abs(dy) > Math.abs(dx) && dy >= SWIPE_MIN) {
+        softDrop();
+      }
+    }
+    tStart = null;
+  });
+
+  canvas.addEventListener("pointercancel", () => {
+    clearTimeout(longPressTimer);
+    tStart = null;
+  });
+
+  // Reduce double-tap zoom on some browsers
+  let lastTouchEnd = 0;
+  document.addEventListener("touchend", (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
+
+  // ===== Start =====
+  updateUI();
+  newRound(true);
+  requestAnimationFrame((ts) => { lastTs = ts; requestAnimationFrame(tick); });
+})();
+</script>
+</body>
+</html>
