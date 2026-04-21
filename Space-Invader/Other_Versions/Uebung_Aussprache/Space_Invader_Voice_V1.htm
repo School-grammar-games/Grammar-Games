@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Word Boxes Shooter (Odd One Out)</title>
+  <style>
+    :root { font-family: system-ui, Arial, sans-serif; }
+    body { margin: 0; display: grid; place-items: center; min-height: 100vh; background: #0b1020; color: #e8eefc; }
+    .wrap { width: min(720px, 95vw); }
+    canvas { width: 100%; height: auto; background: #060914; border: 2px solid #2a3566; border-radius: 10px; display: block; }
+    .hud { display: flex; justify-content: space-between; align-items: center; margin: 10px 2px 12px; font-size: 14px; gap: 10px; flex-wrap: wrap; }
+    .hint { opacity: 0.85; font-size: 13px; margin-top: 10px; line-height: 1.35; }
+    button {
+      background: #23306a; color: #e8eefc; border: 1px solid #2a3566; padding: 8px 12px; border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.1); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hud">
+      <div><strong>Score:</strong> <span id="score">0</span></div>
+      <div><strong>Lives:</strong> <span id="lives">3</span></div>
+      <div><strong>Set:</strong> <span id="set">1</span>/14</div>
+      <div><button id="restart">Restart</button></div>
+    </div>
+
+    <canvas id="game" width="720" height="480" aria-label="Word Boxes Game"></canvas>
+
+    <div class="hint">
+      Controls: <strong>←</strong>/<strong>→</strong> move, <strong>Space</strong> shoot.<br />
+      Rule: Each set has exactly one correct “odd word”. Shoot only the correct word to gain points and advance.
+      If you shoot a wrong word, you lose a life (and the set restarts).
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    // ----------------------------
+    // Canvas setup
+    // ----------------------------
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+    const setEl = document.getElementById('set');
+    const restartBtn = document.getElementById('restart');
+
+    // ----------------------------
+    // Game constants
+    // ----------------------------
+    const W = canvas.width;
+    const H = canvas.height;
+
+    const PLAYER = { w: 44, h: 14, speed: 5 };
+    const BULLET = { w: 4, h: 10, speed: 7, cooldownMs: 250 };
+
+    const WORD_SETS = [
+      ['west', 'vest', 'water', 'window', 'week'],
+      ['wine', 'winter', 'vine', 'wish', 'white'],
+      ['wet', 'wind', 'vet', 'well', 'wave'],
+      ['wail', 'veil', 'wait', 'wake', 'warm'],
+      ['wane', 'vain', 'wheel', 'word', 'walk'],
+      ['while', 'vile', 'winter', 'wind', 'wish'],
+      ['wheel', 'veal', 'window', 'we', 'wake'],
+      ['vest', 'very', 'vote', 'west', 'value'],
+      ['vine', 'vote', 'view', 'wine', 'voice'],
+      ['vet', 'very', 'visit', 'wet', 'vase'],
+      ['veil', 'view', 'vote', 'wail', 'value'],
+      ['vain', 'visit', 'voice', 'wane', 'very'],
+      ['vile', 'view', 'vote', 'while', 'very'],
+      ['veal', 'view', 'value', 'wheel', 'voice']
+    ];
+
+    // Teacher key (odd word) for each set in the same order as WORD_SETS:
+    const ANSWERS = [
+      'vest',   // 1
+      'vine',   // 2
+      'vet',    // 3
+      'veil',   // 4
+      'vain',   // 5
+      'vile',   // 6
+      'veal',   // 7
+      'west',   // 8
+      'wine',   // 9
+      'wet',    // 10
+      'wail',   // 11
+      'wane',   // 12
+      'while',  // 13
+      'wheel'   // 14
+    ];
+
+    const BOX = { w: 112, h: 34, gapX: 14 };
+    const BOX_MOVE = { stepX: 16, stepY: 18, intervalMs: 520 };
+
+    // ----------------------------
+    // State
+    // ----------------------------
+    let keys = new Set();
+
+    let player, bullets, boxes, boxDir, boxLastMoveAt;
+    let score, lives, setIndex;
+    let lastShotAt = 0;
+    let running = true;
+
+    // message feedback (brief)
+    let feedbackText = '';
+    let feedbackUntil = 0;
+
+    // ----------------------------
+    // Helpers
+    // ----------------------------
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+    function rectsOverlap(a, b) {
+      return (
+        a.x < b.x + b.w &&
+        a.x + a.w > b.x &&
+        a.y < b.y + b.h &&
+        a.y + a.h > b.y
+      );
+    }
+
+    function showFeedback(text, ms = 700) {
+      feedbackText = text;
+      feedbackUntil = performance.now() + ms;
+    }
+
+    function updateHud() {
+      scoreEl.textContent = String(score);
+      livesEl.textContent = String(lives);
+      setEl.textContent = String(setIndex + 1);
+    }
+
+    function boxesBounds() {
+      let minX = Infinity, maxX = -Infinity, maxY = -Infinity;
+      for (const bx of boxes) {
+        if (!bx.alive) continue;
+        minX = Math.min(minX, bx.x);
+        maxX = Math.max(maxX, bx.x + bx.w);
+        maxY = Math.max(maxY, bx.y + bx.h);
+      }
+      return { minX, maxX, maxY };
+    }
+
+    function buildBoxesForSet(words) {
+      boxes = [];
+
+      const totalW = words.length * BOX.w + (words.length - 1) * BOX.gapX;
+      const startX = (W - totalW) / 2;
+      const startY = 80;
+
+      for (let i = 0; i < words.length; i++) {
+        boxes.push({
+          x: startX + i * (BOX.w + BOX.gapX),
+          y: startY,
+          w: BOX.w,
+          h: BOX.h,
+          text: words[i],
+          alive: true
+        });
+      }
+
+      boxDir = 1;
+      boxLastMoveAt = performance.now();
+    }
+
+    function restartCurrentSet() {
+      bullets.length = 0;
+      buildBoxesForSet(WORD_SETS[setIndex]);
+      updateHud();
+    }
+
+    function nextSet() {
+      setIndex += 1;
+      if (setIndex >= WORD_SETS.length) {
+        running = false; // completed all sets => win
+        return;
+      }
+      bullets.length = 0;
+      buildBoxesForSet(WORD_SETS[setIndex]);
+      updateHud();
+    }
+
+    // ----------------------------
+    // Game setup
+    // ----------------------------
+    function resetGame() {
+      score = 0;
+      lives = 3;
+      setIndex = 0;
+      running = true;
+
+      player = {
+        x: (W - PLAYER.w) / 2,
+        y: H - 40,
+        w: PLAYER.w,
+        h: PLAYER.h
+      };
+
+      bullets = [];
+      buildBoxesForSet(WORD_SETS[setIndex]);
+      updateHud();
+
+      feedbackText = '';
+      feedbackUntil = 0;
+    }
+
+    // ----------------------------
+    // Input
+    // ----------------------------
+    window.addEventListener('keydown', (e) => {
+      if (['ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+      keys.add(e.key);
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys.delete(e.key);
+    });
+
+    restartBtn.addEventListener('click', resetGame);
+
+    // ----------------------------
+    // Game mechanics
+    // ----------------------------
+    function tryShoot(now) {
+      if (now - lastShotAt < BULLET.cooldownMs) return;
+
+      bullets.push({
+        x: player.x + player.w / 2 - BULLET.w / 2,
+        y: player.y - BULLET.h,
+        w: BULLET.w,
+        h: BULLET.h
+      });
+
+      lastShotAt = now;
+    }
+
+    function movePlayer() {
+      if (keys.has('ArrowLeft')) player.x -= PLAYER.speed;
+      if (keys.has('ArrowRight')) player.x += PLAYER.speed;
+      player.x = clamp(player.x, 8, W - player.w - 8);
+    }
+
+    function moveBullets() {
+      for (const b of bullets) b.y -= BULLET.speed;
+      bullets = bullets.filter(b => b.y + b.h > 0 && !b._dead);
+    }
+
+    function moveBoxes(now) {
+      if (now - boxLastMoveAt < BOX_MOVE.intervalMs) return;
+
+      boxLastMoveAt = now;
+
+      const { minX, maxX } = boxesBounds();
+      if (!isFinite(minX) || !isFinite(maxX)) return;
+
+      const hitRight = maxX + BOX_MOVE.stepX >= W - 10;
+      const hitLeft = minX - BOX_MOVE.stepX <= 10;
+
+      if ((boxDir === 1 && hitRight) || (boxDir === -1 && hitLeft)) {
+        for (const bx of boxes) bx.y += BOX_MOVE.stepY;
+        boxDir *= -1;
+      } else {
+        for (const bx of boxes) bx.x += BOX_MOVE.stepX * boxDir;
+      }
+    }
+
+    function loseLife(reasonText) {
+      lives -= 1;
+      updateHud();
+
+      if (lives <= 0) {
+        running = false;
+        return;
+      }
+
+      showFeedback(reasonText, 900);
+      restartCurrentSet();
+    }
+
+    function handleCollisions() {
+      const correctWord = ANSWERS[setIndex];
+
+      // Bullet vs boxes
+      for (const b of bullets) {
+        if (b._dead) continue;
+
+        for (const bx of boxes) {
+          if (!bx.alive) continue;
+
+          if (rectsOverlap(b, bx)) {
+            b._dead = true;
+
+            if (bx.text === correctWord) {
+              score += 10;
+              updateHud();
+              showFeedback('Correct!', 700);
+              nextSet();
+            } else {
+              loseLife('Wrong word! -1 life');
+            }
+            break;
+          }
+        }
+      }
+
+      // If boxes reach player line => lose a life (optional pressure mechanic)
+      const { maxY } = boxesBounds();
+      if (running && isFinite(maxY) && maxY >= player.y) {
+        loseLife('Too late! -1 life');
+      }
+    }
+
+    // ----------------------------
+    // Rendering
+    // ----------------------------
+    function drawBackground() {
+      ctx.clearRect(0, 0, W, H);
+
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = '#9bb3ff';
+      for (let i = 0; i < 70; i++) {
+        const x = (i * 97) % W;
+        const y = (i * 53) % H;
+        ctx.fillRect(x, y, 2, 2);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawPlayer() {
+      ctx.fillStyle = '#e8eefc';
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+      ctx.fillRect(player.x + player.w / 2 - 4, player.y - 8, 8, 8);
+    }
+
+    function drawBullets() {
+      ctx.fillStyle = '#ffd66b';
+      for (const b of bullets) ctx.fillRect(b.x, b.y, b.w, b.h);
+    }
+
+    function drawBoxes() {
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '16px system-ui, Arial';
+
+      for (const bx of boxes) {
+        if (!bx.alive) continue;
+
+        ctx.fillStyle = '#7ee081';
+        ctx.fillRect(bx.x, bx.y, bx.w, bx.h);
+
+        ctx.strokeStyle = '#e8eefc';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(bx.x, bx.y, bx.w, bx.h);
+
+        ctx.fillStyle = '#060914';
+        ctx.fillText(bx.text, bx.x + bx.w / 2, bx.y + bx.h / 2);
+      }
+    }
+
+    function drawFeedback(now) {
+      if (!feedbackText || now > feedbackUntil) return;
+
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(0, H - 70, W, 70);
+
+      ctx.fillStyle = '#e8eefc';
+      ctx.font = '18px system-ui, Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(feedbackText, W / 2, H - 35);
+    }
+
+    function drawOverlay() {
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.fillStyle = '#e8eefc';
+      ctx.font = '28px system-ui, Arial';
+      ctx.textAlign = 'center';
+
+      const won = lives > 0 && setIndex >= WORD_SETS.length;
+      ctx.fillText(won ? 'You Win!' : 'Game Over', W / 2, H / 2 - 10);
+
+      ctx.font = '16px system-ui, Arial';
+      ctx.fillText('Press Restart to play again', W / 2, H / 2 + 22);
+    }
+
+    // ----------------------------
+    // Main loop
+    // ----------------------------
+    function loop(now) {
+      if (running) {
+        movePlayer();
+        if (keys.has(' ')) tryShoot(now);
+        moveBullets();
+        moveBoxes(now);
+        handleCollisions();
+      }
+
+      drawBackground();
+      drawBoxes();
+      drawPlayer();
+      drawBullets();
+      drawFeedback(now);
+
+      if (!running) drawOverlay();
+
+      requestAnimationFrame(loop);
+    }
+
+    // Start
+    resetGame();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
