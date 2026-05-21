@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Farben-Zufallsgenerator</title>
+  <style>
+    :root{
+      --bg1:#eef4ff;
+      --bg2:#dfe9ff;
+      --card:#ffffffee;
+      --text:#1f2937;
+      --shadow:0 18px 45px rgba(0,0,0,0.18);
+      --radius:28px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.95), rgba(255,255,255,0) 35%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 14px;
+      overflow: auto;
+    }
+
+    .floating-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(18px);
+      opacity: 0.2;
+      animation: drift 12s ease-in-out infinite alternate;
+    }
+
+    .blob:nth-child(1){ width: 220px; height: 220px; left: 8%; top: 8%; background: #ff66cc; }
+    .blob:nth-child(2){ width: 260px; height: 260px; right: 10%; top: 10%; background: #4da6ff; animation-duration: 14s; }
+    .blob:nth-child(3){ width: 240px; height: 240px; left: 18%; bottom: 8%; background: #ffd84d; animation-duration: 16s; }
+    .blob:nth-child(4){ width: 280px; height: 280px; right: 14%; bottom: 6%; background: #33cc66; animation-duration: 13s; }
+
+    @keyframes drift {
+      from { transform: translateY(0px) translateX(0px) scale(1); }
+      to   { transform: translateY(-25px) translateX(18px) scale(1.08); }
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      width: min(980px, 100%);
+      background: var(--card);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      text-align: center;
+      font-size: clamp(1.8rem, 3.4vw, 2.8rem);
+    }
+
+    .subtitle {
+      text-align: center;
+      margin: 0 0 18px;
+      font-size: 0.98rem;
+      color: #4b5563;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    button {
+      border: none;
+      border-radius: 16px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 22px rgba(0,0,0,0.16);
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .primary {
+      background: linear-gradient(135deg, #1f2937, #374151);
+      color: white;
+    }
+
+    .secondary {
+      background: white;
+      color: #1f2937;
+    }
+
+    .display {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .color-field {
+      height: clamp(240px, 48vh, 540px);
+      align-self: start;
+      border-radius: 20px;
+      border: 4px solid rgba(255,255,255,0.8);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05), 0 12px 28px rgba(0,0,0,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      flex: 0 0 auto;
+      overflow: hidden;
+      background: linear-gradient(135deg, #e5e7eb, #cbd5e1);
+      transition: background 0.5s ease, transform 0.3s ease;
+    }
+
+    .color-field.animate {
+      animation: pop 0.6s ease;
+    }
+
+    @keyframes pop {
+      0%   { transform: scale(0.96) rotate(-0.5deg); }
+      50%  { transform: scale(1) rotate(0.5deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    .shine {
+      position: absolute;
+      inset: -40%;
+      background: linear-gradient(120deg, transparent 35%, rgba(255,255,255,0.45) 50%, transparent 65%);
+      transform: translateX(-120%) rotate(12deg);
+      pointer-events: none;
+    }
+
+    .color-field.animate .shine {
+      animation: sweep 0.9s ease forwards;
+    }
+
+    @keyframes sweep {
+      from { transform: translateX(-120%) rotate(12deg); }
+      to   { transform: translateX(120%) rotate(12deg); }
+    }
+
+    .color-name {
+      font-size: clamp(1.9rem, 4.4vw, 3.7rem);
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      text-align: center;
+      padding: 20px;
+      text-shadow: 0 2px 8px rgba(255,255,255,0.35);
+    }
+
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .panel-box {
+      background: white;
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+    }
+
+    .panel-box h2 {
+      margin: 0 0 12px;
+      font-size: 1.1rem;
+    }
+
+
+    .collapsible-panel {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .panel-toggle {
+      width: 100%;
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: white;
+      box-shadow: none;
+      border: none;
+      padding: 18px 20px;
+      margin: 0;
+      color: #1f2937;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: left;
+      border-radius: 20px;
+      transition: background 0.18s ease;
+    }
+
+    .panel-toggle:hover {
+      background: #f7f8fb;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .panel-toggle:active {
+      transform: none;
+    }
+
+    .panel-arrow {
+      font-size: 1.15rem;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    .panel-content {
+      padding: 0 18px 18px;
+      overflow: hidden;
+    }
+
+    .panel-content.closed {
+      display: none !important;
+    }
+
+    .history {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .history-item {
+      min-height: 76px;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.98rem;
+      text-align: center;
+      padding: 10px;
+      border: 3px solid rgba(255,255,255,0.75);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+      transform: scale(0.98);
+      opacity: 0;
+      animation: fadeIn 0.35s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .hint {
+      color: #4b5563;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .legend-item {
+      border-radius: 16px;
+      min-height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      text-align: center;
+      padding: 8px;
+      border: 3px solid rgba(255,255,255,0.78);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+    }
+
+    @media (max-width: 1000px) {
+      .app {
+        padding: 18px;
+      }
+
+      .color-field {
+        height: clamp(220px, 42vh, 420px);
+      }
+    }
+
+    @media (max-width: 850px) {
+      .display {
+        grid-template-columns: 1fr;
+      }
+
+      .color-field {
+        height: 240px;
+      }
+
+      .legend {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 520px) {
+      .app { padding: 18px; }
+      .history { grid-template-columns: 1fr; }
+      .legend { grid-template-columns: 1fr; }
+      button { width: 100%; }
+      .controls { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="floating-bg" aria-hidden="true">
+    <div class="blob"></div>
+    <div class="blob"></div>
+    <div class="blob"></div>
+    <div class="blob"></div>
+  </div>
+
+  <main class="app">
+    <h1>Farben-Zufallsgenerator</h1>
+    <p class="subtitle">Zufällige Auswahl aus: Grün, Pink, Hellblau, Dunkelblau, Gelb und Orange</p>
+
+    <div class="controls">
+      <button class="primary" id="generateBtn">Zufallsfarbe wählen</button>
+      <button class="secondary" id="resetBtn">Zurücksetzen</button>
+    </div>
+
+    <section class="display">
+      <div class="color-field" id="colorField">
+        <div class="shine"></div>
+        <div class="color-name" id="colorName">Start</div>
+      </div>
+
+      <div class="side-panel">
+        <div class="panel-box collapsible-panel">
+          <button class="panel-toggle" type="button" data-target="historyContent" aria-expanded="false">
+            <span>Letzte Farben</span>
+            <span class="panel-arrow">▸</span>
+          </button>
+          <div class="panel-content closed" id="historyContent">
+            <div class="history" id="history"></div>
+          </div>
+        </div>
+
+        <div class="panel-box collapsible-panel">
+          <button class="panel-toggle" type="button" data-target="legendContent" aria-expanded="false">
+            <span>Farben im Generator</span>
+            <span class="panel-arrow">▸</span>
+          </button>
+          <div class="panel-content closed" id="legendContent">
+            <div class="legend" id="legend"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const colors = [
+      { name: "Grün", value: "#33cc66", text: "#083b1d" },
+      { name: "Pink", value: "#ff66cc", text: "#5a0838" },
+      { name: "Hellblau", value: "#8fd3ff", text: "#0b3552" },
+      { name: "Dunkelblau", value: "#1f4fa3", text: "#ffffff" },
+      { name: "Gelb", value: "#ffe45c", text: "#5c4700" },
+      { name: "Orange", value: "#ff9f43", text: "#5a2e00" }
+    ];
+
+    const colorField = document.getElementById("colorField");
+    const colorName = document.getElementById("colorName");
+    const historyBox = document.getElementById("history");
+    const legendBox = document.getElementById("legend");
+    const generateBtn = document.getElementById("generateBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    let history = [];
+
+    function renderLegend() {
+      legendBox.innerHTML = "";
+      colors.forEach(color => {
+        const item = document.createElement("div");
+        item.className = "legend-item";
+        item.style.background = color.value;
+        item.style.color = color.text;
+        item.textContent = color.name;
+        legendBox.appendChild(item);
+      });
+    }
+
+    function renderHistory() {
+      historyBox.innerHTML = "";
+      if (history.length === 0) {
+        const p = document.createElement("p");
+        p.className = "hint";
+        p.textContent = "Noch keine Farbe gewählt.";
+        historyBox.appendChild(p);
+        return;
+      }
+
+      history.slice().reverse().forEach(color => {
+        const item = document.createElement("div");
+        item.className = "history-item";
+        item.style.background = color.value;
+        item.style.color = color.text;
+        item.textContent = color.name;
+        historyBox.appendChild(item);
+      });
+    }
+
+    function animateField() {
+      colorField.classList.remove("animate");
+      void colorField.offsetWidth;
+      colorField.classList.add("animate");
+    }
+
+    function pickRandomColor() {
+      const randomIndex = Math.floor(Math.random() * colors.length);
+      const chosen = colors[randomIndex];
+
+      colorField.style.background = chosen.value;
+      colorName.textContent = chosen.name;
+      colorName.style.color = chosen.text;
+
+      history.push(chosen);
+      if (history.length > 4) history.shift();
+
+      renderHistory();
+      animateField();
+    }
+
+    function resetApp() {
+      history = [];
+      colorField.style.background = "linear-gradient(135deg, #e5e7eb, #cbd5e1)";
+      colorName.textContent = "Start";
+      colorName.style.color = "#1f2937";
+      renderHistory();
+      colorField.classList.remove("animate");
+    }
+
+    generateBtn.addEventListener("click", pickRandomColor);
+    resetBtn.addEventListener("click", resetApp);
+    document.querySelectorAll(".panel-toggle").forEach(button => {
+      button.addEventListener("click", () => {
+        const targetId = button.dataset.target;
+        const panel = document.getElementById(targetId);
+        const isOpen = button.getAttribute("aria-expanded") === "true";
+
+        button.setAttribute("aria-expanded", String(!isOpen));
+        panel.classList.toggle("closed", isOpen);
+        button.querySelector(".panel-arrow").textContent = isOpen ? "▸" : "▾";
+      });
+    });
+
+    renderLegend();
+    renderHistory();
+  </script>
+</body>
+</html>
